@@ -1,0 +1,40 @@
+{
+  "ts-node": {
+    "require": [
+      "tsconfig-paths/register"
+    ]
+  },
+  "compilerOptions": {
+    "noEmit": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "useDefineForClassFields": false,
+    "rootDir": "./",
+    "paths": {
+      "@/*": [
+        "./src"
+      ]
+    }
+  },
+  "include": [
+    "actions",
+    "src",
+    "models",
+    "utils",
+    "configs"
+  ],
+  "exclude": [
+    "src/**/__tests__/*",
+    "node_modules"
+  ]
+}

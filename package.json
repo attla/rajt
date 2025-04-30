@@ -1,0 +1,45 @@
+{
+  "name": "rajt",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./src/index.ts",
+    "./http": "./src/http.ts",
+    "./types": "./src/types.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "sam": "sam local start-api --warm-containers LAZY --debug",
+    "dev": "tsx watch src/dev.ts",
+    "prod": "bun run build && bun run sam",
+    "build": "bun run cache:routes && bun run export && bun run clean:temp",
+    "build:watch": "chokidar \"{actions,src,models,utils,configs}/**/*.ts\" -c \"bun run build\" --initial",
+    "export": "esbuild --bundle --minify --outfile=dist/index.js --platform=node --target=node20 --format=esm --tree-shaking=true --legal-comments=none src/prod.ts",
+    "cache:routes": "tsx src/scripts/cache-routes.ts",
+    "ensure-dirs": "rm -rf dist tmp && mkdir -p ./tmp && chmod 755 ./tmp && mkdir -p ./dist && chmod 755 ./dist",
+    "clean": "rm -rf dist tmp",
+    "clean:build": "rm -rf dist",
+    "clean:temp": "rm -rf tmp",
+    "zip": "zip -j lambda.zip dist/index.js",
+    "update": "aws lambda update-function-code --zip-file fileb://lambda.zip --function-name hello",
+    "deploy": "run-s build zip update",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.4.3",
+    "dotenv": "^16.5.0",
+    "hono": "^4.7.6"
+  },
+  "devDependencies": {
+    "@hono/node-server": "^1.14.1",
+    "@types/node": "^20.11.0",
+    "chokidar-cli": "^3.0.0",
+    "esbuild": "^0.25.2",
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
+  }
+}
