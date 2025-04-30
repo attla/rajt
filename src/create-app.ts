@@ -116,6 +116,7 @@ export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
 
 function mw(...objs: string[]): Function[] {
   return objs.flatMap(obj => {
+    if (typeof obj !== 'string') return null
     // @ts-ignore
     return getHandler(obj)?.mw || null
   }).flat().filter(Boolean)
