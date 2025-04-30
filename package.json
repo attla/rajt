@@ -1,6 +1,7 @@
 {
   "name": "rajt",
-  "version": "0.0.3",
+  "description": "A serverless bundler layer, fully typed for AWS Lambda (Node.js and LLRT) and Cloudflare Workers.",
+  "version": "0.0.4",
   "type": "module",
   "main": "dist/index.js",
   "exports": {
@@ -39,5 +40,28 @@
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3"
-  }
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
+  "author": "Zunq <open-source@zunq.com>",
+  "homepage": "https://zunq.dev",
+  "repository": "git://github.com/attla/rajt",
+  "bugs": "https://github.com/attla/rajt/issues",
+  "keywords": [
+    "rajt",
+    "aws",
+    "lambda",
+    "llrt",
+    "app",
+    "http",
+    "application",
+    "framework",
+    "router",
+    "cloudflare",
+    "workers",
+    "deno",
+    "bun",
+    "nodejs"
+  ]
 }

@@ -1,10 +1,5 @@
-<p align="left">
-  <a href="https://npmjs.com/package/rajt"><img src="https://img.shields.io/npm/v/rajt.svg" alt="npm package"></a>
-  <a href="https://pr.new/attla/rajt"><img src="https://developer.stackblitz.com/img/start_pr_dark_small.svg" alt="Start new PR in StackBlitz Codeflow"></a>
-</p>
+<h1 align="left">Rajt λ<br/><a href="https://pr.new/attla/rajt"><img align="right" src="https://developer.stackblitz.com/img/start_pr_dark_small.svg" alt="Start new PR in StackBlitz Codeflow"></a><a href="https://npmjs.com/package/rajt"><img align="right" src="https://img.shields.io/npm/v/rajt.svg" alt="npm package"></a></h1>
 <br/>
-
-# Rajt λ
 
 > This framework is fully geared towards the serverless world, specifically AWS Lambda (Node.js and LLRT) / Cloudflare Workers.
 
@@ -12,7 +7,7 @@
 - ⚡️ Fast Cold Start
 - 📦 Optimized Build
 
-[Read the Docs to Learn More](DOCS.md).
+[Read the Docs to Learn More](https://github.com/attla/rajt/blob/main/DOCS.md).
 
 ## Packages
 
@@ -23,4 +18,4 @@
 
 ## License
 
-This package is licensed under the [MIT license](LICENSE) © [Zunq](https://zunq.com).
+This package is licensed under the [MIT license](https://github.com/attla/rajt/blob/main/LICENSE) © [Zunq](https://zunq.com).
