@@ -31,7 +31,7 @@ export default async function getRoutes(all: boolean = false, baseDir: string = 
             method: '',
             path: '',
             name: group.name.replace(/\.ts$/, ''),
-            file: relative(process.cwd(), indexFile),
+            file: baseDir + indexFile.split(baseDir)[1],
             middlewares,
             handle: group,
           })
