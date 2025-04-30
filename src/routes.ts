@@ -49,7 +49,7 @@ export default async function getRoutes(all: boolean = false, baseDir: string = 
             method: handle.m.toLowerCase(),
             path: handle.p,
             name: handle.name.replace(/\.ts$/, ''),
-            file: relative(process.cwd(), fullPath),
+            file: baseDir + fullPath.split(baseDir)[1],
             middlewares,
             handle,
           })

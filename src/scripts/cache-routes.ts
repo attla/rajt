@@ -5,10 +5,10 @@ import ensureDir from '../utils/ensuredir'
 async function cacheRoutes() {
   const routes = await getRoutes(true)
 
-  const iPath = './tmp/import-routes.mjs'
+  const iPath = '../../tmp/import-routes.mjs'
   ensureDir(iPath)
   writeFileSync(iPath, `// AUTO-GENERATED FILE - DO NOT EDIT
-import { registerHandler } from '../src/register'
+import { registerHandler } from '../node_modules/rajt/src/register'
 
 ${routes.map(r => `import ${r.name} from '../${normalizePath(r.file)}'`).join('\n')}
 
@@ -20,12 +20,12 @@ try {
       registerHandler(name, handler)
     }
   }
-} catch (error) {
-  console.error('Failed to register handlers:', error)
+} catch (e) {
+  console.error('Failed to register handlers:', e)
 }
 `)
 
-  const rPath = './tmp/routes.json'
+  const rPath = '../../tmp/routes.json'
   ensureDir(rPath)
   writeFileSync(rPath, JSON.stringify(routes.filter(r => r.method && r.path).map(route => [
     route.method,

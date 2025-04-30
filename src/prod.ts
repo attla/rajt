@@ -5,10 +5,10 @@ import createApp from './create-app'
 config({ path: '.env.prod' })
 
 // @ts-ignore
-await import('../tmp/import-routes.mjs')
+await import('../../../tmp/import-routes.mjs')
 
 // @ts-ignore
-const routes = (await import('../tmp/routes.json')).default
+const routes = (await import('../../../tmp/routes.json')).default
 // @ts-ignore
 const app = createApp({ routes })
 
