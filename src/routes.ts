@@ -58,6 +58,6 @@ export default async function getRoutes(all: boolean = false, baseDir: string = 
     }
   }
 
-  await walk(path.resolve(__dirname, '..', baseDir))
+  await walk(path.resolve(__dirname, '../../..', baseDir))
   return routes
 }
