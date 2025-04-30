@@ -1,5 +1,5 @@
 import fs from 'node:fs'
-import path, { relative } from 'node:path'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Route } from './types'
 import { registerHandler } from './register'
