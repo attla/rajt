@@ -1,7 +1,7 @@
 {
   "name": "rajt",
   "description": "A serverless bundler layer, fully typed for AWS Lambda (Node.js and LLRT) and Cloudflare Workers.",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "type": "module",
   "main": "dist/index.js",
   "exports": {
@@ -13,20 +13,24 @@
     "src"
   ],
   "scripts": {
-    "sam:local": "sam local start-api --warm-containers LAZY --debug --template-file ../../template.yaml",
     "dev": "tsx watch src/dev.ts",
     "local": "bun run --silent build && bun run --silent sam:local",
     "build": "bun run --silent cache:routes && bun run --silent export && bun run --silent clean:temp",
     "build:watch": "chokidar \"../../{actions,configs,models,utils}/**/*.ts\" -c \"bun run --silent build\" --initial",
     "export": "esbuild --bundle --minify --outfile=../../dist/index.js --platform=node --target=node20 --format=esm --tree-shaking=true --legal-comments=none src/prod.ts",
+    "package": "bun run --silent build && bun run --silent sam:package",
+    "deploy": "bun run --silent build && bun run --silent sam:package && && bun run --silent sam:deploy",
+    "update": "bun run --silent build && bun run --silent zip && && bun run --silent sam:update",
+    "sam:local": "sam local start-api --warm-containers LAZY --debug --template-file ../../template-dev.yaml",
+    "sam:package": "sam package --template-file ../../template-prod.yaml --output-template-file ../../packaged.yaml",
+    "sam:deploy": "sam deploy --template-file ../../packaged.yaml --stack-name rajt-llrt --capabilities CAPABILITY_IAM",
+    "sam:update": "source ../../.env.prod && aws lambda update-function-code --function-name $AWS_NAME --zip-file fileb: //../../lambda.zip --region $AWS_REGION",
     "cache:routes": "tsx src/scripts/cache-routes.ts",
     "ensure-dirs": "rm -rf ../../dist ../../tmp && mkdir -p ../../tmp && chmod 755 ../../tmp && mkdir -p ../../dist && chmod 755 ../../dist",
     "clean": "rm -rf ../../dist ../../tmp",
     "clean:build": "rm -rf ../../dist",
     "clean:temp": "rm -rf ../../tmp",
-    "zip": "zip -j lambda.zip ../../dist/index.js",
-    "update": "aws lambda update-function-code --zip-file fileb://../../lambda.zip --function-name hello",
-    "deploy": "bun run --silent build && bun run --silent zip && bun run --silent update",
+    "zip": "zip -j ../../lambda.zip ../../dist/index.js",
     "start": "node ../../dist/index.js"
   },
   "dependencies": {
