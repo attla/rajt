@@ -4,7 +4,7 @@ import createApp from './create-app'
 import getRoutes from './routes'
 import { getAvailablePort } from './utils/port'
 
-config({ path: '.env.dev' })
+config({ path: '../../.env.dev' })
 
 const routes = await getRoutes()
 const fetch = createApp({ routes }).fetch

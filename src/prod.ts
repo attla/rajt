@@ -2,7 +2,7 @@ import { config } from 'dotenv'
 import { handle } from 'hono/aws-lambda'
 import createApp from './create-app'
 
-config({ path: '.env.prod' })
+config({ path: '../../.env.prod' })
 
 // @ts-ignore
 await import('../../../tmp/import-routes.mjs')
