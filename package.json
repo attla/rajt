@@ -6,6 +6,7 @@
   "main": "dist/index.js",
   "exports": {
     ".": "./src/index.ts",
+    "./dynamodb": "./src/dynamodb/index.ts",
     "./http": "./src/http.ts",
     "./types": "./src/types.ts"
   },
@@ -34,6 +35,8 @@
     "start": "node ../../dist/index.js"
   },
   "dependencies": {
+    "@aws-lite/client": "^0.23.2",
+    "@aws-lite/dynamodb": "^0.3.9",
     "@hono/node-server": "^1.14.1",
     "@hono/zod-validator": "^0.4.3",
     "@types/node": "^20.11.0",
