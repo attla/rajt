@@ -10,7 +10,7 @@ This framework is fully geared towards the serverless world, specifically AWS La
   - [Model](#model)
   - [Basic Usage](#basic-usage)
     - [Get](#get)
-    - [Put](#create)
+    - [Put](#put)
     - [Update](#update)
     - [Delete](#delete)
   - [Advanced Queries](#advanced-queries)
@@ -254,9 +254,9 @@ class User {
   createdAt: Date;
 
   constructor(id: string, sk: string) {
-    this.id = id;
-    this.sk = sk;
-    this.createdAt = new Date();
+    this.id = id
+    this.sk = sk
+    this.createdAt = new Date()
   }
 }
 ```
@@ -371,7 +371,7 @@ await model.where(q => {
 ```ts
 const model = Dynamodb.model(User)
 
-let lastEvaluatedKey;
+let lastEvaluatedKey
 
 do {
   const users = await model.where(q => {
@@ -381,7 +381,7 @@ do {
 
   console.log(users)
 
-  lastEvaluatedKey = model.lastEvaluatedKey;
+  lastEvaluatedKey = model.lastEvaluatedKey
   // Process batch of 100 items
 } while (lastEvaluatedKey)
 ```
