@@ -2,6 +2,24 @@ This framework is fully geared towards the serverless world, specifically AWS La
 
 > It works with bun and LLRT runtimes ;)
 
+- [Installation](#install)
+- [Endpoints](#actionsfeatures)
+- [Validations](#validations)
+- [Middlewares](#middlewares)
+- [DynamoDB](#dynamodb)
+  - [Model](#model)
+  - [Basic Usage](#basic-usage)
+    - [Get](#get)
+    - [Put](#create)
+    - [Update](#update)
+    - [Delete](#delete)
+  - [Advanced Queries](#advanced-queries)
+    - [Scan](#scan)
+    - [Filters](#filter)
+    - [Queries](#queries)
+    - [Post query filters](#post-query-filters)
+    - [Pagination](#post-query-filters)
+
 ## Install
 
 ```bash
@@ -166,7 +184,7 @@ import { Middleware } from 'rajt/http'
 export default class ListUsers extends Action {}
 ```
 
-Creating a  middleware class:
+Creating a middleware class:
 
 ```ts
 import { Middleware as BaseMiddleware } from 'rajt'
@@ -211,4 +229,159 @@ class AuthMiddleware extends BaseMiddleware {
 // using decorator alias @Middlewares
 @Middlewares(AuthMiddleware, new AuthMiddleware)
 export default class ListUsers extends Action {}
+```
+
+## DynamoDB
+
+#### Model:
+
+The `@Model` decorator transforms a class into a DynamoDB entity, mapping it to a specific table. Use `@PartitionKey` and `@SortKey` to define your primary key structure.
+
+Model Example with Common Patterns
+
+```ts
+import { Model, PartitionKey, SortKey } from 'rajt/dynamodb'
+
+@Model('USER_TABLE') // Represents the DynamoDB table name
+class User {
+  @PartitionKey('uuid') // Custom mapping: stores as 'uuid' in DynamoDB
+  id: string;
+
+  @SortKey() // Uses the property name 'sk' as stored
+  sk: string;
+
+  // Common pattern for time-based sorting
+  createdAt: Date;
+
+  constructor(id: string, sk: string) {
+    this.id = id;
+    this.sk = sk;
+    this.createdAt = new Date();
+  }
+}
+```
+
+#### Basic Usage:
+
+##### Get
+
+Retrieves a single item by its primary key
+
+```ts
+import { Dynamodb } from 'rajt/dynamodb'
+import User from './models/user'
+
+const model = Dynamodb.model(User)
+
+const item = await model.get(
+  'USER#123',
+  'PROFILE' // Optional
+)
+```
+
+##### Put
+
+Creates or replaces an entire item
+
+```ts
+await model.put({
+  id: 'USER#456',
+  sk: 'PROFILE',
+  name: 'John Doe',
+  email: 'john@example.com'
+})
+```
+
+##### Update
+
+Partially updates an existing item
+
+```ts
+await model.update(
+  'Partition_Key_123',
+  'USER#123',
+  // key pair
+  // ['USER#123', 'PROFILE'],
+  {
+    email: 'new.email@example.com',
+    lastLogin: new Date().toISOString()
+  }
+)
+```
+
+##### Delete
+
+Removes an item from the table
+
+```ts
+await model.delete(
+  'USER#789',
+  'PROFILE' // Optional
+)
+```
+
+#### Advanced Queries:
+
+##### Scan
+
+Scan with filters
+
+```ts
+await model.scan() // scan all table
+
+// Aplyng filters
+await model.where(q => {
+  q.filter('status', '=', 'ACTIVE')
+   .filter('createdAt', '>', '2023-01-01')
+}).scan()
+```
+
+##### Filters
+
+All DynamoDB operators are avaliabe with `where()`
+
+##### Queries
+
+Basic query with Key conditions
+
+```ts
+await model.where(q => {
+  q.keyCondition('id', 'USER#123')
+   .keyCondition('sk', 'begins_with', 'ORDER#')
+   .limit(10)
+}).query()
+```
+
+##### Post query filters
+
+Filter results after retrieval (client-side)
+
+```ts
+await model.scan(item => item.sk.startWith('Books#'))
+
+await model.where(q => {
+  q.keyCondition('id', 'begins_with', 'USER#')
+   .filter('createdAt', '>', '2023-01-01')
+   .limit(10)
+}).query(user => user.sk.includes('ADMIN'))
+```
+
+##### Pagination
+
+```ts
+const model = Dynamodb.model(User)
+
+let lastEvaluatedKey;
+
+do {
+  const users = await model.where(q => {
+    q.keyCondition('id', 'begins_with', 'USER#')
+     .limit(100)
+  }).query()
+
+  console.log(users)
+
+  lastEvaluatedKey = model.lastEvaluatedKey;
+  // Process batch of 100 items
+} while (lastEvaluatedKey)
 ```
