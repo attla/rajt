@@ -377,6 +377,9 @@ do {
   const users = await model.where(q => {
     q.keyCondition('id', 'begins_with', 'USER#')
      .limit(100)
+
+     if (lastEvaluatedKey)
+      q.exclusiveStartKey(lastEvaluatedKey)
   }).query()
 
   console.log(users)

@@ -7,7 +7,7 @@
 - ⚡️ Fast Cold Start
 - 📦 Optimized Build
 
-[Read the Docs to Learn More](https://github.com/attla/rajt/blob/main/DOCS.md).
+[Read the Docs to Learn More](https://github.com/attla/rajt/blob/main/DOCS.md)
 
 ## Packages
 

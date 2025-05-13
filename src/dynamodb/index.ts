@@ -1,2 +1,3 @@
 export { Dynamodb } from './client'
-export { Model, PartitionKey, SortKey } from './decorators'
+export { Model, Entity, Zip, PartitionKey, SortKey, Key, Keys } from './decorators'
+export { default as Schema } from './schema'

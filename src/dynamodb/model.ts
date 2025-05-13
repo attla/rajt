@@ -1,6 +1,6 @@
 import type { AwsLiteDynamoDB } from '@aws-lite/dynamodb-types'
-import { getModelMetadata } from './metadata-registry'
-import type { ModelMetadata } from './metadata-registry'
+import { getModelMetadata } from './decorators'
+import type { ModelMetadata } from './decorators'
 import QueryBuilder from './query-builder'
 
 export default class AbstractModel<T extends object> {
@@ -46,6 +46,8 @@ export default class AbstractModel<T extends object> {
   }
 
   schema(pk: string, sk?: string) {
+    if (!this.meta.keys) return {}
+
     const keys = { [this.meta.keys.PK]: pk }
     if (sk && this.meta.keys.SK)
       keys[this.meta.keys.SK] = sk
