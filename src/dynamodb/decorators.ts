@@ -37,7 +37,7 @@ function _table(target: Function | any, opt?: ModelOpts) {
 function _zip(target: Function | any) {
   if (!target?.m) target.m = []
   target.m[2] = true
-  target.m[3] = Object.keys(new target)
+  target.m[3] = target?.schema || Object.keys(new target)
 }
 
 function _key(target: Function | any, pk: string, sk?: string) {
@@ -49,7 +49,7 @@ function _model(target: any, opt?: ModelOpts) {
   _table(target, opt)
   const notStr = typeof opt !== 'string'
 
-  if (!opt || notStr && opt?.zip)
+  if (!opt || !notStr || (typeof opt?.zip === undefined || opt?.zip))
     _zip(target)
 
   const pk = opt && notStr ? opt?.partitionKey : undefined

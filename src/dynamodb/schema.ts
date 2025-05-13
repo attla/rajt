@@ -39,8 +39,8 @@ export default function Schema<T extends ZodTypeAny>(schema: T) {
   return class {
     static _schema = schema
 
-    static getSchema() {
-      return extractZodKeys(schema)
+    static get schema() {
+      return extractZodKeys(this._schema)
     }
 
     constructor(data: z.infer<T>) {
