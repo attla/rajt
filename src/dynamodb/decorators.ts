@@ -14,6 +14,9 @@ export type ModelOpts = string | {
 }
 
 export function getModelMetadata(target: Function | any): ModelMetadata {
+  if (!target?.m)
+    throw Error(`Entity "${target?.name}" not registred, Use @Entity or @Model.`)
+
   const typeKeys = typeof target.m[1]
   return {
     table: target.m[0],
@@ -42,25 +45,61 @@ function _key(target: Function | any, pk: string, sk?: string) {
   target.m[1] = pk && sk? [pk, sk] : [pk]
 }
 
-export function Entity(opt?: ModelOpts) {
-  return (target: any) => _table(target, opt)
+function _model(target: any, opt?: ModelOpts) {
+  _table(target, opt)
+  const notStr = typeof opt !== 'string'
+
+  if (!opt || notStr && opt?.zip)
+    _zip(target)
+
+  const pk = opt && notStr ? opt?.partitionKey : undefined
+  const sk = opt && notStr ? opt?.sortKey : undefined
+  _key(target, pk || 'PK', sk || 'SK')
 }
 
-export function Model(opt?: ModelOpts) {
-  return (target: any) => {
-    _table(target, opt)
-    const notStr = typeof opt !== 'string'
-
-    if (!opt || notStr && opt?.zip)
-      _zip(target)
-
-    const pk = opt && notStr ? opt?.partitionKey : undefined
-    const sk = opt && notStr ? opt?.sortKey : undefined
-    _key(target, pk || 'PK', sk || 'SK')
+function _pk(target: any, prop: string) {
+  if (!target?.m) target.m = []
+  if (['string', 'undefined'].includes(typeof target.m[1])) {
+    target.m[1] = prop
+  } else {
+    target.m[1][0] = prop
   }
 }
 
-export function Zip() {
+function _sk(target: any, prop: string) {
+  if (!target?.m) target.m = []
+  if (['string', 'undefined'].includes(typeof target.m[1])) {
+    target.m[1] = []
+    target.m[1][1] = prop
+  } else {
+    target.m[1][0] = prop
+  }
+}
+
+export function Entity(target: Function): void
+export function Entity(opt?: ModelOpts): ClassDecorator
+export function Entity(...args: any[]): void | ClassDecorator {
+  if (args.length === 1 && typeof args[0] === 'function')
+    return _table(args[0])
+
+  return (target: any) => _table(target, ...args)
+}
+
+export function Model(target: Function): void
+export function Model(opt?: ModelOpts): ClassDecorator
+export function Model(...args: any[]): void | ClassDecorator {
+  if (args.length === 1 && typeof args[0] === 'function')
+    return _model(args[0])
+
+  return (target: any) => _model(target, ...args)
+}
+
+export function Zip(target: Function): void
+export function Zip(): ClassDecorator
+export function Zip(...args: any[]): void | ClassDecorator {
+  if (args.length === 1 && typeof args[0] === 'function')
+    return _zip(args[0])
+
   return (target: any) => _zip(target)
 }
 
@@ -69,29 +108,30 @@ export function Key(pk: string, sk?: string) {
     _key(target, pk, sk)
   }
 }
-export function Keys(pk: string, sk?: string) {
-  return Key(pk, sk)
+export const Keys = Key
+
+export function PartitionKey(attrName: string): PropertyDecorator
+export function PartitionKey(target: any, propertyKey: string): void
+export function PartitionKey(target: any, propertyKey: string | undefined, parameterIndex: number): void
+export function PartitionKey(...args: any[]): void | PropertyDecorator {
+  if (!args.length) return
+
+  if (typeof args[0] === 'function' && typeof args[1] === 'string' && args[1])
+    return _pk(args[0], args[1])
+
+  if (args.length === 1 && args[0])
+    return (target: any) => _pk(target, args[0])
 }
 
-export function PartitionKey(attrName?: string) {
-  return (target: any, prop: string) => {
-    if (!target?.m) target.m = []
-    if (['string', 'undefined'].includes(typeof target.m[1])) {
-      target.m[1] = attrName || prop
-    } else {
-      target.m[1][0] = attrName || prop
-    }
-  }
-}
+export function SortKey(attrName: string): PropertyDecorator
+export function SortKey(target: any, propertyKey: string): void
+export function SortKey(target: any, propertyKey: string | undefined, parameterIndex: number): void
+export function SortKey(...args: any[]): void | PropertyDecorator {
+  if (!args.length) return
 
-export function SortKey(attrName?: string) {
-  return (target: any, prop: string) => {
-    if (!target?.m) target.m = []
-    if (['string', 'undefined'].includes(typeof target.m[1])) {
-      target.m[1] = []
-      target.m[1][1] = attrName || prop
-    } else {
-      target.m[1][0] = attrName || prop
-    }
-  }
+  if (typeof args[0] === 'function' && typeof args[1] === 'string' && args[1])
+    return _sk(args[0], args[1])
+
+  if (args.length === 1 && args[0])
+    return (target: any) => _sk(target, args[0])
 }
