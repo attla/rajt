@@ -247,7 +247,7 @@ class User {
   @PartitionKey('uuid') // Custom mapping: stores as 'uuid' in DynamoDB
   id: string;
 
-  @SortKey() // Uses the property name 'sk' as stored
+  @SortKey // Uses the property name 'sk' as stored
   sk: string;
 
   // Common pattern for time-based sorting
