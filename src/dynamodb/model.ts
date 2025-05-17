@@ -21,7 +21,6 @@ export default class AbstractModel<T extends object> {
       return
     }
 
-    // @ts-ignore
     const meta = getModelMetadata(cls)
     if (!meta)
       throw new Error('Missing model metadata')
@@ -89,7 +88,17 @@ export default class AbstractModel<T extends object> {
     return this.processItem(item, keys)
   }
 
-  async update(key: Keys, attrs: Partial<T>) {
+  async update(attrs: Partial<T>, key: Keys) {
+    let keys
+    if (this.meta.zip) {
+      keys = this.getItemKey(attrs, key)
+      this.validateKeys(keys)
+      // @ts-ignore
+      attrs = { V: Compact.encode(this.getItemWithoutKeys(attrs), this.meta.fields)}
+    } else {
+      this.validateKeys(attrs)
+    }
+
     const UpdateExpressionParts: string[] = []
     const ExpressionAttributeValues: any = {}
     for (const [k, v] of Object.entries(attrs)) {
@@ -99,13 +108,15 @@ export default class AbstractModel<T extends object> {
     const UpdateExpression = 'SET ' + UpdateExpressionParts.join(', ')
     const ExpressionAttributeNames = Object.fromEntries(Object.keys(attrs).map(k => [`#${k}`, k]))
 
-    return this.db.UpdateItem({
+    await this.db.UpdateItem({
       TableName: this.table,
       Key: this.key(key),
       UpdateExpression,
       ExpressionAttributeValues,
       ExpressionAttributeNames
     })
+
+    return this.processItem(attrs, keys)
   }
 
   async delete(key: Keys, sk?: string) {
