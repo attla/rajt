@@ -1,11 +1,4 @@
-type Operator = '=' | '<>' | '<' | '<=' | '>' | '>=' | 'begins_with' | 'between' | 'in' | 'attribute_exists' | 'attribute_not_exists' | 'attribute_type' | 'contains' | 'size'
-
-type Condition = {
-  type: 'filter' | 'keyCondition',
-  field: string,
-  operator: Operator,
-  value: any
-}
+import type { Condition, Operator } from './types'
 
 export default class QueryBuilder {
   private _conditions: Condition[] = []

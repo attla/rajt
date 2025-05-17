@@ -1,21 +1,19 @@
 import { z, ZodTypeAny } from 'zod'
+import type { SchemaStructure } from './types'
 
-function extractZodKeys(schema: ZodTypeAny): any {
+function extractZodKeys(schema: ZodTypeAny): SchemaStructure {
   if (schema instanceof z.ZodObject) {
     const shape = schema.shape
+
     return Object.entries(shape).map(([key, value]) => {
       const inner = unwrap(value as ZodTypeAny)
 
-      if (inner instanceof z.ZodObject) {
+      if (inner instanceof z.ZodObject)
         return { [key]: extractZodKeys(inner) }
-      }
 
       if (inner instanceof z.ZodArray) {
         const item = unwrap(inner._def.type as ZodTypeAny)
-        if (item instanceof z.ZodObject)
-          return { [key]: extractZodKeys(item) }
-
-        return key
+        return item instanceof z.ZodObject ? { [key]: extractZodKeys(item) } : key
       }
 
       return key
@@ -38,13 +36,29 @@ function unwrap(schema: ZodTypeAny): ZodTypeAny {
 export default function Schema<T extends ZodTypeAny>(schema: T) {
   return class {
     static _schema = schema
+    static defaultSortKey?: string = undefined
+    #PK?: string = undefined
+    #SK?: string = undefined
+
+    constructor(data: z.infer<T>) {
+      Object.assign(this, data)
+    }
+
+    get PK() { return this.#PK }
+    get SK() { return this.#SK }
 
     static get schema() {
       return extractZodKeys(this._schema)
     }
 
-    constructor(data: z.infer<T>) {
-      Object.assign(this, data)
+    static get defaultSK() {
+      return this.defaultSortKey
+    }
+
+    withKey(key: string, sk?: string) {
+      this.#PK = key
+      if (sk) this.#SK = sk
+      return this
     }
   }
 }

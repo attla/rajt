@@ -1,17 +1,5 @@
 import plur from 'plur'
-
-export type ModelMetadata = {
-  table: string,
-  keys?: Record<'PK' | 'SK', string>,
-  zip: boolean,
-}
-
-export type ModelOpts = string | {
-  table?: string,
-  partitionKey?: string,
-  sortKey?: string,
-  zip?: boolean,
-}
+import type { ModelMetadata, ModelOpts } from './types'
 
 export function getModelMetadata(target: Function | any): ModelMetadata {
   if (!target?.m)
@@ -22,6 +10,7 @@ export function getModelMetadata(target: Function | any): ModelMetadata {
     table: target.m[0],
     // @ts-ignore
     keys: typeKeys !== 'undefined' ? (typeKeys === 'string' ? { PK: target.m[1] } : { PK: target.m[1][0], SK: target.m[1][1] }) : undefined,
+    defaultSK: target?.defaultSK || undefined,
     zip: target.m[2] || false,
     fields: target.m[3] || [],
   }
@@ -42,7 +31,7 @@ function _zip(target: Function | any) {
 
 function _key(target: Function | any, pk: string, sk?: string) {
   if (!target?.m) target.m = []
-  target.m[1] = pk && sk? [pk, sk] : [pk]
+  target.m[1] = pk && sk ? [pk, sk] : [pk]
 }
 
 function _model(target: any, opt?: ModelOpts) {
