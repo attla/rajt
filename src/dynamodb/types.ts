@@ -7,8 +7,6 @@ export type Condition = {
   value: any
 }
 
-// export type SchemaStructure = string | Record<string, SchemaStructure> | SchemaStructure[]
-// export type SchemaStructure = string | { [key: string]: SchemaStructure[] }
 export type ISchemaStructure = string | Record<string, ISchemaStructure[]>
 export type SchemaStructure = ISchemaStructure[]
 

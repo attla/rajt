@@ -25,12 +25,8 @@ export type LambdaResponse = {
 export type Errors = Record<string, string | string[]>
 export type ErrorResponse = {
   m?: string, // message
-  // c?: number, // http code
   e?: Errors, // error bag
-  // e?: Record<string, string | string[]>, // error bag
 }
-
-// export type Response<E> = E | ErrorResponse
 
 export type ResponseHeadersInit = [
     string,

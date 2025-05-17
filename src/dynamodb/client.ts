@@ -7,7 +7,6 @@ export const aws = await awsLite({
   // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/Package/-aws-sdk-lib-dynamodb/#configuration
   // @ts-ignore
   awsjsonMarshall: {convertClassInstanceToMap: true},
-  // @ts-ignore
   awsjsonUnmarshall: {convertClassInstanceToMap: true}
 })
 
