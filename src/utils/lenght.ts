@@ -1,14 +1,32 @@
 export default function getLength(item: any): number {
   const type = typeof item
 
-  if (type === 'string')
-    return item.length
-  if (Array.isArray(item))
-    return item.length
-  if (type === 'object' && item !== null)
-    return Object.keys(item).length
-  if (type === 'number')
-    return item.toString().length
+  switch (type) {
+    case 'string':
+      return item.length
 
-  return 0
+    case 'number':
+    case 'bigint':
+    // case 'function':
+      return item.toString().length
+
+    // case 'boolean':
+    //   return item ? 1 : 0
+
+    // case 'symbol':
+    //   return item.toString().length - 8
+
+    case 'object':
+      if (item === null)
+        return 0
+
+      if (Array.isArray(item))
+        return item.length
+
+      return Object.keys(item).length
+
+    case 'undefined':
+    default:
+      return 0
+  }
 }
