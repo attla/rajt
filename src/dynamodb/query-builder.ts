@@ -1,34 +1,34 @@
 import type { Condition, Operator } from './types'
 
 export default class QueryBuilder {
-  private _conditions: Condition[] = []
-  private _limit?: number
-  private _startKey?: Record<string, any>
-  private _index?: string
+  #conditions: Condition[] = []
+  #limit?: number
+  #startKey?: Record<string, any>
+  #index?: string
 
   filter(field: string, operator: Operator, value: any = null) {
-    this._conditions.push({ type: 'filter', field, operator, value })
+    this.#conditions.push({ type: 'filter', field, operator, value })
     return this
   }
 
   keyCondition(field: string, operator: Operator | any, value?: any) {
     const noVal = value === undefined
-    this._conditions.push({ type: 'keyCondition', field, operator: noVal ? '=' : operator, value: noVal ? operator : value })
+    this.#conditions.push({ type: 'keyCondition', field, operator: noVal ? '=' : operator, value: noVal ? operator : value })
     return this
   }
 
   limit(n: number) {
-    this._limit = n
+    this.#limit = n
     return this
   }
 
   exclusiveStartKey(key: Record<string, any>) {
-    this._startKey = key
+    this.#startKey = key
     return this
   }
 
   index(name: string) {
-    this._index = name
+    this.#index = name
     return this
   }
 
@@ -38,7 +38,7 @@ export default class QueryBuilder {
     const names: Record<string, string> = {}
 
     let i = 0
-    for (const cond of this._conditions.filter(c => c.type === type)) {
+    for (const cond of this.#conditions.filter(c => c.type === type)) {
       const attr = `#attr${i}`
       const val = `:val${i}`
       names[attr] = cond.field
@@ -107,11 +107,11 @@ export default class QueryBuilder {
     const filter = this.buildExpression('filter')
     const params: any = {}
 
-    if (this._limit)
-      params.Limit = this._limit
+    if (this.#limit)
+      params.Limit = this.#limit
 
-    if (this._startKey)
-      params.ExclusiveStartKey = this._startKey
+    if (this.#startKey)
+      params.ExclusiveStartKey = this.#startKey
 
     if (filter.expression)
       params.FilterExpression = filter.expression
@@ -131,8 +131,8 @@ export default class QueryBuilder {
 
     const params: any = { ...filters }
 
-    if (this._index)
-      params.IndexName = this._index
+    if (this.#index)
+      params.IndexName = this.#index
 
     if (keys.expression)
       params.KeyConditionExpression = keys.expression

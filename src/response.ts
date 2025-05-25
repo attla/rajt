@@ -25,19 +25,19 @@ class NullContext {
 }
 
 export default class JsonResponse {
-  private static _c?: Context
+  static #c?: Context
 
   static setContext(c: Context) {
-    this._c = c
+    this.#c = c
     return this
   }
 
-  private static context(): Context | NullContext {
-    return this._c ?? new NullContext()
+  static #context(): Context | NullContext {
+    return this.#c ?? new NullContext()
   }
 
   static raw(status?: StatusCode, body?: string) {
-    return this.context().newResponse(body ? body : null, { status })
+    return this.#context().newResponse(body ? body : null, { status })
   }
 
   static ok(): Response
@@ -46,7 +46,7 @@ export default class JsonResponse {
     if (data === undefined)
       return this.raw(200)
 
-    return this.context().json(data, 200)
+    return this.#context().json(data, 200)
   }
 
   static created(): Response
@@ -55,7 +55,7 @@ export default class JsonResponse {
     if (data === undefined)
       return this.raw(201)
 
-    return this.context().json(data, 201)
+    return this.#context().json(data, 201)
   }
 
   static accepted(): Response
@@ -64,7 +64,7 @@ export default class JsonResponse {
     if (data === undefined)
       return this.raw(202)
 
-    return this.context().json(data, 202)
+    return this.#context().json(data, 202)
   }
 
   static deleted(): Response
@@ -88,7 +88,7 @@ export default class JsonResponse {
     if (data === undefined)
       return this.raw(401)
 
-    return this.context().json(data, 401)
+    return this.#context().json(data, 401)
   }
 
   static forbidden(): Response
@@ -97,7 +97,7 @@ export default class JsonResponse {
     if (data === undefined)
       return this.raw(403)
 
-    return this.context().json(data, 403)
+    return this.#context().json(data, 403)
   }
 
   static notFound(): Response
@@ -122,7 +122,7 @@ export default class JsonResponse {
   }
 
   static error(errors?: Errors, msg?: string, status?: ContentfulStatusCode) {
-    const context = this.context()
+    const context = this.#context()
     status ??= 500
 
     if (!errors && !msg)

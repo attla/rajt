@@ -2,7 +2,7 @@ import type { SchemaStructure } from './types'
 import getLength from '../utils/lenght'
 
 export default class Compact {
-  private static typeMap: Record<string, string> = {
+  static #typeMap: Record<string, string> = {
     // Null
     'null,': 'N,',
     ',null': ',N',
@@ -33,7 +33,7 @@ export default class Compact {
         .replace(/'/g, '"')
         .replace(/~TDQ~/g, "'")
         .replace(/\\'/g, "^'"),
-      this.typeMap
+      this.#typeMap
     )
   }
 
@@ -49,7 +49,7 @@ export default class Compact {
   static decode<T = any>(val: string, schema: SchemaStructure): T {
     if (!val) return val as T
 
-    val = this.replaceTypes(val, this.reverseMap(this.typeMap))
+    val = this.replaceTypes(val, this.reverseMap(this.#typeMap))
       .replace(/"/g, '~TSQ~')
       .replace(/'/g, '"')
       .replace(/~TSQ~/g, "'")

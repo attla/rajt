@@ -25,7 +25,7 @@ export default abstract class Action {
   rule<T extends keyof ValidationTargets>(target: T): { schema: (schema: ZodObject<any>) => RuleDefinition }
   rule<T extends keyof ValidationTargets>(target: T, schema: ZodObject<any>): RuleDefinition
 
-  public rule<T extends keyof ValidationTargets>(target: T, schema?: ZodObject<any>):
+  rule<T extends keyof ValidationTargets>(target: T, schema?: ZodObject<any>):
     | { schema: (schema: ZodObject<any>) => RuleDefinition }
     | RuleDefinition
   {
@@ -46,15 +46,15 @@ export default abstract class Action {
     }
   }
 
-  public param(key: string) {
+  param(key: string) {
     return this.context.req.param(key)
   }
 
-  public query() {
+  query() {
     return this.context.req.query()
   }
 
-  public async form(cType?: string) {
+  async form(cType?: string) {
     cType ??= this.context.req.header('Content-Type')
     if (!cType) return {}
 
@@ -91,7 +91,7 @@ export default abstract class Action {
     return form
   }
 
-  public async json<E>() {
+  async json<E>() {
     try {
       return await this.context.req.json<E>()
     } catch {
@@ -99,7 +99,7 @@ export default abstract class Action {
     }
   }
 
-  public async body<E>() {
+  async body<E>() {
     const cType = this.context.req.header('Content-Type')
     if (!cType) return {}
 
@@ -117,11 +117,11 @@ export default abstract class Action {
     return {}
   }
 
-  public get response() {
+  get response() {
     return this.context ? JsonResponse.setContext(this.context) : JsonResponse
   }
 
-  public validate() {
+  validate() {
     const rules = this.rules()
     const h = async (c: Context) => {
       this.context = c
@@ -161,7 +161,7 @@ export default abstract class Action {
     return auth ? auth.hasRole(...roles) : false
   }
 
-  public run() {
+  run() {
     return this.validate()
   }
 

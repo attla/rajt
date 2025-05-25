@@ -5,7 +5,7 @@ export type IMiddleware = {
 }
 
 export default abstract class Middleware implements IMiddleware {
-  public abstract handle(c: Context, next: Next): Promise<void> | void
+  abstract handle(c: Context, next: Next): Promise<void> | void
 }
 
 // export type MiddlewareHandler = (c: Context, next: Next) => Promise<void> | void
