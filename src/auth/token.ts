@@ -7,6 +7,7 @@ export class Token {
   static #prefix: string = 'bearer'
 
   static fromRequest(c: Context) {
+    const token = this.fromHeader(c.req)
     return token ? this.parse(c.req, token) : null
   }
 
