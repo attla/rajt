@@ -1,6 +1,6 @@
 import { existsSync, writeFileSync } from 'node:fs'
 import { config } from 'dotenv'
-import getRoutes from '../routes'
+import { getRoutes, getMiddlewares } from '../routes'
 import ensureDir from '../utils/ensuredir'
 
 config({ path: '../../.env.dev' })
@@ -11,6 +11,7 @@ async function cacheRoutes() {
     writeFileSync(rolePath, '{}')
 
   const routes = await getRoutes(true)
+  const middlewares = await getMiddlewares()
 
   const iPath = '../../tmp/import-routes.mjs'
   ensureDir(iPath)
@@ -18,6 +19,7 @@ async function cacheRoutes() {
 import { registerHandler } from '../node_modules/rajt/src/register'
 
 ${routes.map(r => `import ${r.name} from '../${normalizePath(r.file)}'`).join('\n')}
+${middlewares.map(r => `import ${r.name} from '../${normalizePath(r.file)}'`).join('\n')}
 
 try {
   const handlers = {${routes.map(r => r.name).join()}}

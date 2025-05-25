@@ -1,7 +1,7 @@
 import { config } from 'dotenv'
 import { serve } from '@hono/node-server'
 import createApp from './create-app'
-import getRoutes from './routes'
+import { getRoutes, getMiddlewares } from './routes'
 import { Ability } from './auth'
 import { getAvailablePort } from './utils/port'
 import jsonImport from './utils/json-import'
@@ -9,6 +9,7 @@ import jsonImport from './utils/json-import'
 config({ path: '../../.env.dev' })
 
 const routes = await getRoutes()
+const middlewares = await getMiddlewares()
 Ability.fromRoutes(routes)
 Ability.roles = jsonImport('../../../../.rolefile')
 

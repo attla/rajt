@@ -8,9 +8,9 @@ import { isAnonFn } from './utils/func'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-export default async function getRoutes(
+export async function getRoutes(
   all: boolean = false,
-  dirs: string[] = ['actions', 'features', 'errors', 'middlewares']
+  dirs: string[] = ['actions', 'features']
 ): Promise<Route[]> {
   const routes: Route[] = []
 
@@ -65,4 +65,55 @@ export default async function getRoutes(
 
   await Promise.all(dirs.map(dir => walk(resolve(__dirname, '../../..', dir), dir)))
   return routes
+}
+
+export async function getMiddlewares(
+  dirs: string[] = ['middlewares']
+): Promise<Route[]> {
+  const mw: Route[] = []
+
+  const walk = async (dir: string, baseDir: string, middlewares: Function[] = []): Promise<void> => {
+    if (!existsSync(dir)) return
+    const files = readdirSync(dir)
+
+    for (const file of files) {
+      const fullPath = join(dir, file)
+      const stat = statSync(fullPath)
+
+      if (stat.isDirectory()) {
+        const indexFile = join(fullPath, 'index.ts')
+
+        if (existsSync(indexFile)) {
+          const mod = await import(indexFile)
+          const group = mod.default
+
+          if (group?.gmw) {
+            // @ts-ignore
+            mw.push({
+              name: group.name.replace(/\.ts$/, ''),
+              file: baseDir + fullPath.split(baseDir)[1],
+              handle: group,
+            })
+          }
+        }
+
+        await walk(fullPath, baseDir, middlewares)
+      } else if (file.endsWith('.ts')) {
+        const mod = await import(fullPath)
+        const handle = mod.default
+
+        if (handle?.gmw) {
+          // @ts-ignore
+          mw.push({
+            name: handle.name.replace(/\.ts$/, ''),
+            file: baseDir + fullPath.split(baseDir)[1],
+            handle,
+          })
+        }
+      }
+    }
+  }
+
+  await Promise.all(dirs.map(dir => walk(resolve(__dirname, '../../..', dir), dir)))
+  return mw
 }
