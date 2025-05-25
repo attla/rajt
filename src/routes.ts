@@ -1,27 +1,31 @@
-import fs from 'node:fs'
-import path from 'node:path'
+import { existsSync, readdirSync, statSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Route } from './types'
 import { registerHandler } from './register'
 import { isAnonFn } from './utils/func'
 
 const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __dirname = dirname(__filename)
 
-export default async function getRoutes(all: boolean = false, baseDir: string = 'actions'): Promise<Route[]> {
+export default async function getRoutes(
+  all: boolean = false,
+  dirs: string[] = ['actions', 'features', 'errors', 'middlewares']
+): Promise<Route[]> {
   const routes: Route[] = []
 
-  const walk = async (dir: string, middlewares: Function[] = []): Promise<void> => {
-    const files = fs.readdirSync(dir)
+  const walk = async (dir: string, baseDir: string, middlewares: Function[] = []): Promise<void> => {
+    if (!existsSync(dir)) return
+    const files = readdirSync(dir)
 
     for (const file of files) {
-      const fullPath = path.join(dir, file)
-      const stat = fs.statSync(fullPath)
+      const fullPath = join(dir, file)
+      const stat = statSync(fullPath)
 
       if (stat.isDirectory()) {
-        const indexFile = path.join(fullPath, 'index.ts')
+        const indexFile = join(fullPath, 'index.ts')
 
-        if (fs.existsSync(indexFile)) {
+        if (existsSync(indexFile)) {
           const mod = await import(indexFile)
           const group = mod.default
           registerHandler(group.name, group)
@@ -37,11 +41,12 @@ export default async function getRoutes(all: boolean = false, baseDir: string = 
           })
         }
 
-        await walk(fullPath, middlewares)
+        await walk(fullPath, baseDir, middlewares)
       } else if (file.endsWith('.ts')) {
         const mod = await import(fullPath)
         const handle = mod.default
 
+        if (handle?.gmw) return
         if (handle?.m) {
           registerHandler(handle.name, handle)
 
@@ -58,6 +63,6 @@ export default async function getRoutes(all: boolean = false, baseDir: string = 
     }
   }
 
-  await walk(path.resolve(__dirname, '../../..', baseDir))
+  await Promise.all(dirs.map(dir => walk(resolve(__dirname, '../../..', dir), dir)))
   return routes
 }

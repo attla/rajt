@@ -23,3 +23,9 @@ export function getHandler(id: string): Function {
   if (!handler) throw new Error(`Handler ${id} not registered`)
   return handler
 }
+
+export const _mw: Function[] = []
+export const getGlobalMiddlewares = () => _mw
+export function registerGlobalMiddleware(handler: any) {
+  _mw.push(handler)
+}

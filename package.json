@@ -41,6 +41,7 @@
     "@hono/zod-validator": "^0.4.3",
     "@types/node": "^20.11.0",
     "chokidar-cli": "^3.0.0",
+    "cripta": "^0.1.6",
     "dotenv": "^16.5.0",
     "esbuild": "^0.25.2",
     "hono": "^4.7.6",

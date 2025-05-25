@@ -9,7 +9,7 @@ indent_style = space
 indent_size = 2
 
 # [*.{js,jsx,ts,tsx,json,yaml,yml}]
-# Herda todas as configurações de [*] e aplica para estas extensões
+# Inherits all settings from [*] and applies to these extensions
 
 [*.md]
 trim_trailing_whitespace = false

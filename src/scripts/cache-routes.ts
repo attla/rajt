@@ -1,8 +1,15 @@
-import { writeFileSync } from 'node:fs'
+import { existsSync, writeFileSync } from 'node:fs'
+import { config } from 'dotenv'
 import getRoutes from '../routes'
 import ensureDir from '../utils/ensuredir'
 
+config({ path: '../../.env.dev' })
+
 async function cacheRoutes() {
+  const rolePath = '../../roles.json'
+  if (!existsSync(rolePath))
+    writeFileSync(rolePath, '{}')
+
   const routes = await getRoutes(true)
 
   const iPath = '../../tmp/import-routes.mjs'

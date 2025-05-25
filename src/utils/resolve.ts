@@ -1,6 +1,7 @@
 import Action, { ActionType } from '../action'
+import { MiddlewareType } from '../middleware'
 
-export default function resolve(obj: ActionType) {
+export function resolve(obj: ActionType) {
   if (typeof obj === 'function' && obj?.length === 2)
     return [obj]
 
@@ -15,4 +16,25 @@ export default function resolve(obj: ActionType) {
     return [instance.handle]
 
   throw new Error('Invalid action')
+}
+
+export function resolveMiddleware(obj: MiddlewareType) {
+  if (typeof obj === 'function' && obj.length === 2)
+    return obj
+
+  if (obj?.handle)
+    return obj.handle
+
+  if (obj.prototype?.handle)
+    return (new obj()).handle
+
+  // if (obj instanceof BaseMiddleware)
+  //   return obj.handle
+
+  // if (BaseMiddleware.isPrototypeOf(obj)) {
+  //   const instance = new (obj as new () => BaseMiddleware)()
+  //   return instance.handle
+  // }
+
+  throw new Error('Invalid middleware provided. Must be a Hono middleware function or MiddlewareClass instance/constructor')
 }

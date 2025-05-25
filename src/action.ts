@@ -2,7 +2,6 @@ import { Context, Handler, HonoRequest, MiddlewareHandler, Next, ValidationTarge
 import { z, ZodObject, ZodRawShape } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 // import { JSONValue } from 'hono/utils/types'
-import json from './response'
 import JsonResponse from './response'
 import { bufferToFormData } from 'hono/utils/buffer'
 import { HTTPException } from 'hono/http-exception'
@@ -134,13 +133,32 @@ export default abstract class Action {
       .map(rule => zValidator(rule.target, rule.schema, (result, c) => {
         if (!result.success) {
           // @ts-ignore
-          return json.badRequest({ ...result.error.flatten()[rule.eTarget] })
+          return JsonResponse.badRequest({ ...result.error.flatten()[rule.eTarget] })
         }
       }))
 
     rulesArray.push(h)
 
     return rulesArray
+  }
+
+  get auth() {
+    const auth = this.context.get('#auth')
+    return auth ? auth?.data : null
+  }
+
+  can(...abilities: string[]): boolean {
+    const auth = this.context.get('#auth')
+    return auth ? auth.can(...abilities) : false
+  }
+
+  cant(...abilities: string[]): boolean {
+    return !this.can(...abilities)
+  }
+
+  hasRole(...roles: string[]): boolean {
+    const auth = this.context.get('#auth')
+    return auth ? auth.hasRole(...roles) : false
   }
 
   public run() {

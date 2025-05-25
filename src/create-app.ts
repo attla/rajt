@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Hono } from 'hono'
 import type { Env, Context, ErrorHandler, NotFoundHandler, Next } from 'hono'
-// import type { Env, Context, ErrorHandler, MiddlewareHandler, NotFoundHandler, Next } from 'hono'
+// import type { MiddlewareHandler } from 'hono'
 // import { createMiddleware } from 'hono/factory'
 // import type { H, Handler, HandlerResponse } from 'hono/types'
 import { HTTPResponseError } from 'hono/types'
 import { Routes } from './types'
 import { BadRequest, Unauthorized } from './exceptions'
 import response from './response'
-import resolve from './utils/resolve'
-import { getHandler } from './register'
+import { resolve, resolveMiddleware } from './utils/resolve'
+import { getGlobalMiddlewares, getHandler } from './register'
 import env from './utils/environment'
 
 type InitFunction<E extends Env = Env> = (app: Hono<E>) => void
@@ -90,8 +90,14 @@ export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
       response.setContext(c)
       await next()
     },
+    ...getGlobalMiddlewares()
   ]
-  middlewares.forEach(middleware => app.use(middleware))
+  middlewares.forEach(mw => {
+    // @ts-ignore
+    const h = resolveMiddleware(mw)
+    // @ts-ignore
+    mw?.p ? app.use(String(mw.p), h) : app.use(h)
+  })
 
   app.onError(options?.onError || EHandler)
   app.notFound(options?.notFound || NFHandler)
