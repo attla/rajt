@@ -2,14 +2,20 @@ import { config } from 'dotenv'
 import { serve } from '@hono/node-server'
 import createApp from './create-app'
 import { getRoutes, getMiddlewares } from './routes'
+import { registerHandler, registerMiddleware } from './register'
 import { Ability } from './auth'
 import { getAvailablePort } from './utils/port'
 import jsonImport from './utils/json-import'
 
 config({ path: '../../.env.dev' })
 
-const routes = await getRoutes()
+let routes = await getRoutes()
+routes.forEach(r => registerHandler(r.name, r.handle))
+routes = routes.filter(r => r?.path)
+
 const middlewares = await getMiddlewares()
+middlewares.forEach(mw => registerMiddleware(mw.handle))
+
 Ability.fromRoutes(routes)
 Ability.roles = jsonImport('../../../../.rolefile')
 

@@ -25,7 +25,7 @@ export function getHandler(id: string): Function {
 }
 
 export const _mw: Function[] = []
-export const getGlobalMiddlewares = () => _mw
-export function registerGlobalMiddleware(handler: any) {
+export const getMiddlewares = () => _mw
+export function registerMiddleware(handler: any) {
   _mw.push(handler)
 }

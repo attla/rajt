@@ -2,7 +2,6 @@ import type { Context, Next } from 'hono'
 import { MiddlewareType } from './middleware'
 import JsonResponse from './response'
 import { Ability, Authnz, Token } from './auth'
-import { registerGlobalMiddleware } from './register'
 import mergeMiddleware from './utils/merge-middleware'
 
 function method(method: string, path = '/') {
@@ -42,17 +41,6 @@ export function Middlewares(...handlers: MiddlewareType[]) {
   return Middleware(...handlers)
 }
 
-type MiddlewareOpt = string | RegExp
-export function GlobalMiddleware(): ClassDecorator
-export function GlobalMiddleware(target: Function): void
-export function GlobalMiddleware(opt?: MiddlewareOpt): ClassDecorator
-export function GlobalMiddleware(...args: any[]): void | ClassDecorator {
-  if (typeof args[0] === 'function')
-    return _globalmw(args[0])
-
-  return (target: any) => _globalmw(target, ...args)
-}
-
 export function Auth(target: Function): void
 export function Auth(): ClassDecorator
 export function Auth(...args: any[]): void | ClassDecorator {
@@ -75,10 +63,4 @@ function _auth(target: Function | any) {
     c.set('#auth', auth)
     await next()
   })
-}
-
-function _globalmw(target: Function | any, path?: string) {
-  target.gmw = true
-  target.p = path
-  registerGlobalMiddleware(target)
 }

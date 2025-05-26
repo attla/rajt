@@ -10,13 +10,13 @@ async function cacheRoutes() {
   if (!existsSync(rolePath))
     writeFileSync(rolePath, '{}')
 
-  const routes = await getRoutes(true)
+  const routes = await getRoutes()
   const middlewares = await getMiddlewares()
 
   const iPath = '../../tmp/import-routes.mjs'
   ensureDir(iPath)
   writeFileSync(iPath, `// AUTO-GENERATED FILE - DO NOT EDIT
-import { registerHandler } from '../node_modules/rajt/src/register'
+import { registerHandler, registerMiddleware } from '../node_modules/rajt/src/register'
 
 ${routes.map(r => `import ${r.name} from '../${normalizePath(r.file)}'`).join('\n')}
 ${middlewares.map(r => `import ${r.name} from '../${normalizePath(r.file)}'`).join('\n')}
@@ -28,6 +28,12 @@ try {
     if (typeof handler === 'function' || handler.prototype?.handle) {
       registerHandler(name, handler)
     }
+  }
+
+  const middlewares = {${middlewares.map(r => r.name).join()}}
+
+  for (const [name, mw] of Object.entries(handlers)) {
+    registerMiddleware(mw)
   }
 } catch (e) {
   console.error('Failed to register handlers:', e)

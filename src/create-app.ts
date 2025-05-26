@@ -9,7 +9,7 @@ import { Routes } from './types'
 import { BadRequest, Unauthorized } from './exceptions'
 import response from './response'
 import { resolve, resolveMiddleware } from './utils/resolve'
-import { getGlobalMiddlewares, getHandler } from './register'
+import { getMiddlewares, getHandler } from './register'
 import env from './utils/environment'
 
 type InitFunction<E extends Env = Env> = (app: Hono<E>) => void
@@ -90,13 +90,13 @@ export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
       response.setContext(c)
       await next()
     },
-    ...getGlobalMiddlewares()
+    ...getMiddlewares()
   ]
   middlewares.forEach(mw => {
     // @ts-ignore
     const h = resolveMiddleware(mw)
     // @ts-ignore
-    mw?.p ? app.use(String(mw.p), h) : app.use(h)
+    mw?.path ? app.use(String(mw.path), h) : app.use(h)
   })
 
   app.onError(options?.onError || EHandler)
