@@ -32,7 +32,7 @@ try {
 
   const middlewares = {${middlewares.map(r => r.name).join()}}
 
-  for (const [name, mw] of Object.entries(handlers)) {
+  for (const [name, mw] of Object.entries(middlewares)) {
     registerMiddleware(mw)
   }
 } catch (e) {

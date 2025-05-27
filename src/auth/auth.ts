@@ -1,11 +1,5 @@
 import { Ability } from './ability'
 
-type Authenticatable = {
-  role?: string,
-  roles?: string[],
-  perms?: string[],
-}
-
 export class Authnz<T extends object> {
   #abilities: string[]
   #roles: string[]
