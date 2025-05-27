@@ -34,7 +34,7 @@ function _key(target: Function | any, pk: string, sk?: string) {
   target.m[1] = pk && sk ? [pk, sk] : [pk]
 }
 
-function _model(target: any, opt?: ModelOpts) {
+export function _model(target: any, opt?: ModelOpts) {
   _table(target, opt)
   const notStr = typeof opt !== 'string'
 

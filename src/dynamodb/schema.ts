@@ -3,9 +3,7 @@ import type { SchemaStructure } from './types'
 
 function extractZodKeys(schema: ZodTypeAny): SchemaStructure {
   if (schema instanceof z.ZodObject) {
-    const shape = schema.shape
-
-    return Object.entries(shape).map(([key, value]) => {
+    return Object.entries(schema.shape).map(([key, value]) => {
       const inner = unwrap(value as ZodTypeAny)
 
       if (inner instanceof z.ZodObject)
@@ -33,14 +31,24 @@ function unwrap(schema: ZodTypeAny): ZodTypeAny {
   return schema
 }
 
-export default function Schema<T extends ZodTypeAny>(schema: T) {
-  return class {
+export function Schema<
+  T extends ZodTypeAny,
+  B extends object
+>(
+  schema: T,
+  BaseClass?: new (...args: any[]) => B
+) {
+  const Base = (BaseClass || class {})
+
+  return class extends Base {
     static _schema = schema
-    static defaultSortKey?: string = undefined
-    #PK?: string = undefined
-    #SK?: string = undefined
+    static defaultSortKey?: string
+
+    #PK?: string
+    #SK?: string
 
     constructor(data: z.infer<T>) {
+      super()
       Object.assign(this, data)
     }
 
