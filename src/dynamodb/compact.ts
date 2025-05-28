@@ -2,38 +2,43 @@ import type { SchemaStructure } from './types'
 import getLength from '../utils/lenght'
 
 export default class Compact {
+  static #typeRegex: RegExp
+  static #reverseTypeRegex: RegExp
+  static #reverseTypeMap: Record<string, string>
   static #typeMap: Record<string, string> = {
+    // Boolean
+    'true': 'T',
+    'false': 'F',
     // Null
-    'null,': 'N,',
-    ',null': ',N',
-    'null]': 'N]',
-    // True
-    'true,': 'T,',
-    ',true': ',T',
-    'true]': 'T]',
-    // False
-    'false,': 'F,',
-    ',false': ',F',
-    'false]': 'F]',
+    'null': 'N',
     // Array
-    '[],': 'A,',
-    ',[]': ',A',
-    '[]]': 'A]',
+    '[]': 'A',
     // Object
-    '{},': 'O,',
-    ',{}': ',O',
-    '{}]': 'O]'
+    '{}': 'O',
+    // Commons
+    '["0"]': 'A0',
+    '["1"]': 'A1',
+    '["true"]': 'A2',
+    '["false"]': 'A3',
+    '"true"': 'T1',
+    '"false"': 'T0',
+  }
+
+  static {
+    this.#reverseTypeMap = Object.fromEntries(Object.entries(this.#typeMap).map(([k, v]) => [v, k]))
+    this.#typeRegex = this.#mapRegex(Object.keys(this.#typeMap))
+    this.#reverseTypeRegex = this.#mapRegex(Object.keys(this.#reverseTypeMap))
   }
 
   static encode(obj: any, schema: SchemaStructure): string {
     const seen: any[] = []
-    return this.replaceTypes(
-      JSON.stringify(this.zip(obj, schema, seen)).replace(/(,|\[)"(\^\d+)"(\]|,|$)/g, '$1$2$3')
+    return this.#minify(
+      JSON.stringify(this.zip(obj, schema, seen))
+        .replace(/"\^(\d+)"/g, '^$1')
         .replace(/"/g, '~TDQ~')
         .replace(/'/g, '"')
         .replace(/~TDQ~/g, "'")
-        .replace(/\\'/g, "^'"),
-      this.#typeMap
+        .replace(/\\'/g, "^'")
     )
   }
 
@@ -47,16 +52,16 @@ export default class Compact {
   }
 
   static decode<T = any>(val: string, schema: SchemaStructure): T {
-    if (!val) return val as T
+    if (!val || typeof val !== 'string') return val as T
 
-    val = this.replaceTypes(val, this.reverseMap(this.#typeMap))
-      .replace(/"/g, '~TSQ~')
-      .replace(/'/g, '"')
-      .replace(/~TSQ~/g, "'")
-      .replace(/\^"/g, '\\"')
-      .replace(/(,|\[)(\^\d+)(\]|,|$)/g, '$1"$2"$3')
-
-    return this.withSchema(this.unzip(JSON.parse(val)), schema) as T
+    return this.withSchema(this.unzip(JSON.parse(
+      this.#deminify(val)
+        .replace(/"/g, '~TSQ~')
+        .replace(/'/g, '"')
+        .replace(/~TSQ~/g, "'")
+        .replace(/\^"/g, '\\"')
+        .replace(/(?<=[,{\[]|^)(\^\d+)(?=[,\]}[]|$)/g, '"$1"')
+    )), schema) as T
   }
 
   static zip(obj: any, schema: SchemaStructure, seen: any[]): any[] {
@@ -75,25 +80,30 @@ export default class Compact {
     })
   }
 
-  static unzip(array: any[], seen: any[] = [], deep = false): any[] {
-    return array.map(item => {
-      const length = getLength(item)
+  static unzip(val: any, seen: any[] = [], deep = false): any[] {
+    const type = typeof val
+    const length = getLength(val, type)
 
-      if ([null, true, false].includes(item) || typeof item !== 'object' && length < 2)
-        return item
+    if ([null, true, false].includes(val) || type != 'object' && length < 2)
+      return val
 
-      if (Array.isArray(item))
-        return this.unzip(item, seen, true)
+    if (Array.isArray(val))
+      return val.map(item => this.unzip(item, seen, deep))
 
-      if (typeof item === 'string' && item.startsWith('^')) {
-        const pos = parseInt(item.slice(1), 10)
-        const val = seen[pos]
-        return deep || (val && !`${val}`.startsWith('^')) ? val : item
-      }
+    if (type == 'object') {
+      for (const key in val)
+        val[key] = this.unzip(val[key], seen)
 
-      seen.push(item)
-      return item
-    })
+      return val
+    }
+
+    if (type == 'string' && val.startsWith('^')) {
+      const item = seen[parseInt(val.slice(1), 10)]
+      return item ? item : val
+    }
+
+    seen.push(val)
+    return val
   }
 
   static withSchema(value: any[], keys: any[]): any {
@@ -108,14 +118,14 @@ export default class Compact {
   static entry(key: any, value: any): any {
     if (!key) return undefined
 
-    if (typeof key === 'string')
+    if (typeof key == 'string')
       return [key, value]
 
     const mainKey = Object.keys(key)[0]
     const subKeys = key[mainKey]
 
     if (Array.isArray(value)) {
-      if (value.length === 0)
+      if (value.length < 1)
         return [mainKey, []]
 
       return Array.isArray(value[0])
@@ -127,9 +137,19 @@ export default class Compact {
   }
 
   static memo(val: any, seen: any[]): any {
-    const length = getLength(val)
-    // TODO: may be incompatible with empty objects or arrays
-    if (typeof val !== 'object' && length < 2) return val
+    if (Array.isArray(val))
+      return val.map(item => this.memo(item, seen))
+
+    const type = typeof val
+    if (type == 'object' && val != null) {
+      for (const key in val)
+        val[key] = this.memo(val[key], seen)
+
+      return val
+    }
+    const length = getLength(val, type)
+
+    if (type !== 'object' && length < 2) return val
 
     const index = seen.indexOf(val)
     if (index !== -1)
@@ -139,11 +159,16 @@ export default class Compact {
     return val
   }
 
-  static replaceTypes(str: string, map: Record<string, string>) {
-    return Object.entries(map).reduce((s, [from, to]) => s.replaceAll(from, to), str)
+  static #mapRegex(keys: string[]) {
+    keys = keys.sort((a, b) => b.length - a.length).map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    return new RegExp(`(?<![^\\s,\\[\\{:])(${keys.join('|')})(?![^\\s,\\]\\}:])`, 'g')
   }
 
-  static reverseMap(map: Record<string, string>): Record<string, string> {
-    return Object.fromEntries(Object.entries(map).map(([k, v]) => [v, k]))
+  static #minify(val: string): string {
+    return val.replace(this.#typeRegex, match => this.#typeMap[match])
+  }
+
+  static #deminify(val: string): string {
+    return val.replace(this.#reverseTypeRegex, match => this.#reverseTypeMap[match])
   }
 }

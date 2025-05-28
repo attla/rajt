@@ -1,5 +1,5 @@
-export default function getLength(item: any): number {
-  const type = typeof item
+export default function getLength(item: any, type?: string): number {
+  if (!type) type = typeof item
 
   switch (type) {
     case 'string':
