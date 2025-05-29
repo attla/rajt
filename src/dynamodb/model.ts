@@ -105,7 +105,7 @@ export default class AbstractModel<T extends object> {
       keys = this.#getItemKey(item, key)
       this.#validateKeys(keys)
       // @ts-ignore
-      item = { ...keys, V: Compact.encode(this.getItemWithoutKeys(item), this.meta.fields) }
+      item = { ...keys, V: Compact.encode(this.#getItemWithoutKeys(item), this.#meta.fields) }
     } else {
       this.#validateKeys(item)
     }
@@ -120,7 +120,7 @@ export default class AbstractModel<T extends object> {
       keys = this.#getItemKey(attrs, key)
       this.#validateKeys(keys)
       // @ts-ignore
-      attrs = { V: Compact.encode(this.getItemWithoutKeys(attrs), this.meta.fields) }
+      attrs = { V: Compact.encode(this.#getItemWithoutKeys(attrs), this.#meta.fields) }
     } else {
       this.#validateKeys(attrs)
     }
@@ -226,7 +226,7 @@ export default class AbstractModel<T extends object> {
       if (this.#meta.keys?.SK) {
         if (key.length > 1)
           // @ts-ignore
-          keys[this.meta.keys.SK] = key[1]
+          keys[this.#meta.keys.SK] = key[1]
         else if (this.#meta.defaultSK)
           keys[this.#meta.keys.SK] = this.#meta.defaultSK
       }
@@ -284,7 +284,7 @@ export default class AbstractModel<T extends object> {
       if (!keys) keys = this.#getItemKey(item)
 
       // @ts-ignore
-      return model.withKey(keys[this.meta.keys.PK], keys[this.meta.keys.SK] || undefined)
+      return model.withKey(keys[this.#meta.keys.PK], keys[this.#meta.keys.SK] || undefined)
     }
 
     return new this.#cls(item)

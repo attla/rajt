@@ -101,7 +101,7 @@ export default abstract class Action {
 
   async body<E>() {
     const cType = this.context.req.header('Content-Type')
-    if (!cType) return {}
+    if (!cType) return {} as E
 
     if (/^application\/([a-z-\.]+\+)?json(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/.test(cType)) {
       return await this.json<E>()
@@ -114,7 +114,7 @@ export default abstract class Action {
         return await this.form() as E
     }
 
-    return {}
+    return {} as E
   }
 
   get response() {
