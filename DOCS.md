@@ -478,7 +478,7 @@ Create a typed model:
 import { Model, Schema } from 'rajt/dynamodb'
 
 @Model('USER_DATABASE') // optional when using with repositories
-class UserModel extends Schema(UserSchema) {
+export default class UserModel extends Schema(UserSchema) {
   static defaultSortKey = 'PROFILE' // optional
 
   #PK?: 'PK' // default, define partition key name
@@ -489,6 +489,10 @@ class UserModel extends Schema(UserSchema) {
     this.uuid
   }
 }
+
+// alternative
+@Model('USER_DATABASE') // optional when using with repositories
+export const model = Dynamodb.model(UserModel)
 ```
 
 #### Repository
