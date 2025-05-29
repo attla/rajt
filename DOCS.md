@@ -6,8 +6,12 @@ This framework is fully geared towards the serverless world, specifically AWS La
 - [Endpoints](#actionsfeatures)
 - [Validations](#validations)
 - [Enums](#enums)
+  - [Basic use](#enum-import)
+  - [String Enums](#simple-string-enum-arraystring)
+  - [Numeric Enums](#numeric-enum-recordstring-number)
 - [Middlewares](#middlewares)
 - [DynamoDB](#dynamodb)
+  - [Schema](#schema)
   - [Model](#model)
   - [Basic Usage](#basic-usage)
     - [Get](#get)
@@ -19,7 +23,8 @@ This framework is fully geared towards the serverless world, specifically AWS La
     - [Filters](#filter)
     - [Queries](#queries)
     - [Post query filters](#post-query-filters)
-    - [Pagination](#post-query-filters)
+    - [Pagination](#pagination)
+  - [Repository](#repository)
 
 ## Install
 
@@ -450,4 +455,62 @@ do {
   lastEvaluatedKey = model.lastEvaluatedKey
   // Process batch of 100 items
 } while (lastEvaluatedKey)
+```
+
+#### Schema:
+
+Define the typed data structure of your entity using Zod:
+
+```ts
+import { z } from 'zod'
+
+const UserSchema = z.object({
+  uid: z.string(),
+  name: z.string(),
+  email: z.string(),
+  createdAt: z.number(),
+})
+```
+
+Create a typed model:
+
+```ts
+import { Model, Schema } from 'rajt/dynamodb'
+
+@Model('USER_DATABASE') // optional when using with repositories
+class UserModel extends Schema(UserSchema) {
+  static defaultSortKey = 'PROFILE' // optional
+
+  #PK?: 'PK' // default, define partition key name
+  #SK?: 'SK' // default, define sort key name
+
+  // custom acessor
+  get id() {
+    this.uuid
+  }
+}
+```
+
+#### Repository
+
+The repository pattern provides an abstract layer for typed entities, helps encapsulate data access logic, making your code more organized and easier to maintain
+
+```ts
+import { Repository } from 'rajt/dynamodb'
+import type { Keys } from 'rajt/dynamodb/types'
+
+export default class UserRepository extends Repository(UserSchema, UserModel, 'USER_DATABASE') {
+  static key(pk: string, sk?: string) {
+    const _pk = 'USER#'+ pk
+    return sk ? [_pk, sk || this.model.defaultSortKey] as Keys : _pk
+  }
+
+  static async get(id: string) {
+    return this.model.get(this.key(id))
+  }
+
+  static async list(): Promise<UserModel[]> {
+    return await this.model.scan()
+  }
+}
 ```
