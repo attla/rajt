@@ -180,13 +180,13 @@ This module provides a flexible implementation of enums in TypeScript/JavaScript
  - Aliased enums (custom values)
  - Utility methods for validation/retrieve a value or key
 
-##### Enum import
+#### Enum import
 
 ```ts
 import { Enum } from 'rajt'
 ```
 
-##### Simple String Enum (Array<`string`>)
+#### Simple String Enum (Array<`string`>)
 
 ```ts
 const Colors = Enum(['RED', 'GREEN', 'BLUE'] as const)
