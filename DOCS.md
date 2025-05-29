@@ -11,7 +11,6 @@ This framework is fully geared towards the serverless world, specifically AWS La
   - [Numeric Enums](#numeric-enum-recordstring-number)
 - [Middlewares](#middlewares)
 - [DynamoDB](#dynamodb)
-  - [Schema](#schema)
   - [Model](#model)
   - [Basic Usage](#basic-usage)
     - [Get](#get)
@@ -24,6 +23,7 @@ This framework is fully geared towards the serverless world, specifically AWS La
     - [Queries](#queries)
     - [Post query filters](#post-query-filters)
     - [Pagination](#pagination)
+  - [Schema](#schema)
   - [Repository](#repository)
 
 ## Install
