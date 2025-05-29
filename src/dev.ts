@@ -17,7 +17,7 @@ const middlewares = await getMiddlewares()
 middlewares.forEach(mw => registerMiddleware(mw.handle))
 
 Ability.fromRoutes(routes)
-Ability.roles = jsonImport('../../../../.rolefile')
+Ability.roles = jsonImport('../../../../roles.json')
 
 const fetch = createApp({ routes }).fetch
 
