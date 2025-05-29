@@ -492,7 +492,7 @@ export default class UserModel extends Schema(UserSchema) {
 
 // alternative
 @Model('USER_DATABASE') // optional when using with repositories
-export const model = Dynamodb.model(UserModel)
+const UserModel = Schema(UserSchema)
 ```
 
 #### Repository
