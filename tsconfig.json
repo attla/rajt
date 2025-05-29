@@ -1,9 +1,4 @@
 {
-  "ts-node": {
-    "require": [
-      "tsconfig-paths/register"
-    ]
-  },
   "compilerOptions": {
     "noEmit": true,
     "target": "ESNext",
@@ -21,20 +16,9 @@
     "useDefineForClassFields": false,
     "rootDir": "./",
     "paths": {
-      "@/*": [
-        "./src"
-      ]
+      "@/*": ["./src/*"]
     }
   },
-  "include": [
-    "actions",
-    "src",
-    "models",
-    "utils",
-    "configs"
-  ],
-  "exclude": [
-    "src/**/__tests__/*",
-    "node_modules"
-  ]
+  "include": ["src/**/*", "tests/**/*", "global.d.ts"],
+  "exclude": ["node_modules", "dist" ]
 }

@@ -1,7 +1,7 @@
 {
   "name": "rajt",
   "description": "A serverless bundler layer, fully typed for AWS Lambda (Node.js and LLRT) and Cloudflare Workers.",
-  "version": "0.0.25",
+  "version": "0.0.26",
   "type": "module",
   "main": "dist/index.js",
   "exports": {
@@ -48,6 +48,12 @@
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "bun-types": "^1.2.14"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "resolutions": {
     "@smithy/types": "^4.3.0"
