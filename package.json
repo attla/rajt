@@ -1,11 +1,12 @@
 {
   "name": "rajt",
   "description": "A serverless bundler layer, fully typed for AWS Lambda (Node.js and LLRT) and Cloudflare Workers.",
-  "version": "0.0.27",
+  "version": "0.0.28",
   "type": "module",
   "main": "dist/index.js",
   "exports": {
     ".": "./src/index.ts",
+    "./auth": "./src/auth/index.ts",
     "./dynamodb": "./src/dynamodb/index.ts",
     "./dynamodb/types": "./src/dynamodb/types.ts",
     "./http": "./src/http.ts",
