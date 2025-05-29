@@ -18,4 +18,4 @@
 
 ## License
 
-This package is licensed under the [MIT license](https://github.com/attla/rajt/blob/main/LICENSE) © [Zunq](https://zunq.com).
+This package is licensed under the [MIT license](https://github.com/attla/rajt/blob/main/LICENSE) © [Zunq](https://zunq.com)
