@@ -5,6 +5,7 @@ This framework is fully geared towards the serverless world, specifically AWS La
 - [Installation](#install)
 - [Endpoints](#actionsfeatures)
 - [Validations](#validations)
+- [Enums](#enums)
 - [Middlewares](#middlewares)
 - [DynamoDB](#dynamodb)
   - [Model](#model)
@@ -168,6 +169,68 @@ export default class UsersNew extends Action {
     return this.response.ok({ message: 'Listing users...' })
   }
 }
+```
+
+## Enums
+
+This module provides a flexible implementation of enums in TypeScript/JavaScript that supports:
+
+ - Simple string enums (array)
+ - Numeric enums (key-value object)
+ - Aliased enums (custom values)
+ - Utility methods for validation/retrieve a value or key
+
+##### Enum import
+
+```ts
+import { Enum } from 'rajt'
+```
+
+##### Simple String Enum (Array<`string`>)
+
+```ts
+const Colors = Enum(['RED', 'GREEN', 'BLUE'] as const)
+
+// Direct access
+console.log(Colors.RED) // 'RED'
+
+// Validation
+console.log(Colors.has('RED')) // true
+console.log(Colors.has('YELLOW')) // false
+
+// Retrieve key/value
+console.log(Colors.key('RED')) // 'RED'
+console.log(Colors.value('RED')) // 'RED'
+
+// Listing keys/values
+console.log(Colors.keys) // ['RED', 'GREEN', 'BLUE']
+console.log(Colors.values) // ['RED', 'GREEN', 'BLUE']
+```
+
+#### Numeric Enum (Record<`string`, `number`>)
+
+```ts
+const Status = Enum({
+  ACTIVE: 1,
+  INACTIVE: 0,
+  PENDING: 2
+} as const)
+
+// Direct access
+console.log(Status.ACTIVE) // 1
+
+// Validation (works with string or number)
+console.log(Status.has('ACTIVE')) // true
+console.log(Status.has(1)) // true
+console.log(Status.has('1')) // true
+
+// Retrieve key/value
+console.log(Status.key(1)) // 'ACTIVE'
+console.log(Status.value('ACTIVE')) // 1
+
+// Listing keys/values
+console.log(Status.keys) // ['ACTIVE', 'INACTIVE', 'PENDING']
+console.log(Status.values) // [1, 0, 2]
 ```
 
 ## Middlewares
