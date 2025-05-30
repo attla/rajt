@@ -91,14 +91,14 @@ Files without a declared HTTP verb are ignored in route matching
 
 ```ts
 // file: ./actions/index.ts
-import { JsonResponse } from 'rajt'
+import { Response } from 'rajt'
 import { Get } from 'rajt/http'
 import type { Context } from 'rajt/types'
 
 @Get('/')
 export default class Index {
   async handle(c: Context) {
-    return JsonResponse.ok({ message: 'Hello world! ;)' })
+    return Response.ok({ message: 'Hello world! ;)' })
   }
 }
 ```

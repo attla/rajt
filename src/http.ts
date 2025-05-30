@@ -1,7 +1,7 @@
 import type { Context, Next } from 'hono'
 import { MiddlewareType } from './middleware'
-import JsonResponse from './response'
-import { Ability, Authnz, Token } from './auth'
+import Response from './response'
+import { Ability, Auth as Gate } from './auth'
 import mergeMiddleware from './utils/merge-middleware'
 
 function method(method: string, path = '/') {
@@ -52,15 +52,12 @@ export function Auth(...args: any[]): void | ClassDecorator {
 
 function _auth(target: Function | any) {
   mergeMiddleware(target, async (c: Context, next: Next) => {
-    const unauthorized = JsonResponse.unauthorized()
-
-    const auth = Authnz.fromToken(Token.fromRequest(c))
+    const auth = Gate.user()
     const ability = Ability.fromAction(target)
 
     if (!auth || !ability || auth.cant(ability))
-      return unauthorized
+      return Response.unauthorized()
 
-    c.set('#auth', auth)
     await next()
   })
 }

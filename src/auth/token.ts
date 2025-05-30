@@ -1,18 +1,18 @@
 import { Envir } from 't0n'
 import { Token as Factory } from 'cripta'
-import type { Context, HonoRequest, Next } from 'hono'
+import c from '../context'
 
 export class Token {
   static #name: string = 'Authorization'
   static #prefix: string = 'bearer'
 
-  static fromRequest(c: Context) {
-    const token = this.fromHeader(c.req)
-    return token ? this.parse(c.req, token) : null
+  static fromRequest() {
+    const token = this.fromCookie() || this.fromHeader()
+    return token ? this.parse(token) : null
   }
 
-  static fromHeader(req: HonoRequest): string | null {
-    const header = req.header(this.#name) || req.header('HTTP_AUTHORIZATION') || req.header('REDIRECT_HTTP_AUTHORIZATION') || null
+  static fromHeader(): string | null {
+    const header = c.cx.req.header(this.#name) || c.cx.req.header('HTTP_AUTHORIZATION') || c.cx.req.header('REDIRECT_HTTP_AUTHORIZATION') || null
 
     if (header) {
       const position = header.toLowerCase().indexOf(this.#prefix.toLowerCase())
@@ -28,17 +28,28 @@ export class Token {
     return null
   }
 
-  static parse(req: HonoRequest, token: string) {
-    const host = this.host(Envir.get('FLOW_SERVER') || req.header('host') || '')
+  static fromCookie(): string | null {
+    const uid = c.cx.req.header('uid')
+
+    if (uid) {
+      const auth = c.cookie.get('__auth_' + uid)
+      return auth ? auth : null
+    }
+
+    return null
+  }
+
+  static parse(token: string) {
+    const host = this.host(Envir.get('FLOW_SERVER') || c.cx.req.header('host') || '')
 
     return Factory.parse(token)
       .issuedBy(host)
       .permittedFor(host)
   }
 
-  static create(req: HonoRequest, user: any, exp: number = 7200) {
+  static create(user: any, exp: number = 7200) {
     const time = Math.floor(Date.now() / 1000)
-    const host = this.host(req.header('host') || '')
+    const host = this.host(c.cx.req.header('host') || '')
 
     return Factory.create()
       .issuedBy(host)

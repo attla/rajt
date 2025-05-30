@@ -4,13 +4,15 @@ import type { Env, Context, ErrorHandler, NotFoundHandler, Next } from 'hono'
 // import type { MiddlewareHandler } from 'hono'
 // import { createMiddleware } from 'hono/factory'
 // import type { H, Handler, HandlerResponse } from 'hono/types'
-import { HTTPResponseError } from 'hono/types'
-import { Routes } from './types'
+import type { HTTPResponseError } from 'hono/types'
+import type { Routes } from './types'
 import { BadRequest, Unauthorized } from './exceptions'
-import response from './response'
 import { resolve, resolveMiddleware } from './utils/resolve'
 import { getMiddlewares, getHandler } from './register'
 import env from './utils/environment'
+import { Auth } from './auth'
+import response from './response'
+import cx from './context'
 
 type InitFunction<E extends Env = Env> = (app: Hono<E>) => void
 
@@ -78,16 +80,18 @@ export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
   const app = options?.app ?? new Hono<E>()
 
   app.use(async (c: Context, next: Next) => {
-    response.setContext(c)
+    cx.setContext(c)
+    Auth.resolve()
     await next()
   })
   getMiddlewares().forEach(mw => {
-    const h = async (c: Context, next: Next) => await resolveMiddleware(mw)(response.cx, next)
+    const h = async (c: Context, next: Next) => await resolveMiddleware(mw)(cx.cx, next)
     // @ts-ignore
     mw?.path ? app.use(String(mw.path), h) : app.use(h)
   })
-
+  // @ts-ignore
   app.onError(options?.onError || EHandler)
+  // @ts-ignore
   app.notFound(options?.notFound || NFHandler)
 
   if (options?.init) options.init(app)

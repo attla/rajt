@@ -1,39 +1,10 @@
-import { Context } from 'hono'
 import type { ContentfulStatusCode, StatusCode } from 'hono/utils/http-status'
-import { ErrorResponse, Errors } from './types'
-import { getCookie, getSignedCookie, setCookie, setSignedCookie, deleteCookie } from 'hono/cookie'
-import type { CookieOptions, CookiePrefixOptions } from 'hono/utils/cookie'
+import type { ErrorResponse, Errors } from './types'
+import c from './context'
 
-const cookieWrapper = (c: Context) => ({
-  all: () => getCookie(c),
-  allSigned: (secret: string) => getSignedCookie(c, secret),
-  get: (name: string, prefixOptions?: CookiePrefixOptions) => prefixOptions ? getCookie(c, name, prefixOptions) : getCookie(c, name),
-  getSigned: (secret: string, name: string, prefixOptions?: CookiePrefixOptions) => prefixOptions ? getSignedCookie(c, secret, name, prefixOptions) : getSignedCookie(c, secret, name),
-  set: (name: string, value: string, opt?: CookieOptions) => setCookie(c, name, value, opt),
-  setSigned: (name: string, value: string, secret: string, opt?: CookieOptions) => setSignedCookie(c, name, value, secret, opt),
-  delete: (name: string, opt?: CookieOptions) => deleteCookie(c, name, opt)
-})
-
-export default class JsonResponse {
-  static #c: Context
-  static #cookie: ReturnType<typeof cookieWrapper>
-
-  static setContext(c: Context) {
-    this.#c = c
-    this.#cookie = cookieWrapper(c)
-    return this
-  }
-
-  static get cx(): Context {
-    return this.#c
-  }
-
-  static get cookie() {
-    return this.#cookie
-  }
-
+export default class Response {
   static raw(status?: StatusCode, body?: string) {
-    return this.cx.newResponse(body ? body : null, { status })
+    return c.cx.newResponse(body ? body : null, { status })
   }
 
   static ok(): Response
@@ -42,7 +13,7 @@ export default class JsonResponse {
     if (data === undefined)
       return this.raw(200)
 
-    return this.cx.json(data, 200)
+    return c.cx.json(data, 200)
   }
 
   static created(): Response
@@ -51,7 +22,7 @@ export default class JsonResponse {
     if (data === undefined)
       return this.raw(201)
 
-    return this.cx.json(data, 201)
+    return c.cx.json(data, 201)
   }
 
   static accepted(): Response
@@ -60,7 +31,7 @@ export default class JsonResponse {
     if (data === undefined)
       return this.raw(202)
 
-    return this.cx.json(data, 202)
+    return c.cx.json(data, 202)
   }
 
   static deleted() {
@@ -82,7 +53,7 @@ export default class JsonResponse {
     if (data === undefined)
       return this.raw(401)
 
-    return this.cx.json(data, 401)
+    return c.cx.json(data, 401)
   }
 
   static forbidden(): Response
@@ -91,7 +62,7 @@ export default class JsonResponse {
     if (data === undefined)
       return this.raw(403)
 
-    return this.cx.json(data, 403)
+    return c.cx.json(data, 403)
   }
 
   static notFound(): Response
@@ -124,6 +95,6 @@ export default class JsonResponse {
     if (msg) resp.m = msg
     if (errors) resp.e = errors
 
-    return this.cx.json(resp, status)
+    return c.cx.json(resp, status)
   }
 }

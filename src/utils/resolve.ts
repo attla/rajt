@@ -8,6 +8,9 @@ export function resolve(obj: ActionType, id: string) {
   if (obj?.run)
     return obj.run()
 
+  if (obj?.handle)
+    return obj.handle()
+
   const instance = new (obj as new () => Action)()
   if (obj?.prototype?.run)
     return instance.run()
