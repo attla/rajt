@@ -1,21 +1,21 @@
 import Action, { ActionType } from '../action'
 import { MiddlewareType } from '../middleware'
 
-export function resolve(obj: ActionType) {
+export function resolve(obj: ActionType, id: string) {
   if (typeof obj === 'function' && obj?.length === 2)
     return [obj]
 
-  if (obj instanceof Action)
+  if (obj?.run)
     return obj.run()
 
   const instance = new (obj as new () => Action)()
-  if (Action.isPrototypeOf(obj))
+  if (obj?.prototype?.run)
     return instance.run()
 
   if (obj?.prototype?.handle)
     return [instance.handle]
 
-  throw new Error('Invalid action')
+  throw new Error(`Invalid action "${id}" - unsupported type`)
 }
 
 export function resolveMiddleware(obj: MiddlewareType) {
