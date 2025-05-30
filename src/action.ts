@@ -1,7 +1,8 @@
-import { Context, Handler, HonoRequest, MiddlewareHandler, Next, ValidationTargets } from 'hono'
-import { z, ZodObject, ZodRawShape } from 'zod'
-import { zValidator } from '@hono/zod-validator'
+// import { Context, Handler, HonoRequest, MiddlewareHandler, Next, ValidationTargets } from 'hono'
 // import { JSONValue } from 'hono/utils/types'
+import { Context, Handler, ValidationTargets } from 'hono'
+import { z, ZodObject } from 'zod'
+import { zValidator } from '@hono/zod-validator'
 import JsonResponse from './response'
 import { bufferToFormData } from 'hono/utils/buffer'
 import { HTTPException } from 'hono/http-exception'
@@ -16,15 +17,8 @@ type RuleDefinition = {
 }
 
 export default abstract class Action {
-  protected context!: Context
-  protected errorTarget!: string
-  protected rules(): RuleDefinition[] | RuleDefinition | null {
-    return null
-  }
-
   rule<T extends keyof ValidationTargets>(target: T): { schema: (schema: ZodObject<any>) => RuleDefinition }
   rule<T extends keyof ValidationTargets>(target: T, schema: ZodObject<any>): RuleDefinition
-
   rule<T extends keyof ValidationTargets>(target: T, schema?: ZodObject<any>):
     | { schema: (schema: ZodObject<any>) => RuleDefinition }
     | RuleDefinition
@@ -47,26 +41,26 @@ export default abstract class Action {
   }
 
   param(key: string) {
-    return this.context.req.param(key)
+    return this.cx.req.param(key)
   }
 
   query() {
-    return this.context.req.query()
+    return this.cx.req.query()
   }
 
   async form(cType?: string) {
-    cType ??= this.context.req.header('Content-Type')
+    cType ??= this.cx.req.header('Content-Type')
     if (!cType) return {}
 
     let formData: FormData
 
-    if (this.context.req.bodyCache.formData) {
-      formData = await this.context.req.bodyCache.formData
+    if (this.cx.req.bodyCache.formData) {
+      formData = await this.cx.req.bodyCache.formData
     } else {
       try {
-        const arrayBuffer = await this.context.req.arrayBuffer()
+        const arrayBuffer = await this.cx.req.arrayBuffer()
         formData = await bufferToFormData(arrayBuffer, cType)
-        this.context.req.bodyCache.formData = formData
+        this.cx.req.bodyCache.formData = formData
       } catch (e) {
         throw new HTTPException(400, {
           message: 'Malformed FormData request.'
@@ -93,14 +87,14 @@ export default abstract class Action {
 
   async json<E>() {
     try {
-      return await this.context.req.json<E>()
+      return await this.cx.req.json<E>()
     } catch {
       throw new HTTPException(400, { message: 'Malformed JSON in request body' })
     }
   }
 
   async body<E>() {
-    const cType = this.context.req.header('Content-Type')
+    const cType = this.cx.req.header('Content-Type')
     if (!cType) return {} as E
 
     if (/^application\/([a-z-\.]+\+)?json(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/.test(cType)) {
@@ -118,14 +112,21 @@ export default abstract class Action {
   }
 
   get response() {
-    return this.context ? JsonResponse.setContext(this.context) : JsonResponse
+    return JsonResponse
+  }
+
+  get cx() {
+    return JsonResponse.cx
+  }
+
+  get cookie() {
+    return JsonResponse.cookie
   }
 
   validate() {
     const rules = this.rules()
     const h = async (c: Context) => {
-      this.context = c
-      return await this.handle(c)
+      return await this.handle(this.cx)
     }
     if (!rules) return [h]
 
@@ -141,13 +142,19 @@ export default abstract class Action {
     return rulesArray
   }
 
+  run() {
+    return this.validate()
+  }
+
+  // PUBLIC API
+
   get auth() {
-    const auth = this.context.get('#auth')
+    const auth = this.cx.get('#auth')
     return auth ? auth?.data : null
   }
 
   can(...abilities: string[]): boolean {
-    const auth = this.context.get('#auth')
+    const auth = this.cx.get('#auth')
     return auth ? auth.can(...abilities) : false
   }
 
@@ -156,12 +163,12 @@ export default abstract class Action {
   }
 
   hasRole(...roles: string[]): boolean {
-    const auth = this.context.get('#auth')
+    const auth = this.cx.get('#auth')
     return auth ? auth.hasRole(...roles) : false
   }
 
-  run() {
-    return this.validate()
+  rules(): RuleDefinition[] | RuleDefinition | null {
+    return null
   }
 
   abstract handle(c: Context): Promise<Response>
