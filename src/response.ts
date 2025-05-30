@@ -32,21 +32,21 @@ export default class JsonResponse {
     return this
   }
 
-  static #context(): Context | NullContext {
+  static get #cx(): Context | NullContext {
     return this.#c ?? new NullContext()
   }
 
   static raw(status?: StatusCode, body?: string) {
-    return this.#context().newResponse(body ? body : null, { status })
+    return this.#cx.newResponse(body ? body : null, { status })
   }
 
   static ok(): Response
-  static ok<T>(data: T): Response
+  // static ok<T>(data: T): Response
   static ok<T>(data?: T) {
     if (data === undefined)
       return this.raw(200)
 
-    return this.#context().json(data, 200)
+    return this.#cx.json(data, 200)
   }
 
   static created(): Response
@@ -55,7 +55,7 @@ export default class JsonResponse {
     if (data === undefined)
       return this.raw(201)
 
-    return this.#context().json(data, 201)
+    return this.#cx.json(data, 201)
   }
 
   static accepted(): Response
@@ -64,7 +64,7 @@ export default class JsonResponse {
     if (data === undefined)
       return this.raw(202)
 
-    return this.#context().json(data, 202)
+    return this.#cx.json(data, 202)
   }
 
   static deleted(): Response
@@ -88,7 +88,7 @@ export default class JsonResponse {
     if (data === undefined)
       return this.raw(401)
 
-    return this.#context().json(data, 401)
+    return this.#cx.json(data, 401)
   }
 
   static forbidden(): Response
@@ -97,7 +97,7 @@ export default class JsonResponse {
     if (data === undefined)
       return this.raw(403)
 
-    return this.#context().json(data, 403)
+    return this.#cx.json(data, 403)
   }
 
   static notFound(): Response
@@ -122,7 +122,7 @@ export default class JsonResponse {
   }
 
   static error(errors?: Errors, msg?: string, status?: ContentfulStatusCode) {
-    const context = this.#context()
+    const context = this.#cx
     status ??= 500
 
     if (!errors && !msg)
