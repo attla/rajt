@@ -38,11 +38,6 @@ const EHandler = async (e: Error | HTTPResponseError) => {
       // @ts-ignore
       return response.badRequest(undefined, e?.message)
 
-    // case e.message.includes('Not Found'):
-    // // @ts-ignore
-    // case e?.status === 404:
-    //   return json.notFound();
-
     default:
       return response.internalError(
         // @ts-ignore
@@ -54,14 +49,11 @@ const EHandler = async (e: Error | HTTPResponseError) => {
                   if (!path) return match
 
                   const nodeModulesIndex = path.indexOf('node_modules')
-                  if (nodeModulesIndex > -1) {
+                  if (nodeModulesIndex > -1)
                     return `${method || ''}(node_modules${path.slice(nodeModulesIndex + 'node_modules'.length)})`
-                  }
 
                   const projectRoot = process.cwd()
-                  const relativePath = path.startsWith(projectRoot)
-                    ? path.slice(projectRoot.length + 1)
-                    : path
+                  const relativePath = path.startsWith(projectRoot) ? path.slice(projectRoot.length + 1) : path
                   return `${method || ''}(${relativePath})`
                 }
               ).trim()
@@ -77,7 +69,7 @@ const EHandler = async (e: Error | HTTPResponseError) => {
   //   e.message || 'Internal Error'
   // )
   // error: e.message,
-  // cause: e.cause || 'Desconhecido',
+  // cause: e.cause || '???',
   // stack: isDev ? e.stack : undefined
 }
 
@@ -85,16 +77,12 @@ export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
   // const root = options?.root ?? '/'
   const app = options?.app ?? new Hono<E>()
 
-  const middlewares = [
-    async (c: Context, next: Next) => {
-      response.setContext(c)
-      await next()
-    },
-    ...getMiddlewares()
-  ]
-  middlewares.forEach(mw => {
-    // @ts-ignore
-    const h = resolveMiddleware(mw)
+  app.use(async (c: Context, next: Next) => {
+    response.setContext(c)
+    await next()
+  })
+  getMiddlewares().forEach(mw => {
+    const h = async (c: Context, next: Next) => await resolveMiddleware(mw)(response.cx, next)
     // @ts-ignore
     mw?.path ? app.use(String(mw.path), h) : app.use(h)
   })
@@ -102,8 +90,7 @@ export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
   app.onError(options?.onError || EHandler)
   app.notFound(options?.notFound || NFHandler)
 
-  if (options?.init)
-    options.init(app)
+  if (options?.init) options.init(app)
 
   const routes = options?.routes || []
   for (const route of routes) {
