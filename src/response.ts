@@ -41,7 +41,6 @@ export default class JsonResponse {
   }
 
   static ok(): Response
-  // static ok<T>(data: T): Response
   static ok<T>(data?: T) {
     if (data === undefined)
       return this.raw(200)
@@ -50,7 +49,6 @@ export default class JsonResponse {
   }
 
   static created(): Response
-  static created<T>(data: T): Response
   static created<T>(data?: T) {
     if (data === undefined)
       return this.raw(201)
@@ -59,7 +57,6 @@ export default class JsonResponse {
   }
 
   static accepted(): Response
-  static accepted<T>(data: T): Response
   static accepted<T>(data?: T) {
     if (data === undefined)
       return this.raw(202)
@@ -67,9 +64,7 @@ export default class JsonResponse {
     return this.#cx.json(data, 202)
   }
 
-  static deleted(): Response
-  static deleted<T>(data: T): Response
-  static deleted<T>(data?: T) {
+  static deleted() {
     return this.noContent()
   }
 
@@ -83,7 +78,6 @@ export default class JsonResponse {
   }
 
   static unauthorized(): Response
-  static unauthorized<T>(data: T): Response
   static unauthorized<T>(data?: T) {
     if (data === undefined)
       return this.raw(401)
@@ -92,7 +86,6 @@ export default class JsonResponse {
   }
 
   static forbidden(): Response
-  static forbidden<T>(data: T): Response
   static forbidden<T>(data?: T) {
     if (data === undefined)
       return this.raw(403)
@@ -101,7 +94,6 @@ export default class JsonResponse {
   }
 
   static notFound(): Response
-  static notFound(msg: string): Response
   static notFound(msg?: string) {
     return this.raw(404, msg)
   }
