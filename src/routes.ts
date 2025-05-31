@@ -62,7 +62,41 @@ export async function getRoutes(
     }
   )))
 
-  return routes
+  return sortRoutes(routes)
+}
+
+function sortRoutes(routes: Route[]) {
+  const metas = new Map<string, { score: number; segmentsCount: number }>()
+
+  for (const route of routes)
+    metas.set(route.path, computeRouteMeta(route.path))
+
+  return routes.sort((a, b) => {
+    const metaA = metas.get(a.path)!
+    const metaB = metas.get(b.path)!
+
+    if (metaA.score === metaB.score)
+      return metaB.segmentsCount - metaA.segmentsCount
+
+    return metaB.score - metaA.score
+  })
+}
+
+function computeRouteMeta(path: string) {
+  const segments = path.split('/').filter(Boolean)
+
+  let score = 0
+  for (const segment of segments) {
+    if (segment === '*') {
+      score += 0
+    } else if (segment.startsWith(':')) {
+      score += 1
+    } else {
+      score += 10
+    }
+  }
+
+  return { score, segmentsCount: segments.length }
 }
 
 export async function getMiddlewares(
