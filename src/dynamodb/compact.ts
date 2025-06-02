@@ -147,9 +147,10 @@ export default class Compact {
 
       return val
     }
-    const length = getLength(val, type)
 
-    if (type !== 'object' && length < 2) return val
+    const length = getLength(val, type)
+    if ([null, true, false].includes(val) || type != 'object' && length < 2)
+      return val
 
     const index = seen.indexOf(val)
     if (index !== -1)
