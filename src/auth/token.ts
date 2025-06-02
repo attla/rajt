@@ -40,7 +40,7 @@ export class Token {
   }
 
   static parse(token: string) {
-    const host = this.host(Envir.get('FLOW_SERVER') || c.cx.req.header('host') || '')
+    const host = this.host(Envir.get('FLOW_SERVER'))
 
     return Factory.parse(token)
       .issuedBy(host)
@@ -67,8 +67,8 @@ export class Token {
     this.#name = name
   }
 
-  static host(url: string | null | undefined): string {
-    if (!url) return ''
+  static host(url?: string | null | undefined): string {
+    if (!url) url = c.cx.req.url || c.cx.req.header('host') || ''
 
     let formattedUrl = String(url)
     if (!formattedUrl.startsWith('http'))
