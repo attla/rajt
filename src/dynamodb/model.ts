@@ -17,7 +17,7 @@ import getLength from '../utils/lenght'
 
 export default class AbstractModel<T extends object> {
   #meta: ModelMetadata
-  #cls!: Model<T>
+  cls?: Model<T>
   lastKey?: Record<string, any>
   #db: DynamoDBDocumentClient
   #queryBuilder?: QueryBuilder
@@ -35,6 +35,7 @@ export default class AbstractModel<T extends object> {
 
     if (typeof (cls as ModelMetadata).table === 'string') {
       this.#meta = cls as ModelMetadata
+      this.cls = model?.cls
       return
     }
 
@@ -43,7 +44,7 @@ export default class AbstractModel<T extends object> {
       throw new Error('Missing model metadata')
 
     this.#meta = meta
-    this.#cls = cls as Model<T>
+    this.cls = cls as Model<T>
   }
 
   get table(): string {
@@ -272,21 +273,20 @@ export default class AbstractModel<T extends object> {
   }
 
   #processItems(items: any[] | undefined, filterFn?: Filter<T>): T[] {
-    if (!items) return []
-
-    items = this.#meta.zip ? Compact.smartDecode<T[]>(items, this.#meta.fields) : items as T[]
+    if (!items || !items.length) return []
+    items = items.map(item => this.#processItem(item))
     return filterFn ? items.filter(filterFn) : items
   }
 
   #processItem(item: any, keys?: Record<string, string>): T {
     if (this.#meta.zip && item?.V) {
-      const model = new this.#cls(Compact.decode(item.V, this.#meta.fields))
+      const model = new this.cls!(Compact.decode<T>(item.V, this.#meta.fields))
       if (!keys) keys = this.#getItemKey(item)
 
       // @ts-ignore
       return model.withKey(keys[this.#meta.keys.PK], keys[this.#meta.keys.SK] || undefined)
     }
 
-    return new this.#cls(item)
+    return new this.cls!(item)
   }
 }
