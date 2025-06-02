@@ -1,19 +1,24 @@
 import type { Condition, Operator } from './types'
 
 export default class QueryBuilder {
-  #conditions: Condition[] = []
+  #filters: Condition[] = []
+  #keyConditions: Condition[] = []
   #limit?: number
   #startKey?: Record<string, any>
   #index?: string
+  #attrCounter = 1
+  #valCounter = 1
+  #fieldAttrMap: Record<string, string> = {}
+  #fieldValMap: Record<string, string> = {}
 
   filter(field: string, operator: Operator, value: any = null) {
-    this.#conditions.push({ type: 'filter', field, operator, value })
+    this.#filters.push({ type: 'filter', field, operator, value })
     return this
   }
 
   keyCondition(field: string, operator: Operator | any, value?: any) {
     const noVal = value === undefined
-    this.#conditions.push({ type: 'keyCondition', field, operator: noVal ? '=' : operator, value: noVal ? operator : value })
+    this.#keyConditions.push({ type: 'keyCondition', field, operator: noVal ? '=' : operator, value: noVal ? operator : value })
     return this
   }
 
@@ -32,22 +37,45 @@ export default class QueryBuilder {
     return this
   }
 
-  buildExpression(type: 'filter' | 'keyCondition') {
+  private attrName(field: string) {
+    if (!this.#fieldAttrMap[field])
+      this.#fieldAttrMap[field] = '#a'+ this.#attrCounter++
+
+    return this.#fieldAttrMap[field]
+  }
+
+  private valName(val: any) {
+    val = String(val)
+    if (!this.#fieldValMap[val])
+      this.#fieldValMap[val] = ':v'+ this.#valCounter++
+
+    return this.#fieldValMap[val]
+  }
+
+  #resetCounters() {
+    this.#attrCounter = 0
+    this.#valCounter = 0
+    this.#fieldAttrMap = {}
+    this.#fieldValMap = {}
+  }
+
+  buildExpression(conditions: Condition[]) {
     const exprParts: string[] = []
     const values: Record<string, any> = {}
     const names: Record<string, string> = {}
 
-    let i = 0
-    for (const cond of this.#conditions.filter(c => c.type === type)) {
-      const attr = `#attr${i}`
-      const val = `:val${i}`
+    for (const cond of conditions) {
+      const attr = this.attrName(cond.field)
+      const val = Array.isArray(cond.value) ? '' : this.valName(cond.value)
       names[attr] = cond.field
 
       switch (cond.operator) {
         case 'between': {
-          exprParts.push(`${attr} BETWEEN ${val}a AND ${val}b`)
-          values[`${val}a`] = cond.value[0]
-          values[`${val}b`] = cond.value[1]
+          const val0 = this.valName(cond.value[0])
+          const val1 = this.valName(cond.value[1])
+          exprParts.push(`${attr} BETWEEN ${val0} AND ${val1}`)
+          values[val0] = cond.value[0]
+          values[val1] = cond.value[1]
           break
         }
         case 'begins_with': {
@@ -56,10 +84,10 @@ export default class QueryBuilder {
           break
         }
         case 'in': {
-          const inVals = cond.value.map((v: any, j: number) => {
-            const vKey = `${val}_${j}`
-            values[vKey] = v
-            return vKey
+          const inVals = cond.value.map((v: any) => {
+            const key = this.valName(v)
+            values[key] = v
+            return key
           })
           exprParts.push(`${attr} IN (${inVals.join(', ')})`)
           break
@@ -92,8 +120,6 @@ export default class QueryBuilder {
           values[val] = cond.value
         }
       }
-
-      i++
     }
 
     return {
@@ -104,7 +130,7 @@ export default class QueryBuilder {
   }
 
   get filters() {
-    const filter = this.buildExpression('filter')
+    const filter = this.buildExpression(this.#filters)
     const params: any = {}
 
     if (this.#limit)
@@ -126,7 +152,7 @@ export default class QueryBuilder {
   }
 
   get conditions() {
-    const keys = this.buildExpression('keyCondition')
+    const keys = this.buildExpression(this.#keyConditions)
     const filters = this.filters
 
     const params: any = { ...filters }
