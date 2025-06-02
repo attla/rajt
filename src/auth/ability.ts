@@ -13,7 +13,7 @@ export class Ability {
   static fromRoutes(actions: Routes) {
     if (!actions?.length) return
 
-    const paths = actions?.map(a => Array.isArray(a) ? a[1] : a.path) ?? []
+    const paths = actions?.map(a => Array.isArray(a) ? a[0]+a[1] : a.method+a.path) || []
     const items = new Set(paths)
 
     if (items.size !== actions.length)
