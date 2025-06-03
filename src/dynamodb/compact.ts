@@ -121,7 +121,7 @@ export default class Compact {
     if (!key) return undefined
 
     if (typeof key == 'string')
-      return [key, value]
+      return [key, value || null]
 
     const mainKey = Object.keys(key)[0]
     const subKeys = key[mainKey]
@@ -135,7 +135,7 @@ export default class Compact {
         : [mainKey, this.withSchema(value, subKeys)]
     }
 
-    return [mainKey, value]
+    return [mainKey, value || null]
   }
 
   static memo(val: any, seen: any[]): any {
