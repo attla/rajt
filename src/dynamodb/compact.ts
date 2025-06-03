@@ -65,6 +65,8 @@ export default class Compact {
   }
 
   static zip(obj: any, schema: SchemaStructure, seen: any[]): any[] {
+    if (!obj || [null, true, false].includes(obj)) return obj
+
     return schema.map(key => {
       if (typeof key === 'string')
         return this.memo(obj[key], seen)
