@@ -13,28 +13,35 @@ export class Ability {
   static fromRoutes(actions: Routes) {
     if (!actions?.length) return
 
-    const paths = actions?.map(a => Array.isArray(a) ? a[0]+a[1] : a.method+a.path) || []
+    const paths = actions?.map(a => Array.isArray(a) ? a[0] + a[1] : a.method + a.path) || []
     const items = new Set(paths)
 
     if (items.size !== actions.length)
       throw new Error(`Duplicate routes detected: "${paths.filter((path, index) => paths.indexOf(path) !== index).join('", "')}"`)
 
-    this.#abilities = Array.from(items).map(a => this.format(a)).filter(Boolean)
+    this.#abilities = Array.from(new Set(actions?.map(a => Array.isArray(a) ? a[3] : a.name) || []))
+      .map(a => this.format(a))
+      .filter(Boolean)
   }
 
-  static fromAction(target: any): string | null {
-    return !target || !target?.p ? null : this.format(target.p)
+  static fromAction(target: any): string {
+    return !target ? '' : this.format(target.name.length > 3 ? target.name : (target?.p || ''))
   }
 
   static format(path: string) {
-    return path.normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/^\/*/, '')
-      .replace(/[^a-zA-Z0-9/]|[\s_.]/g, '-')
-      .replace(/([a-z])([A-Z])/g, '$1-$2')
-      .replace(/\//g, '.')
-      .replace(/-+/g, '-')
-      .toLowerCase()
+    return path == '/'
+      ? 'index'
+      : path.normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/^\/*/, '')
+        .replace(/([a-z])([A-Z])/g, '$1-$2')
+        .replace(/[^a-zA-Z0-9/]|[\s_.]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/\//g, '.')
+        .replace(/\.-/g, '.')
+        .replace(/^[._-]+/, '')
+        .replace(/[._-]+$/, '')
+        .toLowerCase()
   }
 
   static get abilities() {
