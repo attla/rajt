@@ -52,10 +52,10 @@ export function Auth(...args: any[]): void | ClassDecorator {
 
 function _auth(target: Function | any) {
   mergeMiddleware(target, async (c: Context, next: Next) => {
-    const auth = Gate.user()
+    const user = Gate.user
     const ability = Ability.fromAction(target)
 
-    if (!auth || !ability || auth.cant(ability))
+    if (!user || !ability || Gate.cant(ability))
       return Response.unauthorized()
 
     await next()
