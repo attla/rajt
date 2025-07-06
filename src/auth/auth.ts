@@ -23,4 +23,11 @@ export class Auth {
   static hasRole(...roles: string[]): boolean {
     return this.#u ? this.#u.hasRole(...roles) : false
   }
+
+  static has(prop: string, value: any = null): boolean {
+    return this.#u ? this.#u.has(prop, value) : false
+  }
+  static hasValue(prop: string, value: any = null): boolean {
+    return this.has(prop, value)
+  }
 }

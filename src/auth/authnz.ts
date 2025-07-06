@@ -4,10 +4,12 @@ export class Authnz<T extends object> {
   #abilities: string[]
   #roles: string[]
   #data: T
+  #token: any
 
-  constructor(data: T, abilities: string[], roles: string[]) {
+  constructor(token: any, data: T, abilities: string[], roles: string[]) {
     this.#abilities = abilities
     this.#roles = roles
+    this.#token = token
     this.#data = data
   }
 
@@ -27,20 +29,27 @@ export class Authnz<T extends object> {
     return roles.flat().every(role => this.#roles.includes(role))
   }
 
-  static fromToken<T extends object>(user: any): Authnz<T> | null {
-    if (!user || user?.isInvalid()) return null
-    user = user.get()
+  has(prop: string, value: any = null): boolean {
+    return this.#token?.hasValue(prop, value) || false
+  }
+  hasValue(prop: string, value: any = null): boolean {
+    return this.has(prop, value)
+  }
+
+  static fromToken<T extends object>(token: any): Authnz<T> | null {
+    if (!token || !token?.isValid()) return null
+    const user = token.get()
     const roles = [...(user?.role ? [user.role] : []), ...(user?.roles ?? [])]
 
     const combined = [...(user?.perms ?? []), ...roles.flatMap(role => {
       const perms = Ability.roles[role]
       if (!perms) return []
-      return perms === '*' ? ['*'] : perms;
+      return perms === '*' ? ['*'] : perms
     })]
 
     const abilities = combined.includes('*') ? ['*'] : Array.from(new Set(combined))
 
-    return new Authnz(user as T, abilities, roles)
+    return new Authnz<T>(token, user, abilities, roles)
   }
 
   #match(rule: string, ability: string): boolean {

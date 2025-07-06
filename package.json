@@ -19,7 +19,6 @@
     "build": "bun run --silent cache:routes && bun run --silent export && bun run --silent clean:temp",
     "build:watch": "chokidar \"../../{actions,configs,models,utils}/**/*.ts\" -c \"bun run --silent build\" --initial",
     "export": "node src/esbuild.mjs",
-    "export-old": "esbuild --bundle --minify --outfile=../../dist/index.js --platform=node --target=node20 --format=esm --tree-shaking=true --legal-comments=none --external:@aws-sdk --external:@smithy src/prod.ts",
     "package": "bun run --silent build && bun run --silent sam:package",
     "deploy": "bun run --silent build && bun run --silent sam:package && bun run --silent sam:deploy",
     "update": "bun run --silent build && bun run --silent zip && bun run --silent sam:update",
