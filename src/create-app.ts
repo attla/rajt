@@ -9,7 +9,7 @@ import type { Routes } from './types'
 import { BadRequest, Unauthorized } from './exceptions'
 import { resolve, resolveMiddleware } from './utils/resolve'
 import { getMiddlewares, getHandler } from './register'
-import env from './utils/environment'
+import { isDev } from './utils/environment'
 import { Auth } from './auth'
 import response from './response'
 import cx from './context'
@@ -25,7 +25,6 @@ export type ServerOptions<E extends Env = Env> = Partial<{
   init?: InitFunction<E>,
 }>
 
-const isDev = env() === 'dev'
 const NFHandler = () => response.notFound()
 const EHandler = async (e: Error | HTTPResponseError) => {
   console.error(e)
@@ -43,7 +42,7 @@ const EHandler = async (e: Error | HTTPResponseError) => {
     default:
       return response.internalError(
         // @ts-ignore
-        isDev
+        isDev()
           ? e.stack?.split('\n').map(line =>
               line.replace(
                 /at (.+ )?\(?([^)]+)\)?/g,
@@ -67,12 +66,12 @@ const EHandler = async (e: Error | HTTPResponseError) => {
 
   // return json.internalError(
   //   // @ts-ignore
-  //   isDev ? e.stack?.split('\n    at ').map() : undefined,
+  //   isDev() ? e.stack?.split('\n    at ').map() : undefined,
   //   e.message || 'Internal Error'
   // )
   // error: e.message,
   // cause: e.cause || '???',
-  // stack: isDev ? e.stack : undefined
+  // stack: isDev (? e.stack : undefined
 }
 
 export const createApp = <E extends Env>(options?: ServerOptions<E>) => {

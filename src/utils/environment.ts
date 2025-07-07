@@ -13,3 +13,7 @@ export default function getEnvironment() {
 
   return 'prod'
 }
+
+export const isDev = () => getEnvironment() === 'dev'
+export const isProd = () => getEnvironment() === 'prod'
+export const isPrd = isProd
