@@ -32,16 +32,16 @@ export class Ability {
     return path == '/'
       ? 'index'
       : path.normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/^\/*/, '')
-        .replace(/([a-z])([A-Z])/g, '$1-$2')
-        .replace(/[^a-zA-Z0-9/]|[\s_.]/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/\//g, '.')
-        .replace(/\.-/g, '.')
-        .replace(/^[._-]+/, '')
-        .replace(/[._-]+$/, '')
-        .toLowerCase()
+         .replace(/[\u0300-\u036f]/g, '')
+         .replace(/^\/*/, '')
+         .replace(/([a-z])([A-Z])/g, '$1-$2')
+         .replace(/[^a-zA-Z0-9/]|[\s\-.]/g, '_')
+         .replace(/_+/g, '_')
+         .replace(/\//g, '.')
+         .replace(/\._/g, '.')
+         .replace(/^[._-]+/, '')
+         .replace(/[._-]+$/, '')
+         .toLowerCase()
   }
 
   static get abilities() {
