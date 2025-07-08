@@ -54,11 +54,18 @@ export class Authnz<T extends object> {
 
   #match(rule: string, ability: string): boolean {
     if (rule === ability) return true
-    if (rule.endsWith('.*')) {
-      const prefix = rule.slice(0, -2)
-      return ability.startsWith(`${prefix}.`) || ability === prefix
-    }
+    if (
+      this.#wildcardMatch(rule, ability, '_*')
+      || this.#wildcardMatch(rule, ability, '-*')
+      || this.#wildcardMatch(rule, ability, '.*')
+    ) return true
+
     return false
+  }
+
+  #wildcardMatch(rule: string, ability: string, suffix: string) {
+    return rule.endsWith(suffix)
+      && (ability.startsWith(rule.slice(0, -2) + suffix[0]) || ability === rule.slice(0, -2))
   }
 
   get abilities() {
