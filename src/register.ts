@@ -2,7 +2,7 @@ export const handlers: Record<string, Function> = {}
 
 export function registerHandler(id: string, handler: any) {
   if (id in handlers)
-    console.warn(`Handler "${id}" has already been registered`)
+    console.warn(`🟠 Handler "${id}" has already been registered`)
 
   handlers[id] = handler
 }

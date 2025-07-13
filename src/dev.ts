@@ -25,7 +25,7 @@ const desiredPort = process.env?.PORT ? Number(process.env.PORT) : 3000
 getAvailablePort(desiredPort)
   .then(port => {
     if (port != desiredPort)
-      console.warn(`🟨 Port ${desiredPort} was in use, using ${port} as a fallback`)
+      console.warn(`🟠 Port ${desiredPort} was in use, using ${port} as a fallback`)
 
     console.log(`🚀 API running on http://localhost:${port}`)
     serve({ fetch, port })
