@@ -1,9 +1,9 @@
 import esbuild from 'esbuild'
-import path from 'path'
+import { dirname, join, relative } from 'path'
 import { fileURLToPath } from 'url'
-import fs from 'fs/promises'
+import { readFile, stat, writeFile } from 'fs/promises'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const formatSize = (bytes) => {
   if (bytes < 1024) return `${bytes}b`
@@ -16,10 +16,10 @@ const formatTime = (ms) => {
 }
 
 const buildOptions = {
-  entryPoints: [path.join(__dirname, 'prod.ts')],
+  entryPoints: [join(__dirname, 'prod.ts')],
   bundle: true,
   minify: true,
-  outfile: path.join(__dirname, '../../../dist/index.js'),
+  outfile: join(__dirname, '../../../dist/index.js'),
   platform: 'node',
   target: 'node20',
   format: 'esm',
@@ -27,37 +27,60 @@ const buildOptions = {
   legalComments: 'none',
   external: ['@aws-sdk', '@smithy'],
   metafile: true,
-  plugins: [{
-    name: 'preserve-class-names',
-    setup(build) {
-      build.onLoad(
-        { filter: /(actions|features)\/.*\.ts$/ },
-        async (args) => {
-          const contents = await fs.readFile(args.path, 'utf8')
-          const result = await esbuild.transform(contents, {
-            loader: 'ts',
-            minify: true,
-            keepNames: true
-          })
-          return { contents: result.code, loader: 'ts' }
-        }
-      )
+  write: false,
+  plugins: [
+    {
+      name: 'preserve-class-names',
+      setup(build) {
+        build.onLoad(
+          { filter: /(actions|features)\/.*\.ts$/ },
+          async (args) => {
+            const contents = await readFile(args.path, 'utf8')
+            const result = await esbuild.transform(contents, {
+              loader: 'ts',
+              minify: true,
+              keepNames: true
+            })
+            return { contents: result.code, loader: 'ts' }
+          }
+        )
+      },
     },
-  }]
+    {
+      name: 'remove-use-strict',
+      setup(build) {
+        build.onEnd(async (result) => {
+          if (!result.outputFiles) return
+
+          const files = result.outputFiles.filter(file => file.path.endsWith('.js'))
+          await Promise.all(files.map(async file => {
+            if (!file.path.endsWith('.js')) return
+
+            await writeFile(
+              file.path,
+              new TextDecoder()
+                .decode(file.contents)
+                .replace(/(["'`])\s*use strict\s*\1;?|`use strict`;?/g, '')
+            )
+          }))
+        })
+      }
+    }
+  ]
 }
 
 try {
   const startTime = Date.now()
   const result = await esbuild.build(buildOptions)
 
-  const cwd = path.join(__dirname, '../../..')
+  const cwd = join(__dirname, '../../..')
 
   const outputFile = buildOptions.outfile
-  const stats = await fs.stat(outputFile)
+  const stats = await stat(outputFile)
   const size = formatSize(stats.size)
 
   console.log(`\n⚡️ Done in ${formatTime(Date.now() - startTime)}`)
-  console.log(`    ${path.relative(path.join(cwd, 'node_modules/rajt/src'), buildOptions.entryPoints[0])} → ${path.relative(cwd, outputFile)}`)
+  console.log(`    ${relative(join(cwd, 'node_modules/rajt/src'), buildOptions.entryPoints[0])} → ${relative(cwd, outputFile)}`)
   console.log(`    Size: ${size}`)
   console.log(`    Files: ${Object.keys(result.metafile.outputs).length}`)
 } catch (error) {
