@@ -1,5 +1,6 @@
 import { Envir } from 't0n'
 import { Token as Factory } from 'cripta'
+import { UAParser } from 'ua-parser-js'
 import c from '../context'
 
 export class Token {
@@ -45,6 +46,8 @@ export class Token {
     return Factory.parse(token)
       .issuedBy(host)
       .permittedFor(host)
+      .withClaim('u', this.userAgent())
+      .withClaim('i', this.ip())
   }
 
   static create(user: any, exp: number = 7200) {
@@ -56,6 +59,8 @@ export class Token {
       .permittedFor(host)
       .issuedAt(time)
       .expiresAt(time + exp)
+      .withClaim('u', this.userAgent())
+      .withClaim('i', this.ip())
       .body(user)
   }
 
@@ -80,5 +85,15 @@ export class Token {
     } catch {
       return ''
     }
+  }
+
+  static userAgent() {
+    if (!c?.userAgent) return 0
+    const { browser, device, os } = UAParser(c.userAgent)
+    return (browser?.name || '') + (browser?.major || '') + (device?.model || '') + (os?.name || '')
+  }
+
+  static ip() {
+     return c?.ip || 0
   }
 }
