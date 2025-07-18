@@ -77,7 +77,7 @@ export class Token {
     try {
       const parsedUrl = new URL(formattedUrl)
       return parsedUrl.host
-    } catch (e) {
+    } catch {
       return ''
     }
   }
