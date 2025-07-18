@@ -28,4 +28,16 @@ export default class CX {
   static get cookie() {
     return this.#cookie
   }
+
+  static get ip(): string | undefined {
+    return this.#c.req.header('cf-connecting-ip')
+      || this.#c.req.header('x-forwarded-for')?.split(',')[0]?.trim()
+      || this.#c.env?.aws?.lambda?.event?.requestContext?.identity?.sourceIp
+      || this.#c.req.header('x-real-ip')
+      || this.#c.env?.remoteAddr?.hostname
+  }
+
+  static get userAgent(): string | undefined {
+    return this.#c.req.header('user-agent')
+  }
 }

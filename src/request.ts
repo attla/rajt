@@ -87,4 +87,12 @@ export default class Request {
   static get cookie() {
     return c.cookie
   }
+
+  static get ip() {
+    return c.ip
+  }
+
+  static get userAgent() {
+    return c.userAgent
+  }
 }
