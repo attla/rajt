@@ -41,10 +41,11 @@ export class Token {
   }
 
   static parse(token: string) {
-    const host = this.host(Envir.get('FLOW_SERVER'))
+    const host = this.host()
+    const serveHost = Envir.get('FLOW_SERVER', host) as string
 
     return Factory.parse(token)
-      .issuedBy(host)
+      .issuedBy(serveHost)
       .permittedFor(host)
       .withClaim('u', this.userAgent())
       .withClaim('i', this.ip())
