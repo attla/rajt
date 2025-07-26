@@ -13,19 +13,22 @@ export default class Compact {
     'null': 'N',
     // Array
     '[]': 'A',
-    // Object
-    '{}': 'O',
-    // Commons
     '["0"]': 'A0',
     '["1"]': 'A1',
-    '["true"]': 'A2',
-    '["false"]': 'A3',
-    '"true"': 'T1',
-    '"false"': 'T0',
+    '["false"]': 'A2',
+    '["true"]': 'A3',
+    // Object
+    '{}': 'O',
+    // String
+    '""': 'S',
+    '"0"': 'S0',
+    '"1"': 'S1',
+    '"false"': 'S2',
+    '"true"': 'S3',
   }
 
   static {
-    this.#reverseTypeMap = Object.fromEntries(Object.entries(this.#typeMap).map(([k, v]) => [v, k]))
+    this.#reverseTypeMap = Object.fromEntries(Object.entries(this.#typeMap).map(([k, v]) => [v, k.replace(/"/g, "'")]))
     this.#typeRegex = this.#mapRegex(Object.keys(this.#typeMap))
     this.#reverseTypeRegex = this.#mapRegex(Object.keys(this.#reverseTypeMap))
   }
