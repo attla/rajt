@@ -1,7 +1,12 @@
 import { z, ZodTypeAny } from 'zod'
 import type { SchemaStructure } from './types'
 
-function extractZodKeys(schema: ZodTypeAny): SchemaStructure {
+const m = Symbol('a')
+export function isArraySchema(v: any) : boolean {
+  return v[m] || false
+}
+
+export function extractZodKeys(schema: ZodTypeAny): SchemaStructure {
   if (schema instanceof z.ZodObject) {
     return Object.entries(schema.shape).map(([key, value]) => {
       const inner = unwrap(value as ZodTypeAny)
@@ -18,15 +23,39 @@ function extractZodKeys(schema: ZodTypeAny): SchemaStructure {
     })
   }
 
+  if (schema instanceof z.ZodArray) {
+    const item = unwrap(schema._def.type as ZodTypeAny)
+    if (item instanceof z.ZodObject) {
+      const r = extractZodKeys(item)
+      // @ts-ignore
+      r[m] = true
+      return r
+    }
+
+    return []
+  }
+
   return []
 }
 
-function unwrap(schema: ZodTypeAny): ZodTypeAny {
+export function unwrap(schema: ZodTypeAny): ZodTypeAny {
   if (schema instanceof z.ZodOptional || schema instanceof z.ZodNullable)
     return unwrap(schema._def.innerType)
 
-  if (schema instanceof z.ZodUnion)
-    return unwrap(schema._def.options[0] as ZodTypeAny)
+  if (schema instanceof z.ZodDefault)
+    return unwrap(schema._def.innerType)
+
+  // if (schema instanceof z.ZodUnion)
+  //   return unwrap(schema._def.options[0] as ZodTypeAny)
+
+  if (schema instanceof z.ZodUnion) {
+    const options = schema._def.options as ZodTypeAny[]
+    const nonEmptyOption = options.find(opt => !(opt instanceof z.ZodUndefined) && !(opt instanceof z.ZodNull))
+    return nonEmptyOption ? unwrap(nonEmptyOption) : options[0]
+  }
+
+  if (schema instanceof z.ZodEffects)
+    return unwrap(schema._def.schema)
 
   return schema
 }

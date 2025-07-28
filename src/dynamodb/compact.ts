@@ -1,5 +1,6 @@
 import type { SchemaStructure } from './types'
 import getLength from '../utils/lenght'
+import { isArraySchema } from './schema'
 
 export default class Compact {
   static #typeRegex: RegExp
@@ -49,7 +50,7 @@ export default class Compact {
     if (!val) return val as T
 
     if (Array.isArray(val))
-      return val.map((i: { v: string }) => this.decode<T>(i?.V, schema)).filter(Boolean) as T
+      return val.map((i: {v: string}) => this.decode<T>(i?.V, schema)).filter(Boolean) as T
 
     return val?.V ? this.decode<T>(val.V, schema) : val
   }
@@ -68,6 +69,9 @@ export default class Compact {
   }
 
   static zip(obj: any, schema: SchemaStructure, seen: any[]): any[] {
+    if (Array.isArray(obj))
+      return obj?.length ? obj.map(item => this.zip(item, schema, seen)) : []
+
     if (!obj || [null, true, false].includes(obj)) return obj
 
     return schema.map(key => {
@@ -85,15 +89,15 @@ export default class Compact {
     })
   }
 
-  static unzip(val: any, seen: any[] = [], deep = false): any[] {
+  static unzip(val: any, seen: any[] = []): any[] {
+    if (Array.isArray(val))
+      return val?.length ? val.map(item => this.unzip(item, seen)) : []
+
     const type = typeof val
     const length = getLength(val, type)
 
     if ([null, true, false].includes(val) || type != 'object' && length < 2)
       return val
-
-    if (Array.isArray(val))
-      return val.map(item => this.unzip(item, seen, deep))
 
     if (type == 'object') {
       for (const key in val)
@@ -111,9 +115,12 @@ export default class Compact {
     return val
   }
 
-  static withSchema(value: any[], keys: any[]): any {
+  static withSchema(value: any[], keys: any[], deep = false): any {
     if (!value || !Array.isArray(value))
       return value
+
+    if (!deep && isArraySchema(keys))
+      return value?.length ? value.map(v => this.withSchema(v, keys, true)) : []
 
     return Object.fromEntries(
       keys.map((key, index) => this.entry(key, value[index])).filter(Boolean)
