@@ -13,6 +13,7 @@ import type { ModelMetadata, Keys, Model, Filter } from './types'
 import { getModelMetadata } from './decorators'
 import QueryBuilder from './query-builder'
 import Compact from './compact'
+import { isArraySchema } from './schema'
 import getLength from '../utils/lenght'
 
 export default class AbstractModel<T extends object> {
@@ -280,13 +281,23 @@ export default class AbstractModel<T extends object> {
 
   #processItem(item: any, keys?: Record<string, string>): T {
     if (this.#meta.zip && item?.V) {
-      const model = new this.cls!(Compact.decode<T>(item.V, this.#meta.fields))
+      const value = Compact.decode<T>(item.V, this.#meta.fields)
+      const model = isArraySchema(this.#meta.fields) && Array.isArray(value)
+        ? value.map(v => new this.cls!(v))
+        : new this.cls!(value)
+
       if (!keys) keys = this.#getItemKey(item)
 
-      // @ts-ignore
-      return model.withKey(keys[this.#meta.keys.PK], keys[this.#meta.keys.SK] || undefined)
+      return this.#withKey(model as T, keys)
     }
 
     return new this.cls!(item)
+  }
+
+  #withKey(model: T, keys: Record<string, string>): T {
+    // @ts-ignore
+    if (Array.isArray(model)) return model.map(m => this.#withKey(m))
+    // @ts-ignore
+    return model.withKey(keys[this.#meta.keys.PK], keys[this.#meta.keys.SK] || undefined)
   }
 }
