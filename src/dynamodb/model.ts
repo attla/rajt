@@ -265,6 +265,9 @@ export default class AbstractModel<T extends object> {
   }
 
   #getItemWithoutKeys(item: Partial<T>): Partial<T> {
+    if (Array.isArray(item))
+      return item?.length ? item.map(i => this.#getItemWithoutKeys(i)) as T : [] as T
+
     if (!this.#meta.keys || !item) return { ...item }
 
     const { PK, SK } = this.#meta.keys
@@ -296,7 +299,7 @@ export default class AbstractModel<T extends object> {
 
   #withKey(model: T, keys: Record<string, string>): T {
     // @ts-ignore
-    if (Array.isArray(model)) return model.map(m => this.#withKey(m))
+    if (Array.isArray(model)) return model.map(m => this.#withKey(m, keys))
     // @ts-ignore
     return model.withKey(keys[this.#meta.keys.PK], keys[this.#meta.keys.SK] || undefined)
   }
