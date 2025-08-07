@@ -16,14 +16,14 @@ export class Token {
     const header = c.cx.req.header(this.#name) || c.cx.req.header('HTTP_AUTHORIZATION') || c.cx.req.header('REDIRECT_HTTP_AUTHORIZATION') || null
 
     if (header) {
-      const position = header.toLowerCase().indexOf(this.#prefix.toLowerCase())
-      if (position !== -1) {
-        let token = header.slice(position + this.#prefix.length).trim()
-        const commaPos = token.indexOf(',')
-        if (commaPos !== -1) token = token.slice(0, commaPos).trim()
+      const pos = header.toLowerCase().indexOf(this.#prefix.toLowerCase())
+      if (pos < 0) return header
 
-        return token
-      }
+      let token = header.slice(pos + this.#prefix.length).trim()
+      const commaPos = token.indexOf(',')
+      if (commaPos > -1) token = token.slice(0, commaPos).trim()
+
+      return token
     }
 
     return null
