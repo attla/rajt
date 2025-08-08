@@ -1,6 +1,3 @@
-import {
-  UpdateCommandInput,
-} from '@aws-sdk/lib-dynamodb'
 import type { ModelMetadata, Keys, Model, Filter } from './types'
 import { getModelMetadata } from './decorators'
 import QueryBuilder from './query-builder'
@@ -121,7 +118,7 @@ export default class AbstractModel<T extends object> {
       UpdateExpression,
       ExpressionAttributeValues,
       ExpressionAttributeNames,
-    } as UpdateCommandInput, key)
+    }, key)
 
     return this.#processItem(attrs, keys)
   }

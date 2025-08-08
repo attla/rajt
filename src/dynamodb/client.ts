@@ -45,18 +45,18 @@ export class Dynamodb {
 }
 
 export class RawClient {
-  static async get(TableName: string, key: Keys, sk?: string) {
+  static async get(TableName: string, key: Keys | Record<string, string>, sk?: string) {
     return DocumentClient.send(new GetCommand({
       TableName,
       Key: this.#key(key, sk),
     }))
   }
 
-  static async scan(TableName: string, filters: ScanCommandInput) {
+  static async scan(TableName: string, filters: Omit<ScanCommandInput, 'TableName'>) {
     return DocumentClient.send(new ScanCommand({ ...filters, TableName }))
   }
 
-  static async query(TableName: string, filters: QueryCommandInput) {
+  static async query(TableName: string, filters: Omit<QueryCommandInput, 'TableName'>) {
     return DocumentClient.send(new QueryCommand({ ...filters, TableName }))
   }
 
@@ -64,13 +64,18 @@ export class RawClient {
     return DocumentClient.send(new PutCommand({ TableName, Item }))
   }
 
-  static async update(TableName: string, filters: UpdateCommandInput, key: Keys, sk?: string) {
+  static async update(
+    TableName: string,
+    filters: Omit<UpdateCommandInput, 'TableName' | 'Key'>,
+    key: Keys | Record<string, string>,
+    sk?: string
+  ) {
     return DocumentClient.send(new UpdateCommand({
       ...filters, TableName, Key: this.#key(key, sk),
     }))
   }
 
-  static async delete(TableName: string, key: Keys, sk?: string) {
+  static async delete(TableName: string, key: Keys | Record<string, string>, sk?: string) {
     return DocumentClient.send(new DeleteCommand({ TableName, Key: this.#key(key, sk) }))
   }
 
@@ -82,7 +87,7 @@ export class RawClient {
     return DocumentClient.send(new BatchWriteCommand(batch))
   }
 
-  static #key(key: Keys, sk?: string) {
+  static #key(key: Keys | Record<string, string>, sk?: string) {
     if (typeof key == 'object' && key != null) return key
 
     let pk: string
