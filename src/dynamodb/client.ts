@@ -1,6 +1,27 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb'
+import {
+  DynamoDBDocumentClient,
+
+  BatchGetCommand,
+  BatchWriteCommand,
+
+  DeleteCommand,
+  GetCommand,
+  PutCommand,
+  QueryCommand,
+  ScanCommand,
+  UpdateCommand,
+
+  ScanCommandInput,
+  QueryCommandInput,
+  UpdateCommandInput,
+
+  BatchGetCommandInput,
+  BatchWriteCommandInput,
+} from '@aws-sdk/lib-dynamodb'
+import type { NativeAttributeValue } from '@aws-sdk/util-dynamodb'
 import AbstractModel from './model'
+import { Keys } from './types'
 
 const client = new DynamoDBClient(process.env?.AWS_SAM_LOCAL ? {
   region: process.env.AWS_REGION || "us-east-1",
@@ -11,10 +32,74 @@ const client = new DynamoDBClient(process.env?.AWS_SAM_LOCAL ? {
   },
 } : {})
 
-export const ddb = DynamoDBDocumentClient.from(client)
+export const DocumentClient = DynamoDBDocumentClient.from(client)
 
 export class Dynamodb {
   static model<T extends object>(cls: new (...args: any[]) => T) {
-    return new AbstractModel<T>(cls, ddb)
+    return new AbstractModel<T>(cls)
+  }
+
+  static raw() {
+    return RawClient
+  }
+}
+
+export class RawClient {
+  static async get(TableName: string, key: Keys, sk?: string) {
+    return DocumentClient.send(new GetCommand({
+      TableName,
+      Key: this.#key(key, sk),
+    }))
+  }
+
+  static async scan(TableName: string, filters: ScanCommandInput) {
+    return DocumentClient.send(new ScanCommand({ ...filters, TableName }))
+  }
+
+  static async query(TableName: string, filters: QueryCommandInput) {
+    return DocumentClient.send(new QueryCommand({ ...filters, TableName }))
+  }
+
+  static async put(TableName: string, Item: Record<string, NativeAttributeValue>) {
+    return DocumentClient.send(new PutCommand({ TableName, Item }))
+  }
+
+  static async update(TableName: string, filters: UpdateCommandInput, key: Keys, sk?: string) {
+    return DocumentClient.send(new UpdateCommand({
+      ...filters, TableName, Key: this.#key(key, sk),
+    }))
+  }
+
+  static async delete(TableName: string, key: Keys, sk?: string) {
+    return DocumentClient.send(new DeleteCommand({ TableName, Key: this.#key(key, sk) }))
+  }
+
+  static async batchGet(batch: BatchGetCommandInput) {
+    return DocumentClient.send(new BatchGetCommand(batch))
+  }
+
+  static async batchWrite(batch: BatchWriteCommandInput) {
+    return DocumentClient.send(new BatchWriteCommand(batch))
+  }
+
+  static #key(key: Keys, sk?: string) {
+    if (typeof key == 'object' && key != null) return key
+
+    let pk: string
+    let skValue: string | undefined
+
+    if (Array.isArray(key)) {
+      pk = key[0]
+      skValue = key[1] ?? sk
+    } else {
+      pk = key
+      skValue = sk
+    }
+
+    const keys = {PK: pk}
+    // @ts-ignore
+    if (skValue) keys.SK = skValue
+
+    return keys
   }
 }

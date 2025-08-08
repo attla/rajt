@@ -1,18 +1,11 @@
 import {
-  DynamoDBDocumentClient,
-  BatchGetCommand,
-  BatchWriteCommand,
-  DeleteCommand,
-  GetCommand,
-  PutCommand,
-  QueryCommand,
-  ScanCommand,
-  UpdateCommand,
+  UpdateCommandInput,
 } from '@aws-sdk/lib-dynamodb'
 import type { ModelMetadata, Keys, Model, Filter } from './types'
 import { getModelMetadata } from './decorators'
 import QueryBuilder from './query-builder'
 import Compact from './compact'
+import { RawClient } from './client'
 import { isArraySchema } from './schema'
 import getLength from '../utils/lenght'
 
@@ -20,17 +13,14 @@ export default class AbstractModel<T extends object> {
   #meta: ModelMetadata
   cls?: Model<T>
   lastKey?: Record<string, any>
-  #db: DynamoDBDocumentClient
   #queryBuilder?: QueryBuilder
   #model?: AbstractModel<T>
 
   constructor(
     cls: Model<T> | ModelMetadata,
-    db: DynamoDBDocumentClient,
     queryBuilder?: QueryBuilder,
     model?: AbstractModel<T>
   ) {
-    this.#db = db
     this.#queryBuilder = queryBuilder
     this.#model = model
 
@@ -70,34 +60,25 @@ export default class AbstractModel<T extends object> {
   where(builderFn: (q: QueryBuilder) => void) {
     const qb = new QueryBuilder()
     builderFn(qb)
-    return new AbstractModel<T>(this.#meta, this.#db, qb, this)
+    return new AbstractModel<T>(this.#meta, qb, this)
   }
 
   async scan(filterFn?: Filter<T>) {
-    const result = await this.#db.send(new ScanCommand({
-      TableName: this.table,
-      ...this.#queryBuilder?.filters,
-    }))
+    const result = await RawClient.scan(this.table, this.#queryBuilder?.filters)
 
     this.lastEvaluatedKey = result.LastEvaluatedKey
     return this.#processItems(result.Items, filterFn)
   }
 
   async query(filterFn?: Filter<T>) {
-    const result = await this.#db.send(new QueryCommand({
-      TableName: this.table,
-      ...this.#queryBuilder?.conditions,
-    }))
+    const result = await RawClient.query(this.table, this.#queryBuilder?.conditions)
 
     this.lastEvaluatedKey = result.LastEvaluatedKey
     return this.#processItems(result.Items, filterFn)
   }
 
   async get(key: Keys, sk?: string) {
-    const result = await this.#db.send(new GetCommand({
-      TableName: this.table,
-      Key: this.#key(key, sk),
-    }))
+    const result = await RawClient.get(this.table, key, sk)
     return result.Item ? this.#processItem(result.Item) : undefined
   }
 
@@ -112,7 +93,7 @@ export default class AbstractModel<T extends object> {
       this.#validateKeys(item)
     }
 
-    await this.#db.send(new PutCommand({ TableName: this.table, Item: item }))
+    await RawClient.put(this.table, item)
     return this.#processItem(item, keys)
   }
 
@@ -136,28 +117,23 @@ export default class AbstractModel<T extends object> {
     const UpdateExpression = 'SET ' + UpdateExpressionParts.join(', ')
     const ExpressionAttributeNames = Object.fromEntries(Object.keys(attrs).map(k => [`#${k}`, k]))
 
-    await this.#db.send(new UpdateCommand({
-      TableName: this.table,
-      Key: this.#key(key),
+    await RawClient.update(this.table, {
       UpdateExpression,
       ExpressionAttributeValues,
       ExpressionAttributeNames,
-    }))
+    } as UpdateCommandInput, key)
 
     return this.#processItem(attrs, keys)
   }
 
   async delete(key: Keys, sk?: string) {
-    return this.#db.send(new DeleteCommand({
-      TableName: this.table,
-      Key: this.#key(key, sk),
-    }))
+    return RawClient.delete(this.table, key, sk)
   }
 
   async batchGet(keys: Array<Keys>) {
-    const result = await this.#db.send(new BatchGetCommand({
+    const result = await RawClient.batchGet({
       RequestItems: { [this.table]: { Keys: keys.map(key => this.#key(key)) } },
-    }))
+    })
     return (result.Responses?.[this.table] as T[] || []).map(item => this.#processItem(item))
   }
 
@@ -171,7 +147,7 @@ export default class AbstractModel<T extends object> {
       return null
     }).filter(Boolean) as any[]
 
-    return this.#db.send(new BatchWriteCommand({ RequestItems: { [this.table]: WriteRequests } }))
+    return RawClient.batchWrite({ RequestItems: { [this.table]: WriteRequests } })
   }
 
   async deleteMany(keys: Array<Keys>) {
