@@ -75,7 +75,7 @@ export default class AbstractModel<T extends object> {
   }
 
   async get(key: Keys, sk?: string) {
-    const result = await RawClient.get(this.table, key, sk)
+    const result = await RawClient.get(this.table, this.#key(key, sk))
     return result.Item ? this.#processItem(result.Item) : undefined
   }
 
@@ -118,13 +118,13 @@ export default class AbstractModel<T extends object> {
       UpdateExpression,
       ExpressionAttributeValues,
       ExpressionAttributeNames,
-    }, key)
+    }, this.#key(key))
 
     return this.#processItem(attrs, keys)
   }
 
   async delete(key: Keys, sk?: string) {
-    return RawClient.delete(this.table, key, sk)
+    return RawClient.delete(this.table, this.#key(key, sk))
   }
 
   async batchGet(keys: Array<Keys>) {
@@ -157,28 +157,7 @@ export default class AbstractModel<T extends object> {
 
   #key(key: Keys, sk?: string) {
     if (!this.#meta.keys) return {}
-
-    let pk: string
-    let skValue: string | undefined
-    if (Array.isArray(key)) {
-      pk = key[0]
-      skValue = key[1] ?? sk
-    } else {
-      pk = key
-      skValue = sk
-    }
-
-    const keys = { [this.#meta.keys.PK]: pk }
-
-    if (this.#meta.keys?.SK) {
-      if (skValue) {
-        keys[this.#meta.keys.SK] = skValue
-      } else if (this.#meta.defaultSK) {
-        keys[this.#meta.keys.SK] = this.#meta.defaultSK
-      }
-    }
-
-    return keys
+    return RawClient.key(key, sk, this.#meta.keys, this.#meta.defaultSK)
   }
 
   #getItemKey(item: Partial<T>, key?: Keys): Record<string, string> {

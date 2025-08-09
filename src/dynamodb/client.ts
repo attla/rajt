@@ -21,7 +21,7 @@ import {
 } from '@aws-sdk/lib-dynamodb'
 import type { NativeAttributeValue } from '@aws-sdk/util-dynamodb'
 import AbstractModel from './model'
-import { Keys } from './types'
+import { Keys, KeySchema } from './types'
 
 const client = new DynamoDBClient(process.env?.AWS_SAM_LOCAL ? {
   region: process.env.AWS_REGION || "us-east-1",
@@ -48,7 +48,7 @@ export class RawClient {
   static async get(TableName: string, key: Keys | Record<string, string>, sk?: string) {
     return DocumentClient.send(new GetCommand({
       TableName,
-      Key: this.#key(key, sk),
+      Key: this.key(key, sk),
     }))
   }
 
@@ -71,12 +71,12 @@ export class RawClient {
     sk?: string
   ) {
     return DocumentClient.send(new UpdateCommand({
-      ...filters, TableName, Key: this.#key(key, sk),
+      ...filters, TableName, Key: this.key(key, sk),
     }))
   }
 
   static async delete(TableName: string, key: Keys | Record<string, string>, sk?: string) {
-    return DocumentClient.send(new DeleteCommand({ TableName, Key: this.#key(key, sk) }))
+    return DocumentClient.send(new DeleteCommand({ TableName, Key: this.key(key, sk) }))
   }
 
   static async batchGet(batch: BatchGetCommandInput) {
@@ -87,7 +87,12 @@ export class RawClient {
     return DocumentClient.send(new BatchWriteCommand(batch))
   }
 
-  static #key(key: Keys | Record<string, string>, sk?: string) {
+  static key(
+    key: Keys | Record<string, string>,
+    sk?: string,
+    schema?: KeySchema,
+    defaultSK?: string,
+  ) {
     let pk: string
     let skValue: string | undefined
 
@@ -101,9 +106,22 @@ export class RawClient {
       skValue = sk
     }
 
-    const keys = {PK: pk}
-    // @ts-ignore
-    if (skValue) keys.SK = skValue
+    if (!schema) {
+      const keys = {PK: pk}
+      // @ts-ignore
+      if (skValue) keys.SK = skValue
+      return keys
+    }
+
+    const keys = { [schema.PK]: pk }
+
+    if (schema?.SK) {
+      if (skValue) {
+        keys[schema.SK] = skValue
+      } else if (defaultSK) {
+        keys[schema.SK] = defaultSK
+      }
+    }
 
     return keys
   }
