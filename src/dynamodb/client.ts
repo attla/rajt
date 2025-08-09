@@ -88,14 +88,14 @@ export class RawClient {
   }
 
   static #key(key: Keys | Record<string, string>, sk?: string) {
-    if (typeof key == 'object' && key != null) return key
-
     let pk: string
     let skValue: string | undefined
 
     if (Array.isArray(key)) {
       pk = key[0]
       skValue = key[1] ?? sk
+    } else if (typeof key == 'object' && key != null) {
+      return key
     } else {
       pk = key
       skValue = sk
