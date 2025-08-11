@@ -24,11 +24,11 @@ import AbstractModel from './model'
 import { Keys, KeySchema } from './types'
 
 const client = new DynamoDBClient(process.env?.AWS_SAM_LOCAL ? {
-  region: process.env.AWS_REGION || "us-east-1",
+  region: process.env.AWS_REGION || 'us-east-1',
   endpoint: process.env.AWS_ENDPOINT_URL || undefined,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "DUMMYIDEXAMPLE",
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "DUMMYEXAMPLEKEY",
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'DUMMYIDEXAMPLE',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'DUMMYEXAMPLEKEY',
   },
 } : {})
 
@@ -46,10 +46,7 @@ export class Dynamodb {
 
 export class RawClient {
   static async get(TableName: string, key: Keys | Record<string, string>, sk?: string) {
-    return DocumentClient.send(new GetCommand({
-      TableName,
-      Key: this.key(key, sk),
-    }))
+    return DocumentClient.send(new GetCommand({ TableName, Key: this.key(key, sk) }))
   }
 
   static async scan(TableName: string, filters: Omit<ScanCommandInput, 'TableName'>) {
