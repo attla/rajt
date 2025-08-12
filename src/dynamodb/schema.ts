@@ -2,8 +2,14 @@ import { z, ZodTypeAny } from 'zod'
 import type { SchemaStructure } from './types'
 
 const m = Symbol('a')
-export function isArraySchema(v: any) : boolean {
+export function isArraySchema(v: any): boolean {
   return v[m] || false
+}
+
+export function arraySchema(v: any): any {
+  // @ts-ignore
+  v[m] = true
+  return v
 }
 
 export function extractZodKeys(schema: ZodTypeAny): SchemaStructure {
@@ -12,11 +18,11 @@ export function extractZodKeys(schema: ZodTypeAny): SchemaStructure {
       const inner = unwrap(value as ZodTypeAny)
 
       if (inner instanceof z.ZodObject)
-        return { [key]: extractZodKeys(inner) }
+        return notEmpty(key, extractZodKeys(inner))
 
       if (inner instanceof z.ZodArray) {
         const item = unwrap(inner._def.type as ZodTypeAny)
-        return item instanceof z.ZodObject ? { [key]: extractZodKeys(item) } : key
+        return item instanceof z.ZodObject ? notEmpty(key, extractZodKeys(item)) : key
       }
 
       return key
@@ -25,12 +31,8 @@ export function extractZodKeys(schema: ZodTypeAny): SchemaStructure {
 
   if (schema instanceof z.ZodArray) {
     const item = unwrap(schema._def.type as ZodTypeAny)
-    if (item instanceof z.ZodObject) {
-      const r = extractZodKeys(item)
-      // @ts-ignore
-      r[m] = true
-      return r
-    }
+    if (item instanceof z.ZodObject)
+      return arraySchema(extractZodKeys(item))
 
     return []
   }
@@ -58,6 +60,10 @@ export function unwrap(schema: ZodTypeAny): ZodTypeAny {
     return unwrap(schema._def.schema)
 
   return schema
+}
+
+function notEmpty(key: string, schema: SchemaStructure): string | Record<string, SchemaStructure> {
+  return schema?.length ? {[key]: schema} : key
 }
 
 export function Schema<
