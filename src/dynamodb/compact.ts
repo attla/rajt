@@ -29,14 +29,28 @@ export default class Compact {
   }
 
   static {
-    this.#reverseTypeMap = Object.fromEntries(Object.entries(this.#typeMap).map(([k, v]) => [v, k.replace(/"/g, "'")]))
-    this.#typeRegex = this.#mapRegex(Object.keys(this.#typeMap))
-    this.#reverseTypeRegex = this.#mapRegex(Object.keys(this.#reverseTypeMap))
+    const keys = []
+    const values = []
+    const reverseTypeMap: Record<string, string> = {}
+    for (const key in this.#typeMap) {
+      const val = this.#typeMap[key]
+      const k = key.replace(/"/g, "'")
+      keys.push(k)
+      values.push(val)
+
+      reverseTypeMap[val] = k
+      this.#typeMap[k] = val
+    }
+
+    this.#reverseTypeMap = reverseTypeMap
+    this.#typeRegex = this.#mapRegex(keys)
+    this.#reverseTypeRegex = this.#mapRegex(values)
   }
 
   static encode(obj: any, schema: SchemaStructure): string {
     const seen: any[] = []
-    return this.#minify(
+
+    return this.#pack(
       JSON.stringify(this.zip(obj, schema, seen))
         .replace(/"\^(\d+)"/g, '^$1')
         .replace(/"/g, '~TDQ~')
@@ -49,7 +63,7 @@ export default class Compact {
   static smartDecode<T = any>(val: any, schema: SchemaStructure): T {
     if (!val) return val as T
 
-    if (Array.isArray(val))
+    if (Array.isArray(val)) // @ts-ignore
       return val.map((i: {v: string}) => this.decode<T>(i?.V, schema)).filter(Boolean) as T
 
     return val?.V ? this.decode<T>(val.V, schema) : val
@@ -59,7 +73,7 @@ export default class Compact {
     if (!val || typeof val !== 'string') return val as T
 
     return this.withSchema(this.unzip(JSON.parse(
-      this.#deminify(val)
+      this.#unpack(val)
         .replace(/"/g, '~TSQ~')
         .replace(/'/g, '"')
         .replace(/~TSQ~/g, "'")
@@ -72,7 +86,7 @@ export default class Compact {
     if (Array.isArray(obj))
       return obj?.length ? obj.map(item => this.zip(item, schema, seen)) : []
 
-    if (!obj || [null, true, false].includes(obj)) return obj
+    if (this.#cantZip(obj)) return obj
 
     return schema.map(key => {
       if (typeof key === 'string')
@@ -96,8 +110,7 @@ export default class Compact {
     const type = typeof val
     const length = getLength(val, type)
 
-    if ([null, true, false].includes(val) || type != 'object' && length < 2)
-      return val
+    if (this.#cantZip(val, type, length)) return val
 
     if (type == 'object') {
       for (const key in val)
@@ -131,7 +144,7 @@ export default class Compact {
     if (!key) return undefined
 
     if (typeof key == 'string')
-      return [key, value || null]
+      return [key, value === undefined ? null : value]
 
     const mainKey = Object.keys(key)[0]
     const subKeys = key[mainKey]
@@ -145,7 +158,7 @@ export default class Compact {
         : [mainKey, this.withSchema(value, subKeys)]
     }
 
-    return [mainKey, value || null]
+    return [mainKey, value === undefined ? null : value]
   }
 
   static memo(val: any, seen: any[]): any {
@@ -161,8 +174,7 @@ export default class Compact {
     }
 
     const length = getLength(val, type)
-    if ([null, true, false].includes(val) || type != 'object' && length < 2)
-      return val
+    if (this.#cantZip(val, type, length)) return val
 
     const index = seen.indexOf(val)
     if (index !== -1)
@@ -177,11 +189,17 @@ export default class Compact {
     return new RegExp(`(?<![^\\s,\\[\\{:])(${keys.join('|')})(?![^\\s,\\]\\}:])`, 'g')
   }
 
-  static #minify(val: string): string {
+  static #pack(val: string): string {
     return val.replace(this.#typeRegex, match => this.#typeMap[match])
   }
 
-  static #deminify(val: string): string {
+  static #unpack(val: string): string {
     return val.replace(this.#reverseTypeRegex, match => this.#reverseTypeMap[match])
+  }
+
+  static #cantZip(val: any, type: string = '', length: number = 0) {
+    if (!val || [null, true, false, 'true', 'false'].includes(val)) return true
+
+    return !type && !length ? false : type != 'object' && length < 2
   }
 }
