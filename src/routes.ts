@@ -36,7 +36,6 @@ const walk = async (dir: string, baseDir: string, fn: Function, parentMw: string
   }
 }
 
-
 export async function getRoutes(
   dirs: string[] = ['actions', 'features']
 ): Promise<Route[]> {
