@@ -11,10 +11,10 @@
 
 ## Packages
 
-| Package                                         | Version (click for changelogs)                                                                                                    |
-| ----------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
-| [rajt](https://github.com/attla/rajt)                           | [![rajt version](https://img.shields.io/npm/v/rajt.svg?label=%20)](https://github.com/attla/rajt/CHANGELOG.md)                                    |
-| [create-rajt](https://github.com/attla/create-rajt)             | [![create-rajt version](https://img.shields.io/npm/v/create-rajt.svg?label=%20)](https://github.com/attla/create-rajt/CHANGELOG.md)               |
+| Package                                             | Version                                                                        |
+| --------------------------------------------------- | :----------------------------------------------------------------------------- |
+| [rajt](https://github.com/attla/rajt)               | ![rajt version](https://img.shields.io/npm/v/rajt.svg?label=%20)               |
+| [create-rajt](https://github.com/attla/create-rajt) | ![create-rajt version](https://img.shields.io/npm/v/create-rajt.svg?label=%20) |
 
 ## License
 
