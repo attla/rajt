@@ -32,6 +32,22 @@ export function Delete(path = '/') {
   return method('delete', path)
 }
 
+export function Head(path = '/') {
+  return method('head', path)
+}
+
+export function Options(path = '/') {
+  return method('options', path)
+}
+
+export function Connect(path = '/') {
+  return method('connect', path)
+}
+
+export function Trace(path = '/') {
+  return method('trace', path)
+}
+
 export function Middleware(...handlers: MiddlewareType[]) {
   return function (target: any) {
     mergeMiddleware(target, ...handlers)
