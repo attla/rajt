@@ -4,48 +4,82 @@ import Response from './response'
 import { Ability, Auth as Gate } from './auth'
 import mergeMiddleware from './utils/merge-middleware'
 
-function method(method: string, path = '/') {
-  return function (target: any) {
-    target.m = method
-    target.p = path
-    target.mw = []
+function method(method: string, ...args: any[]): void | ClassDecorator {
+  if (args.length === 1 && typeof args[0] === 'function') {
+    return _method(method, '/', args[0])
   }
+
+  const path = typeof args[0] === 'string' ? args[0] : '/'
+  return (target: Function) => _method(method, path, target)
 }
 
-export function Get(path = '/') {
-  return method('get', path)
+function _method(method: string, path = '/', target: Function | any) {
+  target.m = method
+  target.p = path
+  target.mw = []
 }
 
-export function Post(path = '/') {
-  return method('post', path)
+export function Get(): ClassDecorator
+export function Get(target: Function): void
+export function Get(path: string): ClassDecorator
+export function Get(...args: any[]): void | ClassDecorator {
+  return method('get', ...args)
 }
 
-export function Put(path = '/') {
-  return method('put', path)
+export function Post(): ClassDecorator
+export function Post(target: Function): void
+export function Post(path: string): ClassDecorator
+export function Post(...args: any[]): void | ClassDecorator {
+  return method('post', ...args)
 }
 
-export function Patch(path = '/') {
-  return method('patch', path)
+export function Put(): ClassDecorator
+export function Put(target: Function): void
+export function Put(path: string): ClassDecorator
+export function Put(...args: any[]): void | ClassDecorator {
+  return method('put', ...args)
 }
 
-export function Delete(path = '/') {
-  return method('delete', path)
+export function Patch(): ClassDecorator
+export function Patch(target: Function): void
+export function Patch(path: string): ClassDecorator
+export function Patch(...args: any[]): void | ClassDecorator {
+  return method('patch', ...args)
 }
 
-export function Head(path = '/') {
-  return method('head', path)
+export function Delete(): ClassDecorator
+export function Delete(target: Function): void
+export function Delete(path: string): ClassDecorator
+export function Delete(...args: any[]): void | ClassDecorator {
+  return method('delete', ...args)
 }
 
-export function Options(path = '/') {
-  return method('options', path)
+export function Head(): ClassDecorator
+export function Head(target: Function): void
+export function Head(path: string): ClassDecorator
+export function Head(...args: any[]): void | ClassDecorator {
+  return method('head', ...args)
 }
 
-export function Connect(path = '/') {
-  return method('connect', path)
+export function Options(): ClassDecorator
+export function Options(target: Function): void
+export function Options(path: string): ClassDecorator
+export function Options(...args: any[]): void | ClassDecorator {
+  return method('options', ...args)
 }
 
-export function Trace(path = '/') {
-  return method('trace', path)
+export function Connect(): ClassDecorator
+export function Connect(target: Function): void
+export function Connect(path: string): ClassDecorator
+export function Connect(...args: any[]): void | ClassDecorator {
+  return method('connect', ...args)
+}
+
+export function Trace(): ClassDecorator
+export function Trace(target: Function): void
+export function Trace(path: string): ClassDecorator
+export function Trace(...args: any[]): void | ClassDecorator {
+  return method('trace', ...args)
 }
 
 export function Middleware(...handlers: MiddlewareType[]) {
