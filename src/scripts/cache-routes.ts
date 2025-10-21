@@ -2,8 +2,15 @@ import { existsSync, writeFileSync } from 'node:fs'
 import { config } from 'dotenv'
 import { getRoutes, getMiddlewares } from '../routes'
 import ensureDir from '../utils/ensuredir'
+import versionSHA from '../utils/version-sha'
 
-config({ path: '../../.env.dev' })
+const env = Object.entries(
+  config({ path: '../../.env.prod' })?.parsed || {}
+).filter(([key, val]) => key?.toLowerCase().indexOf('aws') != 0) // prevent AWS credentials
+
+const version = versionSHA('../../.git')
+env.push(['VERSION_SHA', process.env['VERSION_SHA'] = version])
+env.push(['VERSION_HASH', process.env['VERSION_HASH'] = version?.substring(0, 7)])
 
 async function cacheRoutes() {
   const rolePath = '../../roles.json'
@@ -16,6 +23,8 @@ async function cacheRoutes() {
   const iPath = '../../tmp/import-routes.mjs'
   ensureDir(iPath)
   writeFileSync(iPath, `// AUTO-GENERATED FILE - DO NOT EDIT
+${env.map(([key, val]) => `process.env.${key} = ${JSON.stringify(val)}`).join('\n')}
+
 import { registerHandler, registerMiddleware } from '../node_modules/rajt/src/register'
 
 ${routes.map(r => `import ${r.name} from '../${normalizePath(r.file)}'`).join('\n')}
