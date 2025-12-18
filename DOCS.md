@@ -1,6 +1,4 @@
-This framework is fully geared towards the serverless world, specifically AWS Lambda / Cloudflare Workers.
-
-> It works with bun and LLRT runtimes ;)
+This framework is fully geared towards the serverless world, specifically AWS Lambda (Node.js, bun and LLRT runtime) / Cloudflare Workers.
 
 - [Installation](#install)
 - [Endpoints](#actionsfeatures)
@@ -50,21 +48,34 @@ The organization of the application's endpoints is done through a folder structu
 
 All endpoints must be encapsulated in files inside the `./actions/` folder; `./features/` is also accepted.
 
-#### File/folder names must use urlBase64Safe:
+#### File/folder names must use urlBase64Safe ([RFC4648](https://datatracker.ietf.org/doc/html/rfc4648#section-5)):
 * Allowed characters: `a-z`, `A-Z`, `0-9`, `-`, `_`;
-* Valid examples: `create-user.ts`, `getPosts_v2.ts`;
-
-#### The folder structure defines the route hierarchy:
+* Recommended examples inside `./actions` folder:
 
 ```bash
 .
 └── actions/
+    ├── orgs/
+    │   ├── list.ts            → [GET]    /orgs
+    │   ├── create.ts          → [POST]   /orgs
+    │   ├── get.ts             → [GET]    /orgs/$ORG_ID
+    │   └── members/
+    │       ├── list.ts        → [GET]    /orgs/$ORG_ID/members
+    │       ├── add.ts         → [POST]   /orgs/$ORG_ID/members/$USER_ID
+    │       ├── get.ts         → [GET]    /orgs/$ORG_ID/members/$USER_ID
+    │       ├── edit.ts        → [PUT]    /orgs/$ORG_ID/members/$USER_ID
+    │       ├── inactive.ts    → [PATCH]  /orgs/$ORG_ID/members/$USER_ID/inactive
+    │       └── remove.ts      → [DELETE] /orgs/$ORG_ID/members/$USER_ID
     ├── users/
-    │   ├── members/
-    │   │   └── create.ts   → /users/members/create
-    │   └── index.ts        → /users
-    ├── posts.ts            → /posts
-    └── index.ts            → /
+    │   ├── user_new.ts        → [POST]   /users/new
+    │   ├── user-get.ts        → [GET]    /users/$ID
+    │   ├── UserEdit.ts        → [PATCH]  /users/$ID
+    │   ├── Userdelete.ts      → [DELETE] /users/$ID/delete
+    │   ├── userblock.ts       → [PATCH]  /users/$ID/block
+    │   ├── userSearch.ts      → [GET]    /users/search
+    │   └── index.ts           → [GET]    /users
+    ├── posts.ts               → [GET]    /posts
+    └── index.ts               → [GET]    /
 ```
 
 #### Index Files:
@@ -83,7 +94,7 @@ Settings in `index.ts` files affect all child routes
 
 #### HTTP Verbs:
 
-Files must explicitly export the HTTP verb (`GET`, `POST`, `PUT`, `PATCH` or `DELETE`)
+Files must explicitly export the HTTP verb (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS`, `HEAD`, `CONNECT`, `TRACE`)
 
 Files without a declared HTTP verb are ignored in route matching
 
@@ -91,13 +102,13 @@ Files without a declared HTTP verb are ignored in route matching
 
 ```ts
 // file: ./actions/index.ts
-import { Response } from 'rajt'
+import { Action, Response } from 'rajt'
 import { Get } from 'rajt/http'
 import type { Context } from 'rajt/types'
 
 @Get('/')
-export default class Index {
-  async handle(c: Context) {
+export default class Index extends Action {
+  static async handle(c: Context) {
     return Response.ok({ message: 'Hello world! ;)' })
   }
 }
@@ -120,24 +131,29 @@ Valid validation targets:
 
 ```ts
 // file: ./actions/users/new
-import { Action } from 'rajt'
+import { Action, Request, Response } from 'rajt'
 import { Post } from 'rajt/http'
 import type { Context } from 'rajt/types'
 import { z } from 'zod'
 
+const RequestSchema = z.object({
+  name: z.string(),
+  email: z.string().email(),
+  age: z.number().optional().nullable(),
+})
+
+type IRequestSchema = z.infer<typeof RequestSchema>
+
 @Post('/users/new')
 export default class UsersNew extends Action {
-  rules() {
-    return this.rule('json', z.object({
-      name: z.string(),
-      age: z.number(),
-    }))
+  static rules() {
+    return this.rule('json', RequestSchema)
   }
 
-  async handle(c: Context) {
-    const user = await this.body<{name: string, age: number}>()
+  static async handle(c: Context) {
+    const user = await Request.body<IRequestSchema>()
     console.log(user)
-    return this.response.ok({ message: 'User created', data: user })
+    return Request.created({ message: 'User created', data: user })
   }
 }
 ```
@@ -146,14 +162,14 @@ Using multiple validations:
 
 ```ts
 // file: ./actions/users/list
-import { Action } from 'rajt'
+import { Action, Request, Response } from 'rajt'
 import { Get } from 'rajt/http'
 import type { Context } from 'rajt/types'
 import { z } from 'zod'
 
 @Get('/users/:org')
 export default class UsersNew extends Action {
-  rules() {
+  static rules() {
     return [
       this.rule('query').schema(
         z.object({
@@ -166,12 +182,12 @@ export default class UsersNew extends Action {
     ]
   }
 
-  async handle(c: Context) {
-    const query = await this.query<>()
+  static async handle(c: Context) {
+    const query = await Request.query()
     console.log(query)
-    const org = await this.param('org')
+    const org = await Request.param('org')
     console.log(org)
-    return this.response.ok({ message: 'Listing users...' })
+    return Response.ok({ message: 'Listing orgs...' })
   }
 }
 ```
