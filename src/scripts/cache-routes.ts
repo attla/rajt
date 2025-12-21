@@ -23,7 +23,7 @@ async function cacheRoutes() {
   const iPath = '../../tmp/import-routes.mjs'
   ensureDir(iPath)
   writeFileSync(iPath, `// AUTO-GENERATED FILE - DO NOT EDIT
-${env.map(([key, val]) => `process.env.${key} = ${JSON.stringify(val)}`).join('\n')}
+${env?.length ? `import { Envir } from '../node_modules/t0n/dist/index'\nEnvir.add({${env.map(([key, val]) => key + ':' + JSON.stringify(val)).join(',')}})` : ''}
 
 import { registerHandler, registerMiddleware } from '../node_modules/rajt/src/register'
 

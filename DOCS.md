@@ -23,6 +23,11 @@ This framework is fully geared towards the serverless world, specifically AWS La
     - [Pagination](#pagination)
   - [Schema](#schema)
   - [Repository](#repository)
+- [Commands](#commands)
+- [Environments](#environments)s
+- [Deploy](#deploy)
+  - [AWS Lambda Deployment](#aws-lambda-deployment)
+  - [Cloudflare Workers Deployment](#cloudflare-workers-deployment)
 
 ## Install
 
@@ -534,3 +539,46 @@ export default class UserRepository extends Repository(UserSchema, UserModel, 'U
   }
 }
 ```
+
+## Commands
+
+List of available commands:
+
+| Command | Description |
+| -: | :- |
+| `dev` | Start the localhost server |
+| `cf:build` | Performs build for Cloudflare Workers |
+| `cf:build:watch` | Performs the build for Cloudflare Workers, and when any file is changed, another build is automatically executed |
+| `cf:local` | Build and start the local Cloudflare Workers environment server |
+| `cf:deploy` | Perform the build and execute wrangler deploy |
+| `aws:build` | Performs build for AWS Lambda |
+| `aws:build:watch` | Performs the build for AWS Lambda, and when any file is changed, another build is automatically executed |
+| `aws:local` | Build and start the local AWS Lambda environment server |
+| `aws:package` | Perform the build and execute sam:package |
+| `aws:deploy` | Perform the build and execute sam:package and sam:deploy |
+| `aws:update` | Perform the build, package the build file into a zip file and execute sam:update |
+| `clean` | Remove all auto-generated files: build, cache, etc.. |
+| `clean:build` | Remove files generated with build |
+| `clean:temp` | Remove cache files |
+| `zip` | Package the build file into a zip file |
+| `ensure-dirs` | Deletes the automatically generated file directories and recreates them with the appropriate permissions |
+| `cache:routes` | Create cache file of routes, middlewares, and configurations |
+
+## Environments
+
+Define the development env vars in `.env.dev` file, and the production in `.env.prod` file.
+
+## Deploy
+
+#### AWS Lambda Deployment
+
+```bash
+bun run aws:deploy
+```
+
+#### Cloudflare Workers Deployment
+
+```bash
+bun run cf:deploy
+```
+

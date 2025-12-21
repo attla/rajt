@@ -6,6 +6,9 @@ import { registerHandler, registerMiddleware } from './register'
 import { Ability } from './auth'
 import { getAvailablePort } from './utils/port'
 import jsonImport from './utils/json-import'
+import { setEnv, detectEnvironment } from './utils/environment'
+
+setEnv(detectEnvironment())
 
 config({ path: '../../.env.dev' })
 

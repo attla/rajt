@@ -1,7 +1,20 @@
 import esbuild from 'esbuild'
-import { dirname, join, relative } from 'path'
-import { fileURLToPath } from 'url'
-import { readFile, stat, writeFile } from 'fs/promises'
+import { basename, dirname, join, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { mkdirSync, existsSync, readdirSync, rmSync, copyFileSync } from 'node:fs'
+import { readFile, stat, writeFile } from 'node:fs/promises'
+
+const fail = (e) => {
+  console.error('❌ Build failed' + (e ? ':' : ''), e || '')
+  process.exit(1)
+}
+
+const args = process.argv.slice(2)
+const platform = args[0] || ''
+
+const platforms = ['aws', 'cf']
+if (!platform || !platforms.includes(platform))
+  fail()
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -15,17 +28,26 @@ const formatTime = (ms) => {
   return `${(ms / 1000).toFixed(2)}s`
 }
 
+const isCF = platform == 'cf'
 const buildOptions = {
-  entryPoints: [join(__dirname, 'prod.ts')],
+  entryPoints: [join(__dirname, `prod-${platform}.ts`)],
   bundle: true,
   minify: true,
   outfile: join(__dirname, '../../../dist/index.js'),
-  platform: 'node',
-  target: 'node20',
+  platform: isCF ? 'browser' : 'node20',
+  target: isCF ? 'es2022' : 'node20',
+  conditions: isCF ? ['worker', 'browser'] : [],
   format: 'esm',
   treeShaking: true,
   legalComments: 'none',
-  external: ['@aws-sdk', '@smithy'],
+  external: [
+    '@aws-sdk', '@smithy',
+    ...(isCF ? [
+      'cloudflare:workers',
+      'node:crypto', 'crypto',
+      'node:buffer', 'buffer',
+    ] : []),
+  ],
   metafile: true,
   write: false,
   plugins: [
@@ -69,21 +91,33 @@ const buildOptions = {
   ]
 }
 
-try {
-  const startTime = Date.now()
-  const result = await esbuild.build(buildOptions)
+const startTime = Date.now()
+const cwd = join(__dirname, '../../..')
 
-  const cwd = join(__dirname, '../../..')
+const distDir = join(cwd, 'dist')
+existsSync(distDir)
+  ? readdirSync(distDir).forEach(file => rmSync(join(distDir, file), { recursive: true, force: true }))
+  : mkdirSync(distDir, { recursive: true })
 
-  const outputFile = buildOptions.outfile
-  const stats = await stat(outputFile)
-  const size = formatSize(stats.size)
+for (const file of await readdirSync(distDir))
+  await rmSync(join(distDir, file))
 
-  console.log(`\n⚡️ Done in ${formatTime(Date.now() - startTime)}`)
-  console.log(`    ${relative(join(cwd, 'node_modules/rajt/src'), buildOptions.entryPoints[0])} → ${relative(cwd, outputFile)}`)
-  console.log(`    Size: ${size}`)
-  console.log(`    Files: ${Object.keys(result.metafile.outputs).length}`)
-} catch (error) {
-  console.error('❌ Build failed:', error)
-  process.exit(1)
+for (let file of [
+  'wrangler.toml',
+]) {
+  file = join(cwd, file)
+  if (existsSync(file))
+    copyFileSync(file, join(cwd, 'dist', basename(file)))
 }
+
+esbuild.build(buildOptions)
+  .then(async result => {
+    const outputFile = buildOptions.outfile
+    const stats = await stat(outputFile)
+    const size = formatSize(stats.size)
+
+    console.log(`\n⚡️ Done in ${formatTime(Date.now() - startTime)}`)
+    console.log(`    ${relative(join(cwd, 'node_modules/rajt/src'), buildOptions.entryPoints[0])} → ${relative(cwd, outputFile)}`)
+    console.log(`    Size: ${size}`)
+    console.log(`    Files: ${Object.keys(result.metafile.outputs).length}`)
+  }).catch(fail)

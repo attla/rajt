@@ -13,7 +13,7 @@ export default function getLastCommitHash(path: string = '.git') {
 
     return headContent
   } catch (e) {
-    console.error('Error reading HEAD file: ', e?.message)
+    // console.error('Error reading HEAD file: ', e?.message)
     return null
   }
 }

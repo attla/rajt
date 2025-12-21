@@ -1,4 +1,3 @@
-import { handle } from 'hono/aws-lambda'
 import createApp from './create-app'
 import { Ability } from './auth'
 
@@ -16,5 +15,4 @@ Ability.fromRoutes(routes)
 // @ts-ignore
 const app = createApp({ routes })
 
-// export default app // AWS Lambda & Cloudflare Workers
-export const handler = handle(app) // AWS Lambda (LLRT)
+export default app
