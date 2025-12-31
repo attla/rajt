@@ -102,12 +102,14 @@ existsSync(distDir)
 for (const file of await readdirSync(distDir))
   await rmSync(join(distDir, file))
 
-for (let file of [
-  'wrangler.toml',
-]) {
-  file = join(cwd, file)
-  if (existsSync(file))
-    copyFileSync(file, join(cwd, 'dist', basename(file)))
+if (isCF) {
+  for (let file of [
+    'wrangler.toml',
+  ]) {
+    file = join(cwd, file)
+    if (existsSync(file))
+      copyFileSync(file, join(cwd, 'dist', basename(file)))
+  }
 }
 
 esbuild.build(buildOptions)

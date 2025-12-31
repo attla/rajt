@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
 import { config } from 'dotenv'
 import { serve } from '@hono/node-server'
 import createApp from './create-app'
@@ -10,7 +12,9 @@ import { setEnv, detectEnvironment } from './utils/environment'
 
 setEnv(detectEnvironment())
 
-config({ path: '../../.env.dev' })
+const __dirname = join(dirname(fileURLToPath(import.meta.url)), '../../../')
+
+config({ path: join(__dirname, '.env.dev') })
 
 let routes = await getRoutes()
 routes.forEach(r => registerHandler(r.name, r.handle))
@@ -20,7 +24,7 @@ const middlewares = await getMiddlewares()
 middlewares.forEach(mw => registerMiddleware(mw.handle))
 
 Ability.fromRoutes(routes)
-Ability.roles = jsonImport('../../../../roles.json')
+Ability.roles = jsonImport(join(__dirname, 'roles.json'))
 
 const fetch = createApp({ routes }).fetch
 
@@ -32,6 +36,4 @@ getAvailablePort(desiredPort)
 
     console.log(`🚀 API running on http://localhost:${port}`)
     serve({ fetch, port })
-  }).catch(err => {
-    console.error('Error finding available port:', err)
-  })
+  }).catch(e => logger.error('Error finding available port:', e))

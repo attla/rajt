@@ -4,6 +4,9 @@
   "version": "0.0.57",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "rajt": "./src/bin/rajt.js"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./auth": "./src/auth/index.ts",
@@ -18,6 +21,7 @@
     "src"
   ],
   "scripts": {
+    "rajt": "./src/bin/rajt.js",
     "dev": "tsx watch src/dev.ts",
     "aws:build": "bun run --silent cache:routes && bun run --silent aws:export && bun run --silent clean:temp",
     "cf:build": "bun run --silent cache:routes && bun run --silent cf:export && bun run --silent clean:temp",
@@ -46,25 +50,44 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "3.817.0",
     "@aws-sdk/lib-dynamodb": "3.817.0",
-    "@hono/node-server": "^1.14.1",
     "@hono/zod-validator": "^0.4.3",
-    "@types/node": "^20.11.0",
-    "chokidar-cli": "^3.0.0",
     "cripta": "^0.1",
-    "dotenv": "^16.5.0",
-    "esbuild": "^0.25.2",
     "hono": "^4.7.6",
     "plur": "^5.1.0",
-    "tsconfig-paths": "^4.2.0",
-    "tsx": "^4.19.3",
-    "typescript": "^5.8.3",
     "ua-parser-js": "^2.0.4"
   },
   "devDependencies": {
-    "bun-types": "^1.2.14"
+    "@cloudflare/workers-types": "^4.20251230.0",
+    "@hono/node-server": "^1.14.1",
+    "@iarna/toml": "^2.2.5",
+    "@miniflare/core": "^2.14.4",
+    "@miniflare/d1": "^2.14.4",
+    "@miniflare/durable-objects": "^2.14.4",
+    "@miniflare/kv": "^2.14.4",
+    "@miniflare/r2": "^2.14.4",
+    "@miniflare/scheduler": "^2.14.4",
+    "@miniflare/sites": "^2.14.4",
+    "@miniflare/storage-file": "^2.14.4",
+    "@miniflare/web-sockets": "^2.14.4",
+    "@types/node": "^20.11.0",
+    "bun-types": "^1.2.14",
+    "chalk": "^5.2.0",
+    "chokidar-cli": "^3.0.0",
+    "dotenv": "^16.5.0",
+    "esbuild": "^0.25.2",
+    "miniflare": "^4.20251217.0",
+    "semiver": "^1.1.0",
+    "strip-ansi": "^7.1.0",
+    "supports-color": "^9.2.2",
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3",
+    "update-check": "^1.5.4",
+    "wrangler": "^4.56.0",
+    "yargs": "^17.7.2"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "resolutions": {
     "@smithy/types": "^4.3.0"
