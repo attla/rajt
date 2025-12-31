@@ -1,4 +1,4 @@
-<h1 align="left">Rajt λ<br/><a href="https://pr.new/attla/rajt"><img align="right" src="https://developer.stackblitz.com/img/start_pr_dark_small.svg" alt="Start new PR in StackBlitz Codeflow"></a><a href="https://npmjs.com/package/rajt"><img align="right" src="https://img.shields.io/npm/v/rajt.svg" alt="npm package"></a></h1>
+<h1 align="left">λ Rajt<br/><a href="https://pr.new/attla/rajt"><img align="right" src="https://developer.stackblitz.com/img/start_pr_dark_small.svg" alt="Start new PR in StackBlitz Codeflow"></a><a href="https://npmjs.com/package/rajt"><img align="right" src="https://img.shields.io/npm/v/rajt.svg" alt="npm package"></a></h1>
 <br/>
 
 > This framework is fully geared towards the serverless world, specifically AWS Lambda (Node.js, bun and LLRT runtime) / Cloudflare Workers.
@@ -13,10 +13,10 @@
 
 | Package | Version | Description |
 | -: | :- | :- |
-| [rajt](https://github.com/attla/rajt) | ![rajt version](https://img.shields.io/npm/v/rajt.svg?label=%20) | 🧱 The core of Rajt serverless framework. |
-| [create-rajt](https://github.com/attla/create-rajt) | ![create-rajt version](https://img.shields.io/npm/v/create-rajt.svg?label=%20) | 📁 CLI tool for create new Rajt projects, from starter templates. |
-| [t0n](https://github.com/attla/t0n) | ![t0n version](https://img.shields.io/npm/v/t0n.svg?label=%20) | 🧰 Collection of elegant typescript resources for web artisans. |
-| [cripta](https://github.com/attla/cripta) | ![cripta version](https://img.shields.io/npm/v/cripta.svg?label=%20) | 🧛 A layer of encryption a little too judicious. |
+| [rajt](https://github.com/attla/rajt) | [![rajt version](https://img.shields.io/npm/v/rajt.svg?label=%20)](https://npm.im/rajt) | 🧱 The core of Rajt serverless framework. |
+| [create-rajt](https://github.com/attla/create-rajt) | [![create-rajt version](https://img.shields.io/npm/v/create-rajt.svg?label=%20)](https://npm.im/create-rajt) | 📁 CLI tool for create new Rajt projects, from starter templates. |
+| [t0n](https://github.com/attla/t0n) | [![t0n version](https://img.shields.io/npm/v/t0n.svg?label=%20)](https://npm.im/t0n) | 🧰 Collection of elegant typescript resources for web artisans. |
+| [cripta](https://github.com/attla/cripta) | [![cripta version](https://img.shields.io/npm/v/cripta.svg?label=%20)](https://npm.im/cripta) | 🧛 A layer of encryption a little too judicious. |
 
 ## License
 
