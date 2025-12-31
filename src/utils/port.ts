@@ -18,9 +18,7 @@ export async function getAvailablePort(startPort: number, maxAttempts = 100) {
   while (attempts < maxAttempts) {
     const inUse = await isPortInUse(port)
 
-    if (!inUse) {
-      return port
-    }
+    if (!inUse) return port
 
     port++
     attempts++
