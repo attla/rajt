@@ -34,7 +34,7 @@ const buildOptions = {
   bundle: true,
   minify: true,
   outfile: join(__dirname, '../../../dist/index.js'),
-  platform: isCF ? 'browser' : 'node20',
+  platform: isCF ? 'browser' : 'node',
   target: isCF ? 'es2022' : 'node20',
   conditions: isCF ? ['worker', 'browser'] : [],
   format: 'esm',

@@ -1,47 +1,8 @@
-import chalk from 'chalk'
+import logger, { type ILogger } from '../utils/logger'
 
 // Prevent non-internal logs
-const _console = {...console}
-const logger = {
-	step(...args: unknown[]) {
-		if (args?.length && args.length < 2) return _console.log(chalk.blue('⁕') +` ${args[0]}\n`)
-		const length = args.length - 1
-		args.forEach((arg, index) => {
-				switch (index) {
-					case 0: return _console.log(chalk.blue('⁕') +' '+ arg)
-					// case 0: return _console.log(chalk.blue('⁕') +` ${arg} \n`)
-					case length: return _console.log(`   ${chalk.gray('⁕')} ${arg}\n`)
-					default: _console.log(`   ${chalk.gray('⁕')} `+ arg)
-				}
-    })
-	},
-	substep(...args: unknown[]) {
-		args.forEach(arg => _console.log(`   ${chalk.gray('⁕')} ` + arg))
-	},
-	ln() {
-		_console.log('\n')
-	},
-  log(...args: unknown[]) {
-    _console.log(...args)
-  },
-  info(...args: unknown[]) {
-    _console.info(...args)
-  },
-  warn(...args: unknown[]) {
-    _console.warn(...args)
-  },
-  error(...args: unknown[]) {
-    _console.error(...args)
-  },
-} as const
-
-// Torna global no Node.js e navegador
-(globalThis as any).logger = logger
-
-// Opcional: declaração de tipo para TypeScript
-declare global {
-  var logger: typeof logger
-}
+(globalThis as any).logger = logger // Make it global in Node.js and browser
+declare global { var logger: ILogger }
 
 // console.log = () => {}
 console.info = () => {}
@@ -52,7 +13,6 @@ import process from 'node:process'
 import { hideBin } from 'yargs/helpers'
 
 import main from './main'
-
 
 /**
  * The main entrypoint for the CLI.

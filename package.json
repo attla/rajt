@@ -37,7 +37,7 @@
     "sam:package": "sam package --template-file ../../template-prod.yaml --output-template-file ../../packaged.yaml",
     "sam:deploy": "sam deploy --template-file ../../packaged.yaml --stack-name rajt-llrt --capabilities CAPABILITY_IAM",
     "sam:update": "source ../../.env.prod && aws lambda update-function-code --function-name $AWS_NAME --zip-file fileb://../../lambda.zip --region $AWS_REGION --no-cli-pager 2>&1 >/dev/null",
-    "cf:local": "bun run --silent cf:build && cd ../../dist && bunx wrangler dev",
+    "cf:local-": "source ../../.env.dev && bun run --silent cf:build:watch -- cd ../../dist && bunx wrangler dev --port=$PORT --persist-to='../.wrangler/state'",
     "cf:deploy": "bun run --silent cf:build && cd ../../dist && bunx wrangler deploy",
     "cache:routes": "tsx src/scripts/cache-routes.ts",
     "ensure-dirs": "rm -rf ../../dist ../../tmp && mkdir -p ../../tmp && chmod 755 ../../tmp && mkdir -p ../../dist && chmod 755 ../../dist",

@@ -1,14 +1,18 @@
 import { fileURLToPath } from 'node:url'
-import { basename, dirname, join, relative } from 'node:path'
-import { spawn } from 'node:child_process'
+import { dirname, join, relative } from 'node:path'
+import { spawn, type ChildProcess } from 'node:child_process'
 
 import chalk from 'chalk'
 import chokidar from 'chokidar'
 import { createCommand } from '../../core/create-command'
 import type { ChokidarEventName } from '../../types'
 
+import type { Miniflare } from 'miniflare'
 import { build, createMiniflare } from './utils'
 import { getAvailablePort } from '../../../utils/port'
+import shutdown from '../../../utils/shutdown'
+
+import {existsSync} from 'node:fs'
 
 const __dirname = join(dirname(fileURLToPath(import.meta.url)), '../../../../../../')
 
@@ -41,7 +45,95 @@ export default createCommand({
 		const desiredPort = args.port ? Number(args.port) : 3000
 		const host = args.host ? String(args.host) : 'localhost'
 		switch (platform) {
-			case 'aws': return logger.log('dev awss!')
+			case 'aws':
+				return withPort(desiredPort, async (port) => {
+					let isBuilding = false
+					let lambda: ChildProcess | null = null
+
+					const buildLambda = async () => {
+						if (isBuilding) return
+						isBuilding = true
+						logger.step('Building lambda')
+						try {
+							await build(platform)
+							if (!lambda) await startLambda()
+						} catch (e) {
+							logger.error('Build failed:', e)
+							process.exit(0)
+						} finally {
+							isBuilding = false
+						}
+					}
+
+					const stopLambda = async () => {
+						if (!lambda) return
+						logger.step('Stopping lambda process...')
+						try {
+							if (!lambda?.killed) {
+								lambda.kill('SIGTERM')
+								await wait(1000)
+
+								if (!lambda?.killed) { // force kill
+									lambda.kill('SIGKILL')
+									await wait(1000)
+								}
+							}
+
+							lambda = null
+						} catch (e) {
+							logger.warn('Error stopping lambda:', e)
+						}
+					}
+
+					const startLambda = async () => {
+						await stopLambda()
+
+						lambda = spawn(
+							'sam',
+							[
+								'local', 'start-api',
+								'--warm-containers', 'LAZY',
+								'--debug', '--template-file', join(__dirname, 'template-dev.yaml'),
+								'--port', args.port,
+							],
+							{
+								stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+								// stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+								shell: process.platform == 'win32',
+								env: {...process.env, DOCKER_HOST: getDockerHost()},
+							}
+						).on('exit', code => {
+							logger.step(`Lambda process exited with code ${code ?? 0}`)
+							if (code !== 0 && code !== null)
+								logger.error('Lambda process crashed, waiting for restart...')
+
+							lambda = null
+						})
+						.on('message', msg => {
+							if (process.send) process.send(msg)
+						}).on('disconnect', () => {
+							if (process.disconnect) process.disconnect()
+						}).on('error', e => {
+							logger.error('Lambda process error:', e)
+							lambda = null
+						})
+
+						await wait(2000)
+
+						logger.step('Lambda process started successfully')
+					}
+
+					await buildLambda()
+					logger.step(`API running on http://${host}:${port}`)
+
+					watch(async () => {
+						await buildLambda()
+					})
+
+					shutdown(async () => {
+						await stopLambda()
+					})
+				})
 			case 'cf': return withPort(desiredPort, async (port) => {
 				let isBuilding = false
 
@@ -53,13 +145,14 @@ export default createCommand({
 						await build(platform)
 						await startWorker()
 					} catch (e) {
-						logger.error('❌ Build failed:', e)
+						logger.error('Build failed:', e)
+						process.exit(0)
 					} finally {
 						isBuilding = false
 					}
 				}
 
-				let worker = null
+				let worker: Miniflare | null = null
 				const startWorker = async () => {
 					if (worker) await worker.dispose()
 
@@ -76,42 +169,41 @@ export default createCommand({
 				})
 			})
 			case 'node':
-				return spawn(process.execPath, [
-						join(__dirname, 'node_modules/.bin/tsx'), 'watch', join(__dirname, 'node_modules/rajt/src/dev.ts'),
-					],
-					{
-						stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
-						env: {...process.env},
-					}
-				).on('exit', code => process.exit(code === undefined || code === null ? 0 : code))
-				.on('message', msg => {
-					if (process.send) process.send(msg)
-				}).on('disconnect', () => {
-					if (process.disconnect) process.disconnect()
+				return withPort(desiredPort, async (port) => {
+					logger.step(`API running on http://${host}:${port}`)
+
+					spawn(
+						process.execPath,
+						[
+							join(__dirname, 'node_modules/.bin/tsx'), 'watch', join(__dirname, 'node_modules/rajt/src/dev.ts'),
+						],
+						{
+							stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+							env: {...process.env, PORT: args.port},
+						}
+					).on('exit', code => process.exit(code ?? 0))
+					.on('message', msg => {
+						if (process.send) process.send(msg)
+					}).on('disconnect', () => {
+						if (process.disconnect) process.disconnect()
+					})
 				})
-			default: return logger.warn(
-				`🟠 Provide a valid platform: ${['aws', 'cf', 'node'].map(p => chalk.hex("#FF8800")(p)).join(', ')}.\n`
-			)
+			default:
+				return logger.warn(
+					`🟠 Provide a valid platform: ${['aws', 'cf', 'node'].map(p => chalk.hex("#FF8800")(p)).join(', ')}.\n`
+				)
     }
 	},
 })
 
 function withPort(desiredPort: number, cb: (port: number) => void) {
 	getAvailablePort(desiredPort)
-		.then(cb).catch(e => logger.error('Error finding available port:', e))
-}
+		.then((port: number) => {
+			if (port != desiredPort)
+				logger.warn(`Port ${desiredPort} was in use, using ${port} as a fallback`)
 
-function setupShutdown(cb: (signal: string, e: unknown) => void) {
-	const shutdown = async (signal: string, e: unknown) => {
-		logger.step(`${signal} received, shutting down`)
-		await cb(signal, e)
-	}
-
-	process.on('SIGINT', e => shutdown('SIGINT', e))
-	process.on('SIGTERM', e  => shutdown('SIGTERM', e))
-	process.on('SIGHUP', e => shutdown('SIGHUP', e))
-	process.on('unhandledRejection', e => shutdown('UNCAUGHT_REJECTION', e))
-	process.on('uncaughtException', e => shutdown('UNCAUGHT_EXCEPTION', e))
+			cb(port)
+		}).catch(e => logger.error('Error finding available port:', e))
 }
 
 function getAssetChangeMessage(
@@ -153,7 +245,7 @@ async function watch(cb: (e: ChokidarEventName | string, file: string) => Promis
 		ignoreInitial: true,
 		awaitWriteFinish: {
 			stabilityThreshold: 200,
-			pollInterval: 100
+			pollInterval: 100,
 		},
 	})
 	let restartTimeout: NodeJS.Timeout | null = null
@@ -176,4 +268,27 @@ async function watch(cb: (e: ChokidarEventName | string, file: string) => Promis
 	codeWatcher.on('unlinkDir', watcher('unlinkDir'))
 
 	logger.step('Watching for file changes')
+}
+
+async function wait(ms: number) {
+	return new Promise(r => setTimeout(r, ms))
+}
+
+function getDockerHost() {
+	const platform = process.platform
+
+	if (platform === 'darwin') {
+		for (const socket of [
+			'/Users/' + process.env.USER + '/.docker/run/docker.sock',
+			'/var/run/docker.sock',
+			process.env.DOCKER_HOST
+		]) {
+			if (socket && existsSync(socket.replace(/^unix:\/\//, '')))
+				return socket.includes('://') ? socket : `unix://${socket}`
+		}
+
+		return 'tcp://localhost:2375'
+	}
+
+	return process.env.DOCKER_HOST || (platform == 'win32' ? 'tcp://localhost:2375' : 'unix:///var/run/docker.sock')
 }

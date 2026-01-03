@@ -48,7 +48,7 @@ export const build = async (platform: 'aws' | 'cf' | 'node') => {
     format: 'esm',
     target: isCF ? 'es2022' : 'node20',
     // platform: 'neutral',
-    platform: isCF ? 'browser' : 'node20',
+    platform: isCF ? 'browser' : 'node',
     conditions: isCF ? ['worker', 'browser'] : [],
     treeShaking: true,
     legalComments: 'none',
