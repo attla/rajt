@@ -53,7 +53,7 @@
     "@hono/zod-validator": "^0.4.3",
     "cripta": "^0.1",
     "hono": "^4.7.6",
-    "plur": "^5.1.0",
+    "pluralize": "^8.0",
     "ua-parser-js": "^2.0.4"
   },
   "devDependencies": {
@@ -70,6 +70,7 @@
     "@miniflare/storage-file": "^2.14.4",
     "@miniflare/web-sockets": "^2.14.4",
     "@types/node": "^20.11.0",
+    "@types/pluralize": "^0.0.33",
     "bun-types": "^1.2.14",
     "chokidar-cli": "^3.0.0",
     "citty": "^0.1.6",

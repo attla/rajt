@@ -1,4 +1,4 @@
-import plur from 'plur'
+import pluralize from 'pluralize'
 import type { ModelMetadata, ModelOpts } from './types'
 
 export function getModelMetadata(target: Function | any): ModelMetadata {
@@ -20,7 +20,7 @@ function _table(target: Function | any, opt?: ModelOpts) {
   if (!target?.m) target.m = []
   const table = opt ? (typeof opt === 'string' ? opt : opt?.table) : undefined
 
-  target.m[0] = table || plur(target.name.toLocaleUpperCase())
+  target.m[0] = table || pluralize(target.name.toLocaleUpperCase())
 }
 
 function _zip(target: Function | any) {
