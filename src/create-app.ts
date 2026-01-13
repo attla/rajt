@@ -1,15 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Hono } from 'hono'
+import { logger } from 'hono/logger'
 import type { Env, Context, ErrorHandler, NotFoundHandler, Next } from 'hono'
 // import type { MiddlewareHandler } from 'hono'
 // import { createMiddleware } from 'hono/factory'
 // import type { H, Handler, HandlerResponse } from 'hono/types'
 import type { HTTPResponseError } from 'hono/types'
+import colors from 'picocolors'
 import type { Routes } from './types'
 import { BadRequest, Unauthorized } from './exceptions'
 import { resolve, resolveMiddleware } from './utils/resolve'
 import { getMiddlewares, getHandler } from './register'
 import { isDev } from './utils/environment'
+import localDate from './utils/local-date'
 import { Auth } from './auth'
 import response from './response'
 import cx from './context'
@@ -77,6 +80,9 @@ const EHandler = async (e: Error | HTTPResponseError) => {
 export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
   // const root = options?.root ?? '/'
   const app = options?.app ?? new Hono<E>()
+
+  if (isDev())
+    app.use('*', logger((...args: any[]) => console.log(colors.gray(localDate()), ...args)))
 
   app.use(async (c: Context, next: Next) => {
     cx.setContext(c)

@@ -71,23 +71,18 @@
     "@miniflare/web-sockets": "^2.14.4",
     "@types/node": "^20.11.0",
     "bun-types": "^1.2.14",
-    "chalk": "^5.2.0",
     "chokidar-cli": "^3.0.0",
+    "citty": "^0.1.6",
     "dotenv": "^16.5.0",
     "esbuild": "^0.25.2",
     "miniflare": "^4.20251217.0",
-    "semiver": "^1.1.0",
-    "strip-ansi": "^7.1.0",
-    "supports-color": "^9.2.2",
-    "tsconfig-paths": "^4.2.0",
+    "picocolors": "^1.1.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3",
-    "update-check": "^1.5.4",
-    "wrangler": "^4.56.0",
-    "yargs": "^17.7.2"
+    "wrangler": "^4.56.0"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=18.0.0"
   },
   "resolutions": {
     "@smithy/types": "^4.3.0"

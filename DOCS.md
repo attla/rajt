@@ -1,4 +1,4 @@
-This framework is fully geared towards the serverless world, specifically AWS Lambda (Node.js, bun and LLRT runtime) / Cloudflare Workers.
+This framework is fully geared towards the serverless world, specifically AWS Lambda (Node.js, Bun and LLRT runtime) / Cloudflare Workers.
 
 - [Installation](#install)
 - [Commands](#commands)
@@ -83,7 +83,7 @@ bunx rajt dev -p aws
 
 Compatible platforms:
 
- - `aws` - AWS Lambda (Node.js, bun and LLRT runtime)
+ - `aws` - AWS Lambda (Node.js, Bun and LLRT runtime)
  - `cf` - Cloudflare Workers
  - `node` - Node.js
 

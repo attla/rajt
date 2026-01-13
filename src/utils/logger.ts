@@ -1,4 +1,4 @@
-import chalk from 'chalk'
+import colors from 'picocolors'
 
 const _console = { ...console }
 
@@ -18,22 +18,22 @@ export interface ILogger {
 
 export const logger = {
 	step(...args: any[]) {
-		if (args?.length && args.length < 2) return _console.log(chalk.blue('⁕') +` ${args[0]}\n`)
+		if (args?.length && args.length < 2) return _console.log(colors.blue('⁕') +` ${args[0]}\n`)
 		const length = args.length - 1
 		args.forEach((arg, index) => {
 				switch (index) {
 					case 0:
-						return _console.log(chalk.blue('⁕') + ' ' + arg)
-						// return _console.log(chalk.blue('⁕') +` ${arg} \n`)
+						return _console.log(colors.blue('⁕') + ' ' + arg)
+						// return _console.log(colors.blue('⁕') +` ${arg} \n`)
 					case length:
-						return _console.log(`   ${chalk.gray('⁕')} ${arg}\n`)
+						return _console.log(`   ${colors.gray('⁕')} ${arg}\n`)
 					default:
-						return _console.log(`   ${chalk.gray('⁕')} ` + arg)
+						return _console.log(`   ${colors.gray('⁕')} ` + arg)
 				}
     })
 	},
 	substep(...args: any[]) {
-		args.forEach(arg => _console.log(`   ${chalk.gray('⁕')} ` + arg))
+		args.forEach(arg => _console.log(`   ${colors.gray('⁕')} ` + arg))
 	},
 	ln() {
 		_console.log('\n')

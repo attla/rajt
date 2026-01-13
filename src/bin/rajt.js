@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 import { spawn } from "node:child_process";
-import { join, dirname } from "path";
-import { existsSync } from "fs";
-import { fileURLToPath } from "url";
+import { join, dirname } from "node:path";
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const ERR_NODE_VERSION = "20.0.0";
-const MIN_NODE_VERSION = "20.0.0";
+const ERR_NODE_VERSION = "18.0.0";
+const MIN_NODE_VERSION = "18.0.0";
 
 let rajtProcess;
 

@@ -1,10 +1,11 @@
+import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, relative } from 'node:path'
 import { spawn, type ChildProcess } from 'node:child_process'
 
-import chalk from 'chalk'
 import chokidar from 'chokidar'
-import { createCommand } from '../../core/create-command'
+import colors from 'picocolors'
+import { defineCommand } from 'citty'
 import type { ChokidarEventName } from '../../types'
 
 import type { Miniflare } from 'miniflare'
@@ -12,35 +13,33 @@ import { build, createMiniflare } from './utils'
 import { getAvailablePort } from '../../../utils/port'
 import shutdown from '../../../utils/shutdown'
 
-import {existsSync} from 'node:fs'
-
 const __dirname = join(dirname(fileURLToPath(import.meta.url)), '../../../../../../')
 
-export default createCommand({
-	metadata: {
+export default defineCommand({
+	meta: {
+		name: 'dev',
 		description: '💻 Start the localhost server\n',
-		status: 'stable',
 	},
-	positionalArgs: ['platform', 'port', 'host'],
 	args: {
 		port: {
-			describe: 'Port to listen on',
+			description: 'Port to listen on',
 			type: 'number',
 			default: 3000,
 		},
 		host: {
-			describe: 'Host to forward requests to, defaults to the zone of project',
+			description: 'Host to forward requests to, defaults to the zone of project',
 			type: 'string',
 			default: 'localhost',
 		},
-		p: {
-			describe: 'Environment platform',
-			alias: 'platform',
-			choices: ['aws', 'cf', 'node'] as const,
-			requiresArg: true,
+		platform: {
+			alias: 'p',
+			description: 'Environment platform',
+			type: 'enum',
+			options: ['aws', 'cf', 'node'] as const,
+			required: true,
 		},
 	},
-	async handler(args) {
+	async run({ args }) {
 		const platform = args.p || args.platform
 		const desiredPort = args.port ? Number(args.port) : 3000
 		const host = args.host ? String(args.host) : 'localhost'
@@ -134,40 +133,41 @@ export default createCommand({
 						await stopLambda()
 					})
 				})
-			case 'cf': return withPort(desiredPort, async (port) => {
-				let isBuilding = false
+			case 'cf':
+				return withPort(desiredPort, async (port) => {
+					let isBuilding = false
 
-				const buildWorker = async () => {
-					if (isBuilding) return
-					isBuilding = true
-					logger.step('Building worker')
-					try {
-						await build(platform)
-						await startWorker()
-					} catch (e) {
-						logger.error('Build failed:', e)
-						process.exit(0)
-					} finally {
-						isBuilding = false
+					const buildWorker = async () => {
+						if (isBuilding) return
+						isBuilding = true
+						logger.step('Building worker')
+						try {
+							await build(platform)
+							await startWorker()
+						} catch (e) {
+							logger.error('Build failed:', e)
+							process.exit(0)
+						} finally {
+							isBuilding = false
+						}
 					}
-				}
 
-				let worker: Miniflare | null = null
-				const startWorker = async () => {
-					if (worker) await worker.dispose()
+					let worker: Miniflare | null = null
+					const startWorker = async () => {
+						if (worker) await worker.dispose()
 
-					worker = await createMiniflare({ port, host, liveReload: false })
-				}
+						worker = await createMiniflare({ port, host, liveReload: false })
+					}
 
-				await buildWorker()
-				logger.step(`API running on http://${host}:${port}`)
+					await buildWorker()
+					logger.step(`API running on http://${host}:${port}`)
 
-				watch(async () => {
-    			logger.step('Restarting server')
-      		await buildWorker()
-      		logger.step('Server restarted')
+					watch(async () => {
+						logger.step('Restarting server')
+						await buildWorker()
+						logger.step('Server restarted')
+					})
 				})
-			})
 			case 'node':
 				return withPort(desiredPort, async (port) => {
 					logger.step(`API running on http://${host}:${port}`)
@@ -190,7 +190,7 @@ export default createCommand({
 				})
 			default:
 				return logger.warn(
-					`🟠 Provide a valid platform: ${['aws', 'cf', 'node'].map(p => chalk.hex("#FF8800")(p)).join(', ')}.\n`
+					`🟠 Provide a valid platform: ${['aws', 'cf', 'node'].map(p => colors.blue(p)).join(', ')}.\n`
 				)
     }
 	},

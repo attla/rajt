@@ -6,6 +6,8 @@ tmp/
 .trash
 .trash*
 lambda.zip
+_TODO.md
+bun.lock
 
 # dependencies
 node_modules
