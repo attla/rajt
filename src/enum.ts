@@ -30,7 +30,7 @@ export default function Enum<T extends string[] | Record<string, string | number
   Object.entries(enumObj).forEach(([key, value]) => {
     keyToValueMap.set(key, value)
     valueToKeyMap.set(String(value), key)
-    if (typeof value === 'number') valueToKeyMap.set(value.toString(), key)
+    if (typeof value == 'number') valueToKeyMap.set(value.toString(), key)
   })
 
   const GeneratedEnum = class {

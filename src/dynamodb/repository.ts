@@ -12,7 +12,7 @@ export function Repository<
   base?: B | ModelOpts,
   opts?: ModelOpts
 ) {
-  const isClass = typeof base === 'function'
+  const isClass = typeof base == 'function'
   type M = z.infer<S>
 
   const Repo = Schema(schema, isClass ? base : undefined)

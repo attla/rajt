@@ -2,7 +2,7 @@ import Action, { ActionType } from '../action'
 import { MiddlewareType } from '../middleware'
 
 export function resolve(obj: ActionType, id: string) {
-  if (typeof obj === 'function' && obj?.length === 2)
+  if (typeof obj == 'function' && obj?.length == 2)
     return [obj]
 
   if (obj?.run)
@@ -22,7 +22,7 @@ export function resolve(obj: ActionType, id: string) {
 }
 
 export function resolveMiddleware(obj: MiddlewareType) {
-  if (typeof obj === 'function' && obj.length === 2)
+  if (typeof obj == 'function' && obj.length == 2)
     return obj
 
   if (obj?.factory)

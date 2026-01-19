@@ -89,7 +89,7 @@ export default class Compact {
     if (this.#cantZip(obj)) return obj
 
     return schema.map(key => {
-      if (typeof key === 'string')
+      if (typeof key == 'string')
         return this.memo(obj[key], seen)
 
       const mainKey = Object.keys(key)[0]

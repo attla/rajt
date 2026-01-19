@@ -34,7 +34,7 @@ try {
   const handlers = {${routes.map(r => r.name).join()}}
 
   for (const [name, handler] of Object.entries(handlers)) {
-    if (typeof handler === 'function' || handler.prototype?.handle) {
+    if (typeof handler == 'function' || handler.prototype?.handle) {
       registerHandler(name, handler)
     }
   }

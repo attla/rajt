@@ -21,7 +21,7 @@ export default class AbstractModel<T extends object> {
     this.#queryBuilder = queryBuilder
     this.#model = model
 
-    if (typeof (cls as ModelMetadata).table === 'string') {
+    if (typeof (cls as ModelMetadata).table == 'string') {
       this.#meta = cls as ModelMetadata
       this.cls = model?.cls
       return

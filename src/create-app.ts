@@ -34,11 +34,11 @@ const EHandler = async (e: Error | HTTPResponseError) => {
 
   switch (true) {
     case e instanceof Unauthorized:
-    case 'status' in e && e.status === 401:
+    case 'status' in e && e.status == 401:
       return response.unauthorized()
 
     case e instanceof BadRequest:
-    case 'status' in e && e.status === 400:
+    case 'status' in e && e.status == 400:
       // @ts-ignore
       return response.badRequest(undefined, e?.message)
 
