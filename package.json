@@ -54,6 +54,7 @@
     "cripta": "^0.1",
     "hono": "^4.7.6",
     "pluralize": "^8.0",
+    "t0n": "^0.1.5",
     "ua-parser-js": "^2.0.4"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
-import type { SchemaStructure } from './types'
-import getLength from '../utils/lenght'
+import { getLength } from 't0n'
 import { isArraySchema } from './schema'
+import type { SchemaStructure } from './types'
 
 export default class Compact {
   static #typeRegex: RegExp

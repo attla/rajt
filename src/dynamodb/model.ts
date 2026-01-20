@@ -4,7 +4,7 @@ import QueryBuilder from './query-builder'
 import Compact from './compact'
 import { RawClient } from './client'
 import { isArraySchema } from './schema'
-import getLength from '../utils/lenght'
+import { getLength } from 't0n'
 
 export default class AbstractModel<T extends object> {
   #meta: ModelMetadata

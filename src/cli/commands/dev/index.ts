@@ -279,7 +279,7 @@ function getDockerHost() {
 
 	if (platform === 'darwin') {
 		for (const socket of [
-			'/Users/' + process.env.USER + '/.docker/run/docker.sock',
+			'/Users/'+ process.env.USER +'/.docker/run/docker.sock',
 			'/var/run/docker.sock',
 			process.env.DOCKER_HOST
 		]) {
