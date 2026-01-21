@@ -1,37 +1,55 @@
-import type { ContentfulStatusCode, StatusCode } from 'hono/utils/http-status'
+import type { ContentfulStatusCode, RedirectStatusCode, StatusCode } from 'hono/utils/http-status'
+import type { BaseMime } from 'hono/utils/mime'
 import type { ErrorResponse, Errors } from './types'
-import c from './context'
 
-export default class Response {
-  static raw(status?: StatusCode, body?: string) {
-    return c.cx.newResponse(body ? body : null, { status })
+type RBag = {
+  status?: StatusCode,
+  headers?: { 'Content-Type'?: BaseMime, 'Location'?: string },
+}
+
+export default class $Response {
+  static raw(status?: StatusCode, body?: any, cType?: BaseMime) {
+    const b: RBag = { status: status || 200 }
+    if (cType) b.headers = {'Content-Type': cType}
+    return new Response(body || null, b)
+  }
+
+  static text(data?: string, status?: StatusCode) {
+    return this.raw(status, data, 'text/plain; charset=UTF-8' as BaseMime)
+  }
+
+  static json<T>(data?: T, status?: StatusCode) {
+    if (data === undefined)
+      return this.raw(status)
+
+    return this.raw(status, JSON.stringify(data), 'application/json')
+  }
+
+  static redirect(location: string | URL, status?: RedirectStatusCode) {
+    const loc = String(location)
+
+    return new Response(null, {
+      status: status || 302,
+      headers: { 'Location': /[^\x00-\xFF]/.test(loc) ? encodeURI(loc) : loc }
+    })
   }
 
   static ok(): Response
   static ok<T>(data: T): Response
   static ok<T>(data?: T) {
-    if (data === undefined)
-      return this.raw(200)
-
-    return c.cx.json(data, 200)
+    return this.json(data, 200)
   }
 
   static created(): Response
   static created<T>(data: T): Response
   static created<T>(data?: T) {
-    if (data === undefined)
-      return this.raw(201)
-
-    return c.cx.json(data, 201)
+    return this.json(data, 201)
   }
 
   static accepted(): Response
   static accepted<T>(data: T): Response
   static accepted<T>(data?: T) {
-    if (data === undefined)
-      return this.raw(202)
-
-    return c.cx.json(data, 202)
+    return this.json(data, 202)
   }
 
   static deleted() {
@@ -50,19 +68,13 @@ export default class Response {
   static unauthorized(): Response
   static unauthorized<T>(data: T): Response
   static unauthorized<T>(data?: T) {
-    if (data === undefined)
-      return this.raw(401)
-
-    return c.cx.json(data, 401)
+    return this.json(data, 401)
   }
 
   static forbidden(): Response
   static forbidden<T>(data: T): Response
   static forbidden<T>(data?: T) {
-    if (data === undefined)
-      return this.raw(403)
-
-    return c.cx.json(data, 403)
+    return this.json(data, 403)
   }
 
   static notFound(): Response
@@ -95,6 +107,6 @@ export default class Response {
     if (msg) resp.m = msg
     if (errors) resp.e = errors
 
-    return c.cx.json(resp, status)
+    return this.json(resp, status)
   }
 }
