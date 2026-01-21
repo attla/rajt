@@ -6,6 +6,8 @@ import { mkdirSync, existsSync, readdirSync, rmSync, copyFileSync } from 'node:f
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, relative } from 'node:path'
 
+import { cacheRoutes } from '../../../routes'
+
 const __dirname = join(dirname(fileURLToPath(import.meta.url)), '../../../../../../')
 const __rajt = join(__dirname, 'node_modules/rajt/src')
 
@@ -113,6 +115,10 @@ export const build = async (platform: 'aws' | 'cf' | 'node') => {
     ],
   }
 
+  await cacheRoutes()
+
+  logger.step('Routes cached')
+
   const result = await esbuild.build(opts)
   if (!result?.metafile) throw Error('build fail')
 
@@ -164,10 +170,13 @@ export async function createMiniflare(options = {}, configPath = 'wrangler.toml'
 
     d1Databases: Object.fromEntries(config.d1_databases.map(db => [db.binding, db.database_id])),
 
-    modules: true,
-    modulesRules: [
-      { type: 'ESModule', include: ['**/*.js', '**/*.ts'] },
+    modules: [
+      { type: "ESModule", path: "dist/index.js" },
     ],
+    // modules: true,
+    // modulesRules: [
+    //   { type: 'ESModule', include: ['**/*.js', '**/*.ts'] },
+    // ],
 
     kvPersist: join(__dirname, '.wrangler/state/v3/kv'),
     cachePersist: join(__dirname, '.wrangler/state/v3/cache'),
