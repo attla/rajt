@@ -222,7 +222,7 @@ export default class UsersNew extends Action {
   static async handle(c: Context) {
     const user = await Request.body<IRequestSchema>()
     console.log(user)
-    return Request.created({ message: 'User created', data: user })
+    return Response.created({ message: 'User created', data: user })
   }
 }
 ```
