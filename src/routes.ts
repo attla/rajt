@@ -34,7 +34,7 @@ const walk = async (dir: string, baseDir: string, fn: Function, parentMw: string
 
     if (stat.isDirectory()) {
       await walk(fullPath, baseDir, fn, currentMw)
-    } else if (file !== 'index.ts' && file.endsWith('.ts') && !file.endsWith('.d.ts')) {
+    } else if (file != 'index.ts' && file.endsWith('.ts') && !file.endsWith('.d.ts')) {
       const mod = await import(fullPath)
       fn(fullPath, baseDir, mod.default, currentMw)
     }

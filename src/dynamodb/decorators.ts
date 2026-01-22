@@ -36,9 +36,9 @@ function _key(target: Function | any, pk: string, sk?: string) {
 
 export function _model(target: any, opt?: ModelOpts) {
   _table(target, opt)
-  const notStr = typeof opt !== 'string'
+  const notStr = typeof opt != 'string'
 
-  if (!opt || !notStr || (opt?.zip === undefined || opt?.zip))
+  if (!opt || !notStr || (opt?.zip == null || opt?.zip))
     _zip(target)
 
   const pk = opt && notStr ? opt?.partitionKey : undefined

@@ -4,5 +4,5 @@ export const isAsyncFn = (fn: any) => {
 }
 
 export const isAnonFn = (fn: any) => {
-    return fn?.name === '' || fn?.name == 'anonymous'
+    return fn?.name == '' || fn?.name == 'anonymous'
 }

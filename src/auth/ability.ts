@@ -16,8 +16,8 @@ export class Ability {
     const paths = actions?.map(a => Array.isArray(a) ? a[0] + a[1] : a.method + a.path) || []
     const items = new Set(paths)
 
-    if (items.size !== actions.length)
-      throw new Error(`Duplicate routes detected: "${paths.filter((path, index) => paths.indexOf(path) !== index).join('", "')}"`)
+    if (items.size != actions.length)
+      throw new Error(`Duplicate routes detected: "${paths.filter((path, index) => paths.indexOf(path) != index).join('", "')}"`)
 
     this.#abilities = Array.from(new Set(actions?.map(a => Array.isArray(a) ? a[3] : a.name) || []))
       .map(a => this.format(a))

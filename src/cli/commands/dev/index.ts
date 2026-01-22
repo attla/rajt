@@ -103,7 +103,7 @@ export default defineCommand({
 							}
 						).on('exit', code => {
 							logger.step(`Lambda process exited with code ${code ?? 0}`)
-							if (code !== 0 && code !== null)
+							if (code != 0 && code != null)
 								logger.error('Lambda process crashed, waiting for restart...')
 
 							lambda = null
@@ -277,7 +277,7 @@ async function wait(ms: number) {
 function getDockerHost() {
 	const platform = process.platform
 
-	if (platform === 'darwin') {
+	if (platform == 'darwin') {
 		for (const socket of [
 			'/Users/'+ process.env.USER +'/.docker/run/docker.sock',
 			'/var/run/docker.sock',

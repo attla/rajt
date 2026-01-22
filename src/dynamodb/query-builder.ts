@@ -17,7 +17,7 @@ export default class QueryBuilder {
   }
 
   keyCondition(field: string, operator: Operator | any, value?: any) {
-    const noVal = value === undefined
+    const noVal = value == null
     this.#keyConditions.push({ type: 'keyCondition', field, operator: noVal ? '=' : operator, value: noVal ? operator : value })
     return this
   }

@@ -193,12 +193,12 @@ export default class AbstractModel<T extends object> {
     if (!this.#meta.keys) return
 
     const pkValue = item[this.#meta.keys.PK as keyof Partial<T>]
-    if (pkValue !== undefined)
+    if (pkValue != null)
       keys[this.#meta.keys.PK] = String(pkValue)
 
     if (this.#meta.keys?.SK) {
       const skValue = item[this.#meta.keys.SK as keyof Partial<T>]
-      if (skValue !== undefined)
+      if (skValue != null)
         keys[this.#meta.keys.SK] = String(skValue)
       else if (this.#meta.defaultSK)
         keys[this.#meta.keys.SK] = this.#meta.defaultSK

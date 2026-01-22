@@ -35,7 +35,7 @@ Consider using a Node.js version manager such as https://volta.sh or https://git
 
   let tsxPath;
   for (const pathOption of tsxPaths) {
-    if (pathOption === "tsx" || existsSync(pathOption)) {
+    if (pathOption == "tsx" || existsSync(pathOption)) {
       tsxPath = pathOption;
       break;
     }
@@ -72,7 +72,7 @@ Consider using a Node.js version manager such as https://volta.sh or https://git
     }
   )
     .on("exit", (code) =>
-      process.exit(code === undefined || code === null ? 0 : code)
+      process.exit(code == null ? 0 : code)
     )
     .on("message", (message) => {
       if (process.send) {

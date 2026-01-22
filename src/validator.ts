@@ -14,7 +14,7 @@ export default class $Validator {
     | { schema: (schema: ZodObject<any>) => Rule }
     | Rule
   {
-    if (schema !== undefined) {
+    if (schema != null) {
       return {
         target,
         schema,
@@ -36,7 +36,7 @@ export default class $Validator {
       return this.cache.get(target)
 
     const aliasFunc = (schema?: ZodObject<any>) => {
-      if (schema !== undefined)
+      if (schema != null)
         return this.createRule(target, schema)
 
       return this.createRule(target)

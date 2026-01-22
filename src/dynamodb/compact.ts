@@ -70,7 +70,7 @@ export default class Compact {
   }
 
   static decode<T = any>(val: string, schema: SchemaStructure): T {
-    if (!val || typeof val !== 'string') return val as T
+    if (!val || typeof val != 'string') return val as T
 
     return this.withSchema(this.unzip(JSON.parse(
       this.#unpack(val)
@@ -144,7 +144,7 @@ export default class Compact {
     if (!key) return undefined
 
     if (typeof key == 'string')
-      return [key, value === undefined ? null : value]
+      return [key, value == null ? null : value]
 
     const mainKey = Object.keys(key)[0]
     const subKeys = key[mainKey]
@@ -158,7 +158,7 @@ export default class Compact {
         : [mainKey, this.withSchema(value, subKeys)]
     }
 
-    return [mainKey, value === undefined ? null : value]
+    return [mainKey, value == null ? null : value]
   }
 
   static memo(val: any, seen: any[]): any {
@@ -177,7 +177,7 @@ export default class Compact {
     if (this.#cantZip(val, type, length)) return val
 
     const index = seen.indexOf(val)
-    if (index !== -1)
+    if (index != -1)
       return `^${index}`
 
     seen.push(val)
