@@ -171,14 +171,14 @@ Files without a declared HTTP verb are ignored in route matching
 
 ```ts
 // file: ./actions/index.ts
-import { Action, Response } from 'rajt'
+import { Action } from 'rajt'
 import { Get } from 'rajt/http'
-import type { Context } from 'rajt/types'
+import type { IRequest, IResponse } from 'rajt/types'
 
 @Get('/')
 export default class Index extends Action {
-  static async handle(c: Context) {
-    return Response.ok({ message: 'Hello world! ;)' })
+  static async handle(req: IRequest, res: IResponse) {
+    return res.ok({ message: 'Hello world! ;)' })
   }
 }
 ```
@@ -200,10 +200,10 @@ Valid validation targets:
 
 ```ts
 // file: ./actions/users/new
-import { Action, Request, Response } from 'rajt'
+import { Action } from 'rajt'
 import { Post } from 'rajt/http'
-import type { Context } from 'rajt/types'
-import { z } from 'zod'
+import type { IRequest, IResponse, IValidator } from 'rajt/types'
+import z from 'zod'
 
 const RequestSchema = z.object({
   name: z.string(),
@@ -215,14 +215,14 @@ type IRequestSchema = z.infer<typeof RequestSchema>
 
 @Post('/users/new')
 export default class UsersNew extends Action {
-  static rules() {
-    return this.rule('json', RequestSchema)
+  static rules(v: IValidator) {
+    return v.json(RequestSchema)
   }
 
-  static async handle(c: Context) {
-    const user = await Request.body<IRequestSchema>()
+  static async handle(req: IRequest, res: IResponse) {
+    const user = await req.body<IRequestSchema>()
     console.log(user)
-    return Response.created({ message: 'User created', data: user })
+    return res.created({ message: 'User created', data: user })
   }
 }
 ```
@@ -231,32 +231,30 @@ Using multiple validations:
 
 ```ts
 // file: ./actions/users/list
-import { Action, Request, Response } from 'rajt'
+import { Action } from 'rajt'
 import { Get } from 'rajt/http'
-import type { Context } from 'rajt/types'
-import { z } from 'zod'
+import type { IRequest, IResponse, IValidator } from 'rajt/types'
+import z from 'zod'
 
 @Get('/users/:org')
 export default class UsersNew extends Action {
-  static rules() {
+  static rules(v: IValidator) {
     return [
-      this.rule('query').schema(
-        z.object({
-          page: z.string().regex(/^\d+$/).transform(Number),
-        })
-      ),
-      this.rule('param', z.object({
+      v.query(z.object({
+        page: z.string().regex(/^\d+$/).transform(Number),
+      })),
+      v.param(z.object({
         org: z.string().regex(/^\d+$/).transform(Number),
       }))
     ]
   }
 
-  static async handle(c: Context) {
-    const query = await Request.query()
+  static async handle(req: IRequest, res: IResponse) {
+    const query = await req.query()
     console.log(query)
-    const org = await Request.param('org')
+    const org = await req.param('org')
     console.log(org)
-    return Response.ok({ message: 'Listing orgs...' })
+    return res.ok({ message: 'Listing orgs...' })
   }
 }
 ```
@@ -550,7 +548,7 @@ do {
 Define the typed data structure of your entity using Zod:
 
 ```ts
-import { z } from 'zod'
+import z from 'zod'
 
 const UserSchema = z.object({
   uid: z.string(),

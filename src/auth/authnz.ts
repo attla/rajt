@@ -79,4 +79,7 @@ export class Authnz<T extends object> {
   get data() {
     return this.#data
   }
+  get user() {
+    return this.#data
+  }
 }

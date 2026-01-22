@@ -13,9 +13,8 @@ import { resolve, resolveMiddleware } from './utils/resolve'
 import { getMiddlewares, getHandler } from './register'
 import { isDev } from './utils/environment'
 import localDate from './utils/local-date'
-import { Auth } from './auth'
+import request from './request'
 import response from './response'
-import cx from './context'
 
 type InitFunction<E extends Env = Env> = (app: Hono<E>) => void
 
@@ -40,7 +39,7 @@ const EHandler = async (e: Error | HTTPResponseError) => {
     case e instanceof BadRequest:
     case 'status' in e && e.status == 400:
       // @ts-ignore
-      return response.badRequest(undefined, e?.message)
+      return response.badRequest(null, e?.message)
 
     default:
       return response.internalError(
@@ -85,12 +84,11 @@ export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
     app.use('*', logger((...args: any[]) => console.log(colors.gray(localDate()), ...args)))
 
   app.use(async (c: Context, next: Next) => {
-    cx.setContext(c)
-    Auth.resolve()
+    c.set('_', new request(c))
     await next()
   })
   getMiddlewares().forEach(mw => {
-    const h = async (c: Context, next: Next) => await resolveMiddleware(mw)(cx.cx, next)
+    const h = async (c: Context, next: Next) => await resolveMiddleware(mw)(c.get('_'), next)
     // @ts-ignore
     mw?.path ? app.use(String(mw.path), h) : app.use(h)
   })
@@ -117,7 +115,7 @@ export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
 
 function mw(...objs: string[]): Function[] {
   return objs.flatMap(obj => {
-    if (typeof obj !== 'string') return null
+    if (typeof obj != 'string') return null
     // @ts-ignore
     return getHandler(obj)?.mw || null
   }).flat().filter(Boolean)

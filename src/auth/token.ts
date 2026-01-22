@@ -1,19 +1,20 @@
 import { Envir } from 't0n'
 import { Token as Factory } from 'cripta'
 import { UAParser } from 'ua-parser-js'
-import c from '../context'
+import type { IRequest } from '@/types'
 
 export class Token {
+  static #cookieName: string = '__auth_'
   static #name: string = 'Authorization'
   static #prefix: string = 'bearer'
 
-  static fromRequest() {
-    const token = this.fromCookie() || this.fromHeader()
-    return token ? this.parse(token) : null
+  static fromRequest(req: IRequest) {
+    const token = this.fromCookie(req) || this.fromHeader(req)
+    return token ? this.parse(req, token) : null
   }
 
-  static fromHeader(): string | null {
-    const header = c.cx.req.header(this.#name) || c.cx.req.header('HTTP_AUTHORIZATION') || c.cx.req.header('REDIRECT_HTTP_AUTHORIZATION') || null
+  static fromHeader(req: IRequest): string | null {
+    const header = req.header(this.#name) || req.header('HTTP_AUTHORIZATION') || req.header('REDIRECT_HTTP_AUTHORIZATION') || null
 
     if (header) {
       const pos = header.toLowerCase().indexOf(this.#prefix.toLowerCase())
@@ -29,39 +30,39 @@ export class Token {
     return null
   }
 
-  static fromCookie(): string | null {
-    const uid = c.cx.req.header('uid')
+  static fromCookie(req: IRequest): string | null {
+    const uid = req.header('uid')
 
     if (uid) {
-      const auth = c.cookie.get('__auth_' + uid)
+      const auth = req.cookie.get(this.#cookieName + uid)
       return auth ? auth : null
     }
 
     return null
   }
 
-  static parse(token: string) {
-    const host = this.host()
+  static parse(req: IRequest, token: string) {
+    const host = this.host(req)
     const serveHost = Envir.get('FLOW_SERVER', host) as string
 
     return Factory.parse(token)
       .issuedBy(serveHost)
       .permittedFor(host)
-      .withClaim('u', this.userAgent())
-      .withClaim('i', this.ip())
+      .withClaim('u', this.userAgent(req))
+      .withClaim('i', this.ip(req))
   }
 
-  static create(user: any, exp: number = 7200) {
+  static create(req: IRequest, user: any, exp: number = 7200) {
     const time = Math.floor(Date.now() / 1000)
-    const host = this.host(c.cx.req.header('host') || '')
+    const host = this.host(req)
 
     return Factory.create()
       .issuedBy(host)
       .permittedFor(host)
       .issuedAt(time)
       .expiresAt(time + exp)
-      .withClaim('u', this.userAgent())
-      .withClaim('i', this.ip())
+      .withClaim('u', this.userAgent(req))
+      .withClaim('i', this.ip(req))
       .body(user)
   }
 
@@ -73,8 +74,9 @@ export class Token {
     this.#name = name
   }
 
-  static host(url?: string | null | undefined): string {
-    if (!url) url = c.cx.req.url || c.cx.req.header('host') || ''
+  static host(req: IRequest): string {
+    const url = req.url || req.header('host')
+    if (!url) return ''
 
     let formattedUrl = String(url)
     if (!formattedUrl.startsWith('http'))
@@ -88,13 +90,14 @@ export class Token {
     }
   }
 
-  static userAgent() {
-    if (!c?.userAgent) return 0
-    const { browser, device, os } = UAParser(c.userAgent)
+  static userAgent(req: IRequest) {
+    const ua = req?.userAgent
+    if (!ua) return 0
+    const { browser, device, os } = UAParser(ua)
     return (browser?.name || '') + (browser?.major || '') + (device?.model || '') + (os?.name || '')
   }
 
-  static ip() {
-     return c?.ip || 0
+  static ip(req: IRequest) {
+     return req?.ip || 0
   }
 }

@@ -1,37 +1,70 @@
 import type { ContentfulStatusCode, RedirectStatusCode, StatusCode } from 'hono/utils/http-status'
 import type { BaseMime } from 'hono/utils/mime'
+import type { ResponseHeader } from 'hono/utils/headers'
 import type { ErrorResponse, Errors } from './types'
+import { HtmlEscapedCallbackPhase, resolveCallback } from 'hono/utils/html'
+
+type HeaderRecord =
+  | Record<'Content-Type', BaseMime>
+  | Record<ResponseHeader, string | string[]>
+  | Record<string, string | string[]>
 
 type RBag = {
   status?: StatusCode,
-  headers?: { 'Content-Type'?: BaseMime, 'Location'?: string },
+  headers?: HeaderRecord,
 }
 
 export default class $Response {
-  static raw(status?: StatusCode, body?: any, cType?: BaseMime) {
+  static raw(
+    status?: StatusCode,
+    body?: any,
+    cType?: BaseMime,
+    headers?: HeaderRecord
+  ) {
     const b: RBag = { status: status || 200 }
-    if (cType) b.headers = {'Content-Type': cType}
-    return new Response(body || null, b)
+
+    if (cType || headers) {
+      headers ??= {}
+      if (cType) headers['Content-Type'] = cType
+      b.headers = headers
+    }
+
+    return new Response(body ?? null, b)
   }
 
   static text(data?: string, status?: StatusCode) {
     return this.raw(status, data, 'text/plain; charset=UTF-8' as BaseMime)
   }
 
-  static json<T>(data?: T, status?: StatusCode) {
-    if (data === undefined)
+  static json<T>(data?: T, status?: StatusCode, headers?: HeaderRecord) {
+    if (data == null)
       return this.raw(status)
 
-    return this.raw(status, JSON.stringify(data), 'application/json')
+    return this.raw(status, JSON.stringify(data), 'application/json', headers)
   }
 
-  static redirect(location: string | URL, status?: RedirectStatusCode) {
+  static redirect(
+    location: string | URL,
+    status?: RedirectStatusCode,
+    headers?: HeaderRecord
+  ) {
     const loc = String(location)
 
     return new Response(null, {
       status: status || 302,
-      headers: { 'Location': /[^\x00-\xFF]/.test(loc) ? encodeURI(loc) : loc }
+      headers: { ...headers, 'Location': /[^\x00-\xFF]/.test(loc) ? encodeURI(loc) : loc }
     })
+  }
+
+  static html(
+    html: string | Promise<string>,
+    status?: ContentfulStatusCode,
+    headers?: HeaderRecord
+  ): Response | Promise<Response> {
+    const res = (html: string) => this.raw(status, html, 'text/html; charset=UTF-8' as BaseMime, headers)
+    return typeof html == 'string'
+      ? res(html)
+      : resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then(res)
   }
 
   static ok(): Response

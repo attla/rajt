@@ -1,98 +1,179 @@
-import { bufferToFormData } from 'hono/utils/buffer'
+import { getCookie, getSignedCookie, setCookie, setSignedCookie, deleteCookie } from 'hono/cookie'
 import { HTTPException } from 'hono/http-exception'
-import type { BodyData } from 'hono/utils/body'
-import Response from './response'
-import c from './context'
+import { Authnz, Token } from './auth'
 
-export default class Request {
-  static param(key: string) {
-    return c.cx.req.param(key)
+import type { Context } from 'hono'
+import type { CookieOptions, CookiePrefixOptions } from 'hono/utils/cookie'
+import type { CustomHeader, RequestHeader } from 'hono/utils/headers'
+import type { BodyData, ParseBodyOptions } from 'hono/utils/body'
+
+const cookieWrapper = (c: Context) => ({
+  all: () => getCookie(c),
+  allSigned: (secret: string) => getSignedCookie(c, secret),
+  get: (name: string, prefixOptions?: CookiePrefixOptions) => prefixOptions ? getCookie(c, name, prefixOptions) : getCookie(c, name),
+  getSigned: (secret: string, name: string, prefixOptions?: CookiePrefixOptions) => prefixOptions ? getSignedCookie(c, secret, name, prefixOptions) : getSignedCookie(c, secret, name),
+  set: (name: string, value: string, opt?: CookieOptions) => setCookie(c, name, value, opt),
+  setSigned: (name: string, value: string, secret: string, opt?: CookieOptions) => setSignedCookie(c, name, value, secret, opt),
+  delete: (name: string, opt?: CookieOptions) => deleteCookie(c, name, opt)
+})
+
+export default class $Request {
+  #c!: Context
+  #cookie: ReturnType<typeof cookieWrapper>
+  #u: Authnz<any> | null = null
+
+  constructor(c: Context) {
+    this.#c = c
+    this.#cookie = cookieWrapper(c)
+    this.#u = Authnz.fromToken(Token.fromRequest(this))
   }
 
-  static query() {
-    return c.cx.req.query()
+  get user() {
+    return this.#u ? this.#u?.data : null
   }
 
-  static async form(cType?: string) {
-    cType ??= c.cx.req.header('Content-Type')
-    if (!cType) return {}
-
-    let formData: FormData
-
-    if (c.cx.req.bodyCache.formData) {
-      formData = await c.cx.req.bodyCache.formData
-    } else {
-      try {
-        const arrayBuffer = await c.cx.req.arrayBuffer()
-        formData = await bufferToFormData(arrayBuffer, cType)
-        c.cx.req.bodyCache.formData = formData
-      } catch (e) {
-        throw new HTTPException(400, {
-          message: 'Malformed FormData request.'
-                   + (e instanceof Error ? ` ${e.message}` : ` ${String(e)}`)
-        })
-      }
-    }
-
-    const form: BodyData<{ all: true }> = {}
-    formData.forEach((value, key) => {
-      if (key.endsWith('[]')) {
-        ;((form[key] ??= []) as unknown[]).push(value)
-      } else if (Array.isArray(form[key])) {
-        ;(form[key] as unknown[]).push(value)
-      } else if (key in form) {
-        form[key] = [form[key] as string | File, value]
-      } else {
-        form[key] = value
-      }
-    })
-
-    return form
+  get auth() {
+    return this.#u
   }
 
-  static async json<E>() {
-    try {
-      return await c.cx.req.json<E>()
-    } catch {
-      throw new HTTPException(400, { message: 'Malformed JSON in request body' })
-    }
+  can(...abilities: string[]) {
+    return this.#u ? this.#u.can(...abilities) : false
   }
 
-  static async body<E>() {
-    const cType = c.cx.req.header('Content-Type')
+  cant(...abilities: string[]) {
+    return !this.can(...abilities)
+  }
+
+  hasRole(...roles: string[]) {
+    return this.#u ? this.#u.hasRole(...roles) : false
+  }
+
+  has(prop: string, value: any = null) {
+    return this.#u ? this.#u.has(prop, value) : false
+  }
+  hasValue(prop: string, value: any = null) {
+    return this.has(prop, value)
+  }
+
+  get cx() {
+    return this.#c
+  }
+
+  get cookie() {
+    return this.#cookie
+  }
+
+  get ip(): string | undefined {
+    return this.#c.req.header('cf-connecting-ip')
+      || this.#c.req.header('x-forwarded-for')?.split(',')[0]?.trim()
+      || this.#c.env?.aws?.lambda?.event?.requestContext?.identity?.sourceIp
+      || this.#c.req.header('x-real-ip')
+      || this.#c.env?.remoteAddr?.hostname
+  }
+
+  get userAgent(): string | undefined {
+    return this.#c.req.header('user-agent')
+  }
+
+  get routePath() {
+    return this.#c.req.routePath
+  }
+
+  get path() {
+    return this.#c.req.path
+  }
+
+  get url() {
+    return this.#c.req.raw.url
+  }
+
+  get method() {
+    return this.#c.req.raw.method
+  }
+
+  get matchedRoutes() {
+    return this.#c.req.matchedRoutes
+  }
+
+  get raw() {
+    return this.#c.req.raw
+  }
+
+  header(name: RequestHeader): string | undefined
+  header(name: string): string | undefined
+  header(): Record<RequestHeader | (string & CustomHeader), string>
+  header(name?: string) { // @ts-ignore
+    return this.#c.req.header(name)
+  }
+
+  param(key?: string) { // @ts-ignore
+    return this.#c.req.param(key)
+  }
+
+  query(): Record<string, string>
+  query(key: string): string | undefined
+  query(key?: string) { // @ts-ignore
+    return this.#c.req.query(key)
+  }
+
+  queries(): Record<string, string[]>
+  queries(key: string):string[] | undefined
+  queries(key?: string) { // @ts-ignore
+    return this.#c.req.queries(key)
+  }
+
+  async body<E>() {
+    const cType = this.#c.req.header('Content-Type')
     if (!cType) return {} as E
 
-    if (/^application\/([a-z-\.]+\+)?json(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/.test(cType)) {
-      return await Request.json<E>()
-    }
+    if (/^application\/([a-z-\.]+\+)?json(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/.test(cType))
+      return await this.json<E>()
 
     if (
-      /^multipart\/form-data(;\s?boundary=[a-zA-Z0-9'"()+_,\-./:=?]+)?$/.test(cType)
-      && ! /^application\/x-www-form-urlencoded(;\s*[a-zA-Z0-9\-]+\=([^;]+))*$/.test(cType)
+      cType?.startsWith('multipart/form-data')
+      || cType?.startsWith('application/x-www-form-urlencoded')
     ) {
-        return await Request.form() as E
+      return await this.parseBody() as E
     }
 
     return {} as E
   }
 
-  static get response() {
-    return Response
+  async parseBody<Options extends Partial<ParseBodyOptions>, T extends BodyData<Options>>(
+    options?: Options
+  ): Promise<T>
+  async parseBody<T extends BodyData>(options?: Partial<ParseBodyOptions>): Promise<T>
+  async parseBody(options?: Partial<ParseBodyOptions>) {
+    try {
+      return await this.#c.req.parseBody(options)
+    } catch (e) {
+      throw new HTTPException(400, {
+        message: 'Malformed FormData request.'+ (e instanceof Error ? ` ${e.message}` : ` ${String(e)}`)
+      })
+    }
   }
 
-  static get cx() {
-    return c.cx
+  async json<E>() {
+    try {
+      return await this.#c.req.json<E>()
+    } catch {
+      throw new HTTPException(400, { message: 'Malformed JSON in request body' })
+    }
   }
 
-  static get cookie() {
-    return c.cookie
+  text() {
+    return this.#c.req.text()
   }
 
-  static get ip() {
-    return c.ip
+  arrayBuffer() {
+    return this.#c.req.arrayBuffer()
   }
 
-  static get userAgent() {
-    return c.userAgent
+  blob() {
+    return this.#c.req.blob()
+  }
+
+  formData() {
+    return this.#c.req.formData()
   }
 }

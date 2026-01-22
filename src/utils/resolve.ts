@@ -1,5 +1,6 @@
-import Action, { ActionType } from '../action'
+import Action from '../action'
 import { MiddlewareType } from '../middleware'
+import type { ActionType } from '../types'
 
 export function resolve(obj: ActionType, id: string) {
   if (typeof obj == 'function' && obj?.length == 2)
