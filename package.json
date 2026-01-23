@@ -1,7 +1,7 @@
 {
   "name": "rajt",
   "description": "A serverless bundler layer, fully typed for AWS Lambda (Node.js and LLRT) and Cloudflare Workers.",
-  "version": "0.0.58",
+  "version": "0.0.59",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -10,8 +10,11 @@
   "exports": {
     ".": "./src/index.ts",
     "./auth": "./src/auth/index.ts",
-    "./dynamodb": "./src/dynamodb/index.ts",
-    "./dynamodb/types": "./src/dynamodb/types.ts",
+    "./d1": "./src/db/d1.ts",
+    "./d1/types": "./src/db.d.ts",
+    "./dynamodb": "./src/db/dynamodb.ts",
+    "./dynamodb/types": "./src/db/dynamodb.d.ts",
+    "./enum": "./src/enum.ts",
     "./http": "./src/http.ts",
     "./types": "./src/types.ts",
     "./env": "./src/utils/environment.ts",
@@ -48,12 +51,10 @@
     "start": "node ../../dist/index.js"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "3.817.0",
-    "@aws-sdk/lib-dynamodb": "3.817.0",
     "@hono/zod-validator": "^0.4.3",
     "cripta": "^0.1",
+    "forj": "^0.0.2",
     "hono": "^4.7.6",
-    "pluralize": "^8.0",
     "t0n": "^0.1.5",
     "ua-parser-js": "^2.0.4"
   },
@@ -71,7 +72,6 @@
     "@miniflare/storage-file": "^2.14.4",
     "@miniflare/web-sockets": "^2.14.4",
     "@types/node": "^20.11.0",
-    "@types/pluralize": "^0.0.33",
     "bun-types": "^1.2.14",
     "chokidar-cli": "^3.0.0",
     "citty": "^0.1.6",

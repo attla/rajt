@@ -15,6 +15,7 @@
 | -: | :- | :- |
 | [rajt](https://github.com/attla/rajt) | [![rajt version](https://img.shields.io/npm/v/rajt.svg?label=%20)](https://npm.im/rajt) | 🧱 The core of Rajt serverless framework. |
 | [create-rajt](https://github.com/attla/create-rajt) | [![create-rajt version](https://img.shields.io/npm/v/create-rajt.svg?label=%20)](https://npm.im/create-rajt) | 📁 CLI tool for create new Rajt projects, from starter templates. |
+| [forj](https://github.com/attla/forj) | [![forj version](https://img.shields.io/npm/v/forj.svg?label=%20)](https://npm.im/forj) | 🗂️ Just another query builder in typescript |
 | [t0n](https://github.com/attla/t0n) | [![t0n version](https://img.shields.io/npm/v/t0n.svg?label=%20)](https://npm.im/t0n) | 🧰 Collection of elegant typescript resources for web artisans. |
 | [cripta](https://github.com/attla/cripta) | [![cripta version](https://img.shields.io/npm/v/cripta.svg?label=%20)](https://npm.im/cripta) | 🧛 A layer of encryption a little too judicious. |
 
