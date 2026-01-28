@@ -56,7 +56,7 @@ Consider using a Node.js version manager such as https://volta.sh or https://git
       "--no-warnings",
       ...process.execArgv,
       tsxPath,
-      join(__dirname, "../rajt/src/cli/index.ts"),
+      join(__dirname, "../cli/index.ts"),
       ...process.argv.slice(2),
     ].filter(arg =>
       !arg.includes('experimental-vm-modules') &&
@@ -103,10 +103,8 @@ function semiver(a, b, bool) {
 
 function directly() {
   try {
-    return ![typeof require, typeof module].includes('undefined') && require.main == module
-      || import.meta.url == `file://${process.argv[1]}`
-      || process.argv[1].endsWith(process.env?.npm_package_bin_rajt)
-      || import.meta?.url?.endsWith(process.env?.npm_package_bin_rajt)
+    return process.env?.npm_lifecycle_script == 'rajt'
+      && process.argv[1]?.endsWith('node_modules/.bin/rajt')
   } catch {
     return false
   }

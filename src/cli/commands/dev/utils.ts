@@ -79,7 +79,7 @@ export const build = async (platform: 'aws' | 'cf' | 'node') => {
         name: 'preserve-class-names',
         setup(build) {
           build.onLoad(
-            { filter: /(actions|features)\/.*\.ts$/ },
+            { filter: /(actions|features|routes)\/.*\.ts$/ },
             async (args) => {
               const contents = await readFile(args.path, 'utf8')
               const result = await esbuild.transform(contents, {

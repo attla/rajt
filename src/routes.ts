@@ -1,16 +1,18 @@
-import { existsSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { Route } from './types'
-import { isAnonFn } from './utils/func'
 
-import { writeFileSync } from 'node:fs'
+import glob from 'tiny-glob'
 import { config } from 'dotenv'
+
+import IMPORT from './utils/import'
+import { isAnonFn } from './utils/func'
 import ensureDir from './utils/ensuredir'
 import versionSHA from './utils/version-sha'
+import type { Route } from './types'
 
 const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+const __root = resolve(dirname(__filename), '../../..')
 
 const importName = (name?: string) => (name || 'Fn'+ Math.random().toString(36).substring(2)).replace(/\.ts$/, '')
 const walk = async (dir: string, baseDir: string, fn: Function, parentMw: string[] = []): Promise<void> => {
@@ -21,7 +23,7 @@ const walk = async (dir: string, baseDir: string, fn: Function, parentMw: string
   const indexFile = join(dir, 'index.ts')
 
   if (existsSync(indexFile)) {
-    const mod = await import(indexFile)
+    const mod = await IMPORT(indexFile)
     const group = mod.default
 
     !isAnonFn(group) && group?.mw?.length && currentMw.push(group?.name)
@@ -35,28 +37,30 @@ const walk = async (dir: string, baseDir: string, fn: Function, parentMw: string
     if (stat.isDirectory()) {
       await walk(fullPath, baseDir, fn, currentMw)
     } else if (file != 'index.ts' && file.endsWith('.ts') && !file.endsWith('.d.ts')) {
-      const mod = await import(fullPath)
+      const mod = await IMPORT(fullPath)
       fn(fullPath, baseDir, mod.default, currentMw)
     }
   }
 }
 
 export async function getRoutes(
-  dirs: string[] = ['actions', 'features']
+  dirs: string[] = ['actions', 'features', 'routes']
 ): Promise<Route[]> {
   const routes: Route[] = []
   let mw: string[] = []
 
   await Promise.all(dirs.map(dir => walk(
-    resolve(__dirname, '../../..', dir),
+    resolve(__root, dir),
     dir,
-    (fullPath: string, baseDir: string, handle: any, middlewares: string[]) => {
+    (path: string, baseDir: string, handle: any, middlewares: string[]) => {
       const name = importName(handle?.name)
-      const file = baseDir + fullPath.split(baseDir)[1]
+      path = path.split(baseDir)[1]
+      const file = baseDir + path
 
+      const m = handle?.m?.toLowerCase()
+      const [method, uri] = m ? [m, handle?.p] : [extractHttpVerb(path), extractHttpPath(path)]
       routes.push({
-        method: handle?.m?.toLowerCase() || '',
-        path: handle?.p || '',
+        method, path: uri,
         name,
         file,
         // @ts-ignore
@@ -67,6 +71,27 @@ export async function getRoutes(
   )))
 
   return sortRoutes(routes)
+}
+
+function extractHttpVerb(file: string) {
+  if (!file) return 'get'
+  const match = file.match(/\.(get|post|put|patch|delete|head|options)\.(?=[jt]s$)/i)
+  return match && match[1] ? match[1].toLowerCase() : 'get'
+}
+
+function extractHttpPath(file: string) {
+  const route = '/'+ file.replace(/\\/g, '/')
+    // .replace(/^(actions|features|routes)\//, '')
+    .replace(/\.[jt]s$/, '')
+    .replace(/\.(get|post|put|patch|delete|head|options)$/i, '')
+    .replace(/\/index$/, '')
+    .split('/')
+    .filter(Boolean)
+    .filter(part => !(part.startsWith('(') && part.endsWith(')')))
+    .map(part => part.startsWith('[') && part.endsWith(']') ? ':'+ part.slice(1, -1) : part)
+    .join('/')
+
+  return route == '/' ? '/' : route.replace(/\/$/, '')
 }
 
 function sortRoutes(routes: Route[]) {
@@ -109,7 +134,7 @@ export async function getMiddlewares(
   const mw: Route[] = []
 
   await Promise.all(dirs.map(dir => walk(
-    resolve(__dirname, '../../..', dir),
+    resolve(__root, dir),
     dir,
     (fullPath: string, baseDir: string, handle: any) => {
       // @ts-ignore
@@ -124,6 +149,36 @@ export async function getMiddlewares(
   return mw
 }
 
+function extractName(file: string) {
+  return file.replace(/\.[^/.]+$/, '').split('/').slice(1).join('.')
+}
+
+export async function getConfigs(
+  dirs: string[] = ['configs']
+): Promise<Record<string, any>> {
+  if (!dirs?.length) return {}
+  const configs: Record<string, any> = {}
+
+  const files = await glob(join(__root, dirs?.length > 1 ? `{${dirs.join(',')}}` : dirs[0], '/**/*.{ts,js,json}'))
+
+  for (const file of files) {
+    const mod = await IMPORT(join(__root, file))
+    const keyPath = extractName(file).split('.')
+
+    keyPath.reduce((acc, key, index) => {
+      if (index == keyPath.length - 1) {
+        acc[key] = mod.default
+      } else if (!acc[key] || typeof acc[key] != 'object') {
+        acc[key] = {}
+      }
+
+      return acc[key]
+    }, configs)
+  }
+
+  return configs
+}
+
 const env = Object.entries(
   config({ path: '../../.env.prod' })?.parsed || {}
 ).filter(([key, val]) => key?.toLowerCase().indexOf('aws') != 0) // prevent AWS credentials
@@ -132,18 +187,46 @@ const version = versionSHA('../../.git') // @ts-ignore
 env.push(['VERSION_SHA', process.env['VERSION_SHA'] = version]) // @ts-ignore
 env.push(['VERSION_HASH', process.env['VERSION_HASH'] = version?.substring(0, 7)])
 
+const IDENTIFIER_RE = /^[$_\p{ID_Start}][$_\u200C\u200D\p{ID_Continue}]*$/u
+function stringifyToJS(value: unknown): string {
+  if (value === null) return 'null'
+  if (value === undefined) return 'undefined'
+
+  const type = typeof value
+
+  if (type == 'string') return JSON.stringify(value)
+  if (type == 'number' || type == 'boolean') return String(value)
+  if (type == 'bigint') return `${value}n`
+  if (type == 'function') return value.toString()
+
+  if (Array.isArray(value))
+    return `[${value.map(stringifyToJS).join(',')}]`
+
+  if (type == 'object') {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .map(([key, val]) => `${IDENTIFIER_RE.test(key) ? key : JSON.stringify(key)}:${stringifyToJS(val)}`)
+
+    return `{${entries.join(',')}}`
+  }
+
+  return 'undefined'
+}
+
 export async function cacheRoutes() {
-  const rolePath = join(__dirname, '../../../roles.json')
+  const rolePath = join(__root, 'configs/roles.ts')
+  ensureDir(rolePath)
   if (!existsSync(rolePath))
-    writeFileSync(rolePath, '{}')
+    writeFileSync(rolePath, `export default {\n\n}`)
 
   const routes = await getRoutes()
   const middlewares = await getMiddlewares()
+  const configs = Object.entries(await getConfigs())
 
-  const iPath = join(__dirname, '../../../tmp/import-routes.mjs')
+  const iPath = join(__root, 'tmp/import-routes.mjs')
   ensureDir(iPath)
   writeFileSync(iPath, `// AUTO-GENERATED FILE - DO NOT EDIT
-${env?.length ? `import { Envir } from '../node_modules/t0n/dist/index'\nEnvir.add({${env.map(([key, val]) => key + ':' + JSON.stringify(val)).join(',')}})` : ''}
+${env?.length ? `import { Envir } from '../node_modules/t0n/dist/index'\nEnvir.add({${env.map(([key, val]) => key +':'+ stringifyToJS(val)).join(',')}})` : ''}
+${configs?.length ? `import Config from '../node_modules/rajt/src/config'\nConfig.add({${configs.map(([key, val]) => key +':'+ stringifyToJS(val)).join(',')}})` : ''}
 
 import { registerHandler, registerMiddleware } from '../node_modules/rajt/src/register'
 
@@ -169,7 +252,7 @@ try {
 }
 `)
 
-  const rPath = join(__dirname, '../../../tmp/routes.json')
+  const rPath = join(__root, 'tmp/routes.json')
   ensureDir(rPath)
   writeFileSync(rPath, JSON.stringify(routes.filter(r => r.method && r.path).map(route => [
     route.method,

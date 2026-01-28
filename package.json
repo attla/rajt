@@ -1,17 +1,17 @@
 {
   "name": "rajt",
   "description": "A serverless bundler layer, fully typed for AWS Lambda (Node.js and LLRT) and Cloudflare Workers.",
-  "version": "0.0.59",
+  "version": "0.0.61",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "rajt": "./src/bin/rajt.js"
+    "rajt": "./bin/rajt.js"
   },
   "exports": {
     ".": "./src/index.ts",
     "./auth": "./src/auth/index.ts",
     "./d1": "./src/db/d1.ts",
-    "./d1/types": "./src/db.d.ts",
+    "./d1/types": "./src/db/d1.d.ts",
     "./dynamodb": "./src/db/dynamodb.ts",
     "./dynamodb/types": "./src/db/dynamodb.d.ts",
     "./enum": "./src/enum.ts",
@@ -21,6 +21,7 @@
     "./length": "./src/utils/length.ts"
   },
   "files": [
+    "bin",
     "src"
   ],
   "scripts": {
@@ -53,9 +54,9 @@
   "dependencies": {
     "@hono/zod-validator": "^0.4.3",
     "cripta": "^0.1",
-    "forj": "^0.0.2",
+    "forj": "^0.0.4",
     "hono": "^4.7.6",
-    "t0n": "^0.1.5",
+    "t0n": "^0.1",
     "ua-parser-js": "^2.0.4"
   },
   "devDependencies": {
@@ -79,6 +80,7 @@
     "esbuild": "^0.25.2",
     "miniflare": "^4.20251217.0",
     "picocolors": "^1.1.1",
+    "tiny-glob": "^0.2",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3",
     "wrangler": "^4.56.0"

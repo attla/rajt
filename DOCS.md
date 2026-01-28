@@ -111,11 +111,13 @@ bunx rajt deploy:update -p aws
 bunx rajt deploy -p=cf
 ```
 
-## Actions/Features
+## Routing
 
 The organization of the application's endpoints is done through a folder structure.
 
-All endpoints must be encapsulated in files inside the `./actions/` folder; `./features/` is also accepted.
+All endpoints must be encapsulated in files inside the `./actions/` folder; `./features/` or `./routes/` is also accepted.
+
+You can only define one handler per file. Also you can append the HTTP method to the filename to define a specific request method.
 
 #### File/folder names must use urlBase64Safe ([RFC4648](https://datatracker.ietf.org/doc/html/rfc4648#section-5)):
 * Allowed characters: `a-z`, `A-Z`, `0-9`, `-`, `_`;
@@ -125,26 +127,31 @@ All endpoints must be encapsulated in files inside the `./actions/` folder; `./f
 .
 └── actions/
     ├── orgs/
-    │   ├── list.ts            → [GET]    /orgs
-    │   ├── create.ts          → [POST]   /orgs
-    │   ├── get.ts             → [GET]    /orgs/$ORG_ID
-    │   └── members/
-    │       ├── list.ts        → [GET]    /orgs/$ORG_ID/members
-    │       ├── add.ts         → [POST]   /orgs/$ORG_ID/members/$USER_ID
-    │       ├── get.ts         → [GET]    /orgs/$ORG_ID/members/$USER_ID
-    │       ├── edit.ts        → [PUT]    /orgs/$ORG_ID/members/$USER_ID
-    │       ├── inactive.ts    → [PATCH]  /orgs/$ORG_ID/members/$USER_ID/inactive
-    │       └── remove.ts      → [DELETE] /orgs/$ORG_ID/members/$USER_ID
-    ├── users/
-    │   ├── user_new.ts        → [POST]   /users/new
-    │   ├── user-get.ts        → [GET]    /users/$ID
-    │   ├── UserEdit.ts        → [PATCH]  /users/$ID
-    │   ├── Userdelete.ts      → [DELETE] /users/$ID/delete
-    │   ├── userblock.ts       → [PATCH]  /users/$ID/block
-    │   ├── userSearch.ts      → [GET]    /users/search
-    │   └── index.ts           → [GET]    /users
-    ├── posts.ts               → [GET]    /posts
-    └── index.ts               → [GET]    /
+    │   ├── [org]/
+    │   │   ├── [repo]/
+    │   │   │   ├── list.get.ts    → [GET]    /orgs/:org/:repo/list
+    │   │   │   ├── issues.ts      → [GET]    /orgs/:org/:repo/issues
+    │   │   └── members/
+    │   │   │   ├── index.ts       → [GET]    /orgs/:org/members
+    │   │   │   ├── add.post.ts    → [POST]   /orgs/:org/members/add
+    │   │   └── index.get.ts       → [GET]    /orgs/:org
+    │   │   └── index.post.ts      → [POST]   /orgs/:org
+    │   │   └── index.put.ts       → [PUT]    /orgs/:org
+    │   └── index.ts               → [GET]    /orgs
+    ├── users.ts                   → [GET]    /users
+    └── index.ts                   → [GET]    /
+```
+
+In some cases, you may want to group a set of routes together in a way which doesn't affect file-based routing. For this purpose, you can put files in a folder which is wrapped in parentheses `(` and `)`.
+
+```bash
+.
+└── routes/
+    ├── (admin)/
+    │   ├── users.ts       → [GET]    /users
+    │   └── reports.ts     → [GET]    /reports
+    ├── (public)/
+        └── index.ts       → [GET]    /
 ```
 
 #### Index Files:

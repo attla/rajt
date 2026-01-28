@@ -1,7 +1,12 @@
 <h1 align="left">λ Rajt<br/><a href="https://pr.new/attla/rajt"><img align="right" src="https://developer.stackblitz.com/img/start_pr_dark_small.svg" alt="Start new PR in StackBlitz Codeflow"></a><a href="https://npmjs.com/package/rajt"><img align="right" src="https://img.shields.io/npm/v/rajt.svg" alt="npm package"></a></h1>
+
+> *Runtime-Agnostic for Javascript and TypeScript*.
+
+> *From Hungarian **`[ˈrɒjt]`** (meaning "start") and Russian **`Райт`** (meaning "wright").*
+
 <br/>
 
-> This framework is fully geared towards the serverless world, specifically AWS Lambda (Node.js, Bun and LLRT runtime) / Cloudflare Workers.
+This framework is fully geared towards the serverless world, specifically AWS Lambda (Node.js, Bun and LLRT runtime) / Cloudflare Workers.
 
 - 💡 Instant Server Start
 - ⚡️ Fast Cold Start

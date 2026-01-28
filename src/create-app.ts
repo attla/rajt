@@ -7,6 +7,7 @@ import type { Env, Context, ErrorHandler, NotFoundHandler, Next } from 'hono'
 // import type { H, Handler, HandlerResponse } from 'hono/types'
 import type { HTTPResponseError } from 'hono/types'
 import colors from 'picocolors'
+import { Envir } from 't0n'
 import type { Routes } from './types'
 import { BadRequest, Unauthorized } from './exceptions'
 import { resolve, resolveMiddleware } from './utils/resolve'
@@ -85,6 +86,7 @@ export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
 
   app.use(async (c: Context, next: Next) => {
     c.set('_', new request(c))
+    if (c.env) Envir.add(c.env)
     await next()
   })
   getMiddlewares().forEach(mw => {
