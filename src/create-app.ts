@@ -6,7 +6,8 @@ import type { Env, Context, ErrorHandler, NotFoundHandler, Next } from 'hono'
 // import { createMiddleware } from 'hono/factory'
 // import type { H, Handler, HandlerResponse } from 'hono/types'
 import type { HTTPResponseError } from 'hono/types'
-import colors from 'picocolors'
+import { createColors } from 'picocolors'
+import { getColorEnabledAsync } from 'hono/utils/color'
 import { Envir } from 't0n'
 import type { Routes } from './types'
 import { BadRequest, Unauthorized } from './exceptions'
@@ -14,8 +15,10 @@ import { resolve, resolveMiddleware } from './utils/resolve'
 import { getMiddlewares, getHandler } from './register'
 import { isDev } from './utils/environment'
 import localDate from './utils/local-date'
-import request from './request'
+import request, { GET_REQUEST } from './request'
 import response from './response'
+
+const colors = createColors(await getColorEnabledAsync())
 
 type InitFunction<E extends Env = Env> = (app: Hono<E>) => void
 
@@ -85,12 +88,12 @@ export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
     app.use('*', logger((...args: any[]) => console.log(colors.gray(localDate()), ...args)))
 
   app.use(async (c: Context, next: Next) => {
-    c.set('_', new request(c))
+    c.set(GET_REQUEST as unknown as string, new request(c))
     if (c.env) Envir.add(c.env)
     await next()
   })
   getMiddlewares().forEach(mw => {
-    const h = async (c: Context, next: Next) => await resolveMiddleware(mw)(c.get('_'), next)
+    const h = async (c: Context, next: Next) => await resolveMiddleware(mw)(c.get(GET_REQUEST as unknown as string), next)
     // @ts-ignore
     mw?.path ? app.use(String(mw.path), h) : app.use(h)
   })

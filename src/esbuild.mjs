@@ -1,6 +1,5 @@
 import esbuild from 'esbuild'
 import { basename, dirname, join, relative } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { mkdirSync, existsSync, readdirSync, rmSync, copyFileSync } from 'node:fs'
 import { readFile, stat, writeFile } from 'node:fs/promises'
 
@@ -16,7 +15,7 @@ const platforms = ['aws', 'cf']
 if (!platform || !platforms.includes(platform))
   fail()
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
+const __dirname = dirname(new URL(import.meta.url).pathname)
 
 const formatSize = (bytes) => {
   if (bytes < 1024) return `${bytes}b`

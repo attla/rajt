@@ -25,11 +25,9 @@ console.error = () => {}
 const directly = () => {
   try {
     // @ts-ignore
-		return typeof vitest == 'undefined'
-			&& (
-				![typeof require, typeof module].includes('undefined') && require.main == module
-				|| import.meta.url == `file://${process.argv[1]}`
-			)
+    return typeof vitest == 'undefined'
+      && process.env?.npm_lifecycle_script == 'rajt'
+      && import.meta.url == `file://${process.argv[1]}`
 	} catch {
 		return false
 	}

@@ -1,14 +1,13 @@
 import esbuild from 'esbuild'
 import TOML from '@iarna/toml'
 import { Miniflare } from 'miniflare'
-import { fileURLToPath } from 'node:url'
 import { mkdirSync, existsSync, readdirSync, rmSync, copyFileSync } from 'node:fs'
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, relative } from 'node:path'
 
 import { cacheRoutes } from '../../../routes'
 
-const __dirname = join(dirname(fileURLToPath(import.meta.url)), '../../../../../../')
+const __dirname = join(dirname(new URL(import.meta.url).pathname), '../../../../../../')
 const __rajt = join(__dirname, 'node_modules/rajt/src')
 
 export const formatSize = (bytes: number) => {

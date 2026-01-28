@@ -2,19 +2,16 @@
 import { spawn } from "node:child_process";
 import { join, dirname } from "node:path";
 import { existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = dirname(new URL(import.meta.url).pathname);
 
 const ERR_NODE_VERSION = "18.0.0";
 const MIN_NODE_VERSION = "18.0.0";
 
 let rajtProcess;
 
-// Executes ../src/cli/index.ts
 function runRajt() {
-  if (semiver(process.versions.node, ERR_NODE_VERSION) < 0) {
+  if (process?.versions?.node && semiver(process.versions.node, ERR_NODE_VERSION) < 0) {
     console.error(
       `Rajt requires at least Node.js v${MIN_NODE_VERSION}. You are using v${process.versions.node}. Please update your version of Node.js.
 
@@ -24,30 +21,35 @@ Consider using a Node.js version manager such as https://volta.sh or https://git
     return;
   }
 
-  const tsxPaths = [
-    // join(__dirname, "../node_modules/.bin/tsx"),
-    // join(__dirname, "../../.bin/tsx"),
-    join(__dirname, "../node_modules/.bin/tsx"),
-    join(__dirname, "../../node_modules/.bin/tsx"),
-    join(process.cwd(), "node_modules/.bin/tsx"),
-    "tsx",
-  ];
-
+  const isBun = process?.isBun || typeof Bun != 'undefined';
   let tsxPath;
-  for (const pathOption of tsxPaths) {
-    if (pathOption == "tsx" || existsSync(pathOption)) {
-      tsxPath = pathOption;
-      break;
-    }
-  }
+  // const params = isBun ? bunParams() : nodeParams();
 
-  if (!tsxPath) {
-    console.error("TypeScript file found but tsx is not available. Please install tsx:");
-    console.error("  npm i -D tsx");
-    console.error("  or");
-    console.error("  bun i -D tsx");
-    process.exit(1);
-    return;
+  if (!isBun) {
+    const tsxPaths = [
+      // join(__dirname, "../node_modules/.bin/tsx"),
+      // join(__dirname, "../../.bin/tsx"),
+      join(__dirname, "../node_modules/.bin/tsx"),
+      join(__dirname, "../../node_modules/.bin/tsx"),
+      join(process.cwd(), "node_modules/.bin/tsx"),
+      "tsx",
+    ];
+
+    for (const pathOption of tsxPaths) {
+      if (pathOption == "tsx" || existsSync(pathOption)) {
+        tsxPath = pathOption;
+        break;
+      }
+    }
+
+    if (!tsxPath) {
+      console.error("TypeScript file found but tsx is not available. Please install tsx:");
+      console.error("  npm i -D tsx");
+      console.error("  or");
+      console.error("  bun i -D tsx");
+      process.exit(1);
+      return;
+    }
   }
 
   return spawn(
@@ -56,12 +58,9 @@ Consider using a Node.js version manager such as https://volta.sh or https://git
       "--no-warnings",
       ...process.execArgv,
       tsxPath,
-      join(__dirname, "../cli/index.ts"),
+      join(__dirname, "../src/cli/index.ts"),
       ...process.argv.slice(2),
-    ].filter(arg =>
-      !arg.includes('experimental-vm-modules') &&
-      !arg.includes('loader')
-    ),
+    ].filter(arg => arg && !arg.includes('experimental-vm-modules') && !arg.includes('loader')),
     {
       stdio: ["inherit", "inherit", "inherit", "ipc"],
       env: {
@@ -70,20 +69,17 @@ Consider using a Node.js version manager such as https://volta.sh or https://git
         TSX_DISABLE_CACHE: process.env.TSX_DISABLE_CACHE || '1',
       }
     }
-  )
-    .on("exit", (code) =>
-      process.exit(code == null ? 0 : code)
-    )
-    .on("message", (message) => {
-      if (process.send) {
-        process.send(message);
-      }
-    })
-    .on("disconnect", () => {
-      if (process.disconnect) {
-        process.disconnect();
-      }
-    });
+  ).on("exit", (code) =>
+    process.exit(code == null ? 0 : code)
+  ).on("message", (message) => {
+    if (process.send) {
+      process.send(message);
+    }
+  }).on("disconnect", () => {
+    if (process.disconnect) {
+      process.disconnect();
+    }
+  });
 }
 
 var fn = new Intl.Collator(0, { numeric: 1 }).compare;
@@ -104,7 +100,10 @@ function semiver(a, b, bool) {
 function directly() {
   try {
     return process.env?.npm_lifecycle_script == 'rajt'
-      && process.argv[1]?.endsWith('node_modules/.bin/rajt')
+      && (
+        process.argv[1]?.endsWith('node_modules/.bin/rajt')
+        || process.argv[1]?.endsWith('node_modules/rajt/bin/rajt.js')
+      )
   } catch {
     return false
   }

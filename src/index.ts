@@ -2,4 +2,6 @@ export { default as Action } from './action'
 export { default as Middleware } from './middleware'
 export { default as Response } from './response'
 export { default as Config } from './config'
+
 export { Enum, Envir } from 't0n'
+export type { EnumStatic, EnumValue, EnumType } from 't0n'

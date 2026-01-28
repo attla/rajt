@@ -13,17 +13,18 @@ export interface ILogger {
   // custom
   step(...data: any[]): void;
   substep(...data: any[]): void;
+  stepWarn(...data: any[]): void;
   ln(): void;
 }
 
 export const logger = {
-	step(...args: any[]) {
-		if (args?.length && args.length < 2) return _console.log(colors.blue('⁕') +` ${args[0]}\n`)
+  $step(color: Function, ...args: any[]) {
+    if (args?.length && args.length < 2) return _console.log(color('⁕') +` ${args[0]}\n`)
 		const length = args.length - 1
 		args.forEach((arg, index) => {
 				switch (index) {
 					case 0:
-						return _console.log(colors.blue('⁕') + ' ' + arg)
+						return _console.log(color('⁕') + ' ' + arg)
 						// return _console.log(colors.blue('⁕') +` ${arg} \n`)
 					case length:
 						return _console.log(`   ${colors.gray('⁕')} ${arg}\n`)
@@ -31,6 +32,12 @@ export const logger = {
 						return _console.log(`   ${colors.gray('⁕')} ` + arg)
 				}
     })
+  },
+	step(...args: any[]) {
+		this.$step(colors.blue, ...args)
+	},
+	stepWarn(...args: any[]) {
+		this.$step(colors.yellow, ...args)
 	},
 	substep(...args: any[]) {
 		args.forEach(arg => _console.log(`   ${colors.gray('⁕')} ` + arg))

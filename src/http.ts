@@ -1,6 +1,7 @@
 import type { Context, Next } from 'hono'
 import { MiddlewareType } from './middleware'
 import response from './response'
+import { GET_REQUEST } from './request'
 import { Ability } from './auth'
 import mergeMiddleware from './utils/merge-middleware'
 import { IRequest } from './types'
@@ -102,7 +103,7 @@ export function Auth(...args: any[]): void | ClassDecorator {
 
 function _auth(target: Function | any) {
   mergeMiddleware(target, async (c: Context, next: Next) => {
-    const req = c.get('_') as IRequest
+    const req = c.get(GET_REQUEST as unknown as string) as IRequest
     const ability = Ability.fromAction(target)
 
     if (!req?.user || !ability || req.cant(ability))

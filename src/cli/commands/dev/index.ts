@@ -1,10 +1,9 @@
 import { existsSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import { dirname, join, relative } from 'node:path'
 import { spawn, type ChildProcess } from 'node:child_process'
 
 import chokidar from 'chokidar'
-import colors from 'picocolors'
+// import colors from 'picocolors'
 import { defineCommand } from 'citty'
 import type { ChokidarEventName } from '../../types'
 
@@ -13,7 +12,7 @@ import { build, createMiniflare } from './utils'
 import { getAvailablePort } from '../../../utils/port'
 import shutdown from '../../../utils/shutdown'
 
-const __dirname = join(dirname(fileURLToPath(import.meta.url)), '../../../../../../')
+const __dirname = join(dirname(new URL(import.meta.url).pathname), '../../../../../../')
 
 export default defineCommand({
 	meta: {
@@ -36,7 +35,7 @@ export default defineCommand({
 			description: 'Environment platform',
 			type: 'enum',
 			options: ['aws', 'cf', 'node'] as const,
-			required: true,
+			// required: true,
 		},
 	},
 	async run({ args }) {
@@ -93,7 +92,7 @@ export default defineCommand({
 								'local', 'start-api',
 								'--warm-containers', 'LAZY',
 								'--debug', '--template-file', join(__dirname, 'template-dev.yaml'),
-								'--port', args.port,
+								'--port', String(port),
 							],
 							{
 								stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
@@ -168,30 +167,43 @@ export default defineCommand({
 						logger.step('Server restarted')
 					})
 				})
+			default:
 			case 'node':
 				return withPort(desiredPort, async (port) => {
 					logger.step(`API running on http://${host}:${port}`)
+					const isBun = process?.isBun || typeof Bun != 'undefined'
+					const params = isBun
+						? ['run', '--port='+ port, '--hot', '--silent', '--no-clear-screen', '--no-summary', join(__dirname, 'node_modules/rajt/src/dev.ts')]
+						: [join(__dirname, 'node_modules/.bin/tsx'), 'watch', join(__dirname, 'node_modules/rajt/src/dev-node.ts')]
 
-					spawn(
+					const child = spawn(
 						process.execPath,
-						[
-							join(__dirname, 'node_modules/.bin/tsx'), 'watch', join(__dirname, 'node_modules/rajt/src/dev.ts'),
-						],
+						params,
 						{
-							stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
-							env: {...process.env, PORT: args.port},
+							stdio: ['inherit', isBun ? 'pipe' : 'inherit', 'inherit', 'ipc'],
+							env: {...process.env, PORT: port},
 						}
-					).on('exit', code => process.exit(code ?? 0))
-					.on('message', msg => {
-						if (process.send) process.send(msg)
-					}).on('disconnect', () => {
-						if (process.disconnect) process.disconnect()
-					})
+					)
+
+					if (isBun && child?.stdout) {
+						child.stdout?.on('data', data => {
+							const output = data.toString()
+							if (!output.includes('Started development server'))
+									process.stdout.write(output)
+						})
+					}
+
+					child.on('exit', code => process.exit(code ?? 0))
+						.on('message', msg => {
+							if (process.send) process.send(msg)
+						}).on('disconnect', () => {
+							if (process.disconnect) process.disconnect()
+						})
 				})
-			default:
-				return logger.warn(
-					`🟠 Provide a valid platform: ${['aws', 'cf', 'node'].map(p => colors.blue(p)).join(', ')}.\n`
-				)
+			// default:
+			// 	return logger.warn(
+			// 		`🟠 Provide a valid platform: ${['aws', 'cf', 'node'].map(p => colors.blue(p)).join(', ')}.\n`
+			// 	)
     }
 	},
 })

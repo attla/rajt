@@ -1,6 +1,5 @@
 import { existsSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import glob from 'tiny-glob'
 import { config } from 'dotenv'
@@ -11,7 +10,7 @@ import ensureDir from './utils/ensuredir'
 import versionSHA from './utils/version-sha'
 import type { Route } from './types'
 
-const __filename = fileURLToPath(import.meta.url)
+const __filename = new URL(import.meta.url).pathname
 const __root = resolve(dirname(__filename), '../../..')
 
 const importName = (name?: string) => (name || 'Fn'+ Math.random().toString(36).substring(2)).replace(/\.ts$/, '')

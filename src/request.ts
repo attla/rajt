@@ -17,6 +17,8 @@ const cookieWrapper = (c: Context) => ({
   delete: (name: string, opt?: CookieOptions) => deleteCookie(c, name, opt)
 })
 
+export const GET_REQUEST: unique symbol = Symbol()
+
 export default class $Request {
   #c!: Context
   #cookie: ReturnType<typeof cookieWrapper>

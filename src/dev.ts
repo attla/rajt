@@ -1,19 +1,15 @@
-import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { config } from 'dotenv'
-import { serve, type ServerType } from '@hono/node-server'
 import createApp from './create-app'
 import { getRoutes, getMiddlewares, getConfigs } from './routes'
 import { registerHandler, registerMiddleware } from './register'
 import Config from './config'
-import { Ability } from './auth'
-import jsonImport from './utils/json-import'
-import { setEnv, detectEnvironment } from './utils/environment'
-import shutdown from './utils/shutdown'
+import { Ability } from 'rajt/auth'
+import { setEnv, detectEnvironment } from 'rajt/env'
 
 setEnv(detectEnvironment())
 
-const __dirname = join(dirname(fileURLToPath(import.meta.url)), '../../../')
+const __dirname = join(dirname(new URL(import.meta.url).pathname), '../../../')
 
 config({ path: join(__dirname, '.env.dev') })
 
@@ -29,15 +25,6 @@ middlewares.forEach(mw => registerMiddleware(mw.handle))
 Ability.fromRoutes(routes)
 Ability.roles = Config.get('roles', {})
 
-const fetch = createApp({ routes }).fetch
+const app = createApp({ routes })
 
-const port = process.env?.PORT ? Number(process.env.PORT) : 3000
-
-let server: ServerType | null = serve({ fetch, port })
-
-shutdown(() => {
-  if (server) {
-    server?.close()
-    server = null
-  }
-})
+export default app
