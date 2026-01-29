@@ -24,10 +24,15 @@ export default class $Request {
   #cookie: ReturnType<typeof cookieWrapper>
   #u: Authnz<any> | null = null
 
+  #host: string
+
   constructor(c: Context) {
     this.#c = c
     this.#cookie = cookieWrapper(c)
     this.#u = Authnz.fromToken(Token.fromRequest(this))
+
+    const url = new URL(c.req.raw.url)
+    this.#host = url.protocol +'://'+ url.host
   }
 
   get user() {
@@ -81,12 +86,16 @@ export default class $Request {
     return this.#c.req.routePath
   }
 
-  get path() {
-    return this.#c.req.path
-  }
-
   get url() {
     return this.#c.req.raw.url
+  }
+
+  get host() {
+    return this.#host
+  }
+
+  get path() {
+    return this.#c.req.path
   }
 
   get method() {

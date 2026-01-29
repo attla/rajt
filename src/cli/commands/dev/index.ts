@@ -212,7 +212,7 @@ function withPort(desiredPort: number, cb: (port: number) => void) {
 	getAvailablePort(desiredPort)
 		.then((port: number) => {
 			if (port != desiredPort)
-				logger.warn(`Port ${desiredPort} was in use, using ${port} as a fallback`)
+				logger.stepWarn(`Port ${desiredPort} was in use, using ${port} as a fallback`)
 
 			cb(port)
 		}).catch(e => logger.error('Error finding available port:', e))
