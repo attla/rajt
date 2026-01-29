@@ -158,7 +158,8 @@ export async function getConfigs(
   if (!dirs?.length) return {}
   const configs: Record<string, any> = {}
 
-  const files = await glob(join(__root, dirs?.length > 1 ? `{${dirs.join(',')}}` : dirs[0], '/**/*.{ts,js,json}'))
+  const files = (await glob(join(__root, dirs?.length > 1 ? `{${dirs.join(',')}}` : dirs[0], '/**/*.{ts,js,cjs,mjs,json}')))
+    .filter(file => !file.includes('.d.'))
 
   for (const file of files) {
     const mod = await IMPORT(join(__root, file))
@@ -177,14 +178,6 @@ export async function getConfigs(
 
   return configs
 }
-
-const env = Object.entries(
-  config({ path: '../../.env.prod' })?.parsed || {}
-).filter(([key, val]) => key?.toLowerCase().indexOf('aws') != 0) // prevent AWS credentials
-
-const version = versionSHA('../../.git') // @ts-ignore
-env.push(['VERSION_SHA', process.env['VERSION_SHA'] = version]) // @ts-ignore
-env.push(['VERSION_HASH', process.env['VERSION_HASH'] = version?.substring(0, 7)])
 
 const IDENTIFIER_RE = /^[$_\p{ID_Start}][$_\u200C\u200D\p{ID_Continue}]*$/u
 function stringifyToJS(value: unknown): string {
@@ -212,6 +205,14 @@ function stringifyToJS(value: unknown): string {
 }
 
 export async function cacheRoutes() {
+  const env = Object.entries(
+    config({ path: '../../.env.prod' })?.parsed || {}
+  ).filter(([key, val]) => key?.toLowerCase().indexOf('aws') != 0) // prevent AWS credentials
+
+  const version = versionSHA('../../.git') // @ts-ignore
+  env.push(['VERSION_SHA', process.env['VERSION_SHA'] = version]) // @ts-ignore
+  env.push(['VERSION_HASH', process.env['VERSION_HASH'] = version?.substring(0, 7)])
+
   const rolePath = join(__root, 'configs/roles.ts')
   ensureDir(rolePath)
   if (!existsSync(rolePath))
@@ -229,8 +230,8 @@ ${configs?.length ? `import Config from '../node_modules/rajt/src/config'\nConfi
 
 import { registerHandler, registerMiddleware } from '../node_modules/rajt/src/register'
 
-${routes.map(r => `import ${r.name} from '../${normalizePath(r.file)}'`).join('\n')}
-${middlewares.map(r => `import ${r.name} from '../${normalizePath(r.file)}'`).join('\n')}
+${routes.map(r => `import ${r.name} from '../${normalizeImportPath(r.file)}'`).join('\n')}
+${middlewares.map(r => `import ${r.name} from '../${normalizeImportPath(r.file)}'`).join('\n')}
 
 try {
   const handlers = {${routes.map(r => r.name).join()}}
@@ -261,6 +262,6 @@ try {
   ])))
 }
 
-function normalizePath(file: string) {
+function normalizeImportPath(file: string) {
   return file.replace(/\.tsx?$/i, '').replace(/(\/index)+$/i, '').replace(/\/+$/g, '')
 }
