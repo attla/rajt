@@ -1,15 +1,15 @@
 import { defineCommand } from 'citty'
 import { gray } from 'picocolors'
 
-import { build, normalizePlatform } from './utils'
-import { error, step, warn } from '../../utils/log'
+import { build, normalizePlatform, platformError } from './utils'
+import { wait, error, } from '../../utils/log'
 
 import { platforms } from './constants'
 
 export default defineCommand({
 	meta: {
 		name: 'build',
-		description: '🗂️ Perform the build\n',
+		description: '🗂️  Perform the build\n',
 	},
 	args: {
 		platform: {
@@ -20,12 +20,11 @@ export default defineCommand({
 		},
 	},
 	async run({ args }) { // @ts-ignore
-		const platform = normalizePlatform(args.p || args.platform || 'node')
-
+		const platform = normalizePlatform(args.p || args.platform || args._[0] || 'node')
 		if (!platform)
-			return warn(`Provide a valid platform: ${platforms.map(p => gray(p)).join(', ')}.\n`)
+			return platformError()
 
-		step('Building for platform: '+ gray(platform))
+		wait('Building for platform: '+ gray(platform))
 
 		try {
 			await build(platform)

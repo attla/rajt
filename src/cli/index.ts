@@ -30,8 +30,8 @@ const version = [name, colors.isColorSupported ? colors.gray('v'+rajtVersion) : 
 
 if (directly()) {
   const _args = process.argv.slice(2)
-  const _aLength = _args.length
-  if (!_aLength || (_aLength == 1 && ['-v', '--version', '--v', '-version'].includes(_args[0]))) {
+  const length = _args.length
+  if (!length || (length == 1 && ['-v', '--version', '--v', '-version'].includes(_args[0]))) {
     console.log(version)
     process.exit(0)
   }
@@ -50,7 +50,7 @@ if (directly()) {
   const main = defineCommand({
     meta: {
       name: 'rajt',
-      version: rajtVersion,
+      version: '',
       description: name,
     },
     subCommands: {
@@ -60,5 +60,5 @@ if (directly()) {
     },
   })
 
-  runMain(main, { rawArgs: _args?.length ? undefined : ['-h'], showUsage })
+  runMain(main, { rawArgs: length ? undefined : ['-h'], showUsage })
 }

@@ -6,18 +6,19 @@ import { readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, relative } from 'node:path'
 
 import chokidar from 'chokidar'
+import { gray } from 'picocolors'
 import type { ChokidarEventName, Platform } from './types'
 
 import { cacheRoutes } from '../../routes'
-import { step, warn } from '../../utils/log'
+import { step, substep, event, error, warn } from '../../utils/log'
 import { platforms } from './constants'
 
-const __dirname = join(dirname(new URL(import.meta.url).pathname), '../../../../../')
-const __rajt = join(__dirname, 'node_modules/rajt/src')
+export const _root = join(dirname(new URL(import.meta.url).pathname), '../../../../../')
+const __rajt = join(_root, 'node_modules/rajt/src')
 
 export function normalizePlatform(platform: Platform) {
-  platform = platform.toLowerCase() as Platform
-  if (!platforms.includes(platform)) return null
+  platform = platform?.toLowerCase() as Platform
+  if (!platforms?.includes(platform)) return null
 
   switch (platform) {
     case 'lambda':
@@ -36,6 +37,16 @@ export function normalizePlatform(platform: Platform) {
   }
 }
 
+export const platformError = () => error(`Provide a valid platform: ${platforms.map(p => gray(p)).join(', ')}.\n`)
+
+export function getRuntime() {
+  try {
+    return process?.isBun || typeof Bun != 'undefined' ? 'bun' : 'node'
+  } catch {
+    return 'node'
+  }
+}
+
 export const formatSize = (bytes: number) => {
   if (bytes < 1024) return `${bytes}b`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)}kb`
@@ -51,7 +62,7 @@ export const build = async (platform: Platform) => {
   const startTime = Date.now()
 
   const isCF = platform == 'cf'
-  const distDir = join(__dirname, 'dist')
+  const distDir = join(_root, 'dist')
 
   existsSync(distDir)
     ? readdirSync(distDir).forEach(file => rmSync(join(distDir, file), { recursive: true, force: true }))
@@ -61,9 +72,9 @@ export const build = async (platform: Platform) => {
     for (let file of [
       'wrangler.toml',
     ]) {
-      file = join(__dirname, file)
+      file = join(_root, file)
       if (existsSync(file))
-        copyFileSync(file, join(__dirname, 'dist', basename(file)))
+        copyFileSync(file, join(_root, 'dist', basename(file)))
     }
   }
 
@@ -73,7 +84,7 @@ export const build = async (platform: Platform) => {
     entryPoints: [join(__rajt, `prod${platform}.ts`)],
     bundle: true,
     minify: true,
-    outfile: join(__dirname, 'dist/index.js'),
+    outfile: join(_root, 'dist/index.js'),
     format: 'esm',
     target: isCF ? 'es2022' : 'node20',
     // platform: 'neutral',
@@ -98,7 +109,7 @@ export const build = async (platform: Platform) => {
     //   '.ts': 'ts',
     //   '.js': 'js'
     // },
-    // tsconfig: join(__dirname, 'tsconfig.json'),
+    // tsconfig: join(_root, 'tsconfig.json'),
     // sourcemap: true,
     // logLevel: 'info',
     plugins: [
@@ -144,19 +155,17 @@ export const build = async (platform: Platform) => {
 
   await cacheRoutes()
 
-  step('Routes cached')
+  event('Routes cached')
 
   const result = await esbuild.build(opts)
   if (!result?.metafile) throw Error('build fail')
 
-  step('Build completed successfully')
-
   const stats = await stat(opts.outfile)
   const size = formatSize(stats.size)
 
-  step(
-    `Build done in ${formatTime(Date.now() - startTime)}`,
-    `${relative(join(__dirname, 'node_modules/rajt/src'), opts.entryPoints[0])} → ${relative(__dirname, opts.outfile)}`,
+  event('Build done in '+ formatTime(Date.now() - startTime))
+  substep(
+    // `${relative(join(_root, 'node_modules/rajt/src'), opts.entryPoints[0])} → ${relative(_root, opts.outfile)}`,
     `Size: ${size}`,
     `Files: ${Object.keys(result.metafile.outputs).length}`
   )
@@ -164,7 +173,7 @@ export const build = async (platform: Platform) => {
 
 async function parseWranglerConfig(file: string) {
   try {
-    return TOML.parse(await readFile(join(__dirname, file), 'utf-8'))
+    return TOML.parse(await readFile(join(_root, file), 'utf-8'))
   } catch (e) {
     warn(`Could not parse ${file}, using defaults`)
     return {}
@@ -183,7 +192,7 @@ export async function createMiniflare(options = {}, configPath = 'wrangler.toml'
     liveReload: options.liveReload !== false,
     updateCheck: false,
 
-    scriptPath: join(__dirname, 'dist/index.js'),
+    scriptPath: join(_root, 'dist/index.js'),
     compatibilityDate: config.compatibility_date || '2024-11-01',
     compatibilityFlags: config.compatibility_flags || [
       'nodejs_compat',
@@ -205,11 +214,11 @@ export async function createMiniflare(options = {}, configPath = 'wrangler.toml'
     //   { type: 'ESModule', include: ['**/*.js', '**/*.ts'] },
     // ],
 
-    kvPersist: join(__dirname, '.wrangler/state/v3/kv'),
-    cachePersist: join(__dirname, '.wrangler/state/v3/cache'),
-    d1Persist: join(__dirname, '.wrangler/state/v3/d1'),
-    r2Persist: join(__dirname, '.wrangler/state/v3/r2'),
-    durablesPersist: join(__dirname, '.wrangler/state/v3/durable_objects'),
+    kvPersist: join(_root, '.wrangler/state/v3/kv'),
+    cachePersist: join(_root, '.wrangler/state/v3/cache'),
+    d1Persist: join(_root, '.wrangler/state/v3/d1'),
+    r2Persist: join(_root, '.wrangler/state/v3/r2'),
+    durablesPersist: join(_root, '.wrangler/state/v3/durable_objects'),
 
     verbose: false,
 
@@ -224,7 +233,7 @@ export async function createMiniflare(options = {}, configPath = 'wrangler.toml'
     upstream: config.upstream || 'https://example.com',
 
     sitePath: config.site?.bucket ?
-      join(__dirname, config.site.bucket) : undefined,
+      join(_root, config.site.bucket) : undefined,
     siteInclude: config.site?.include || ['**/*'],
     siteExclude: config.site?.exclude || [],
 
@@ -247,7 +256,7 @@ function getAssetChangeMessage(
 	e: ChokidarEventName,
 	path: string
 ): string {
-	path = relative(__dirname, path)
+	path = relative(_root, path)
 	switch (e) {
 		case 'add':
 			return `File ${path} was added`
@@ -265,11 +274,11 @@ function getAssetChangeMessage(
 
 export async function watch(cb: (e: ChokidarEventName | string, file: string) => Promise<void>) {
 	const codeWatcher = chokidar.watch([
-		join(__dirname, '{actions,features,routes,configs,enums,locales,middlewares,models,utils}/**/*.ts'),
-		join(__dirname, '.env.dev'),
-		join(__dirname, '.env.prod'),
-		join(__dirname, 'package.json'),
-		join(__dirname, 'wrangler.toml'),
+		join(_root, '{actions,features,routes,configs,enums,locales,middlewares,models,utils}/**/*.ts'),
+		join(_root, '.env.dev'),
+		join(_root, '.env.prod'),
+		join(_root, 'package.json'),
+		join(_root, 'wrangler.toml'),
 	], {
 		ignored: /(^|[/\\])\../, // ignore hidden files
 		persistent: true,

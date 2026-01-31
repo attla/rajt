@@ -1,16 +1,13 @@
 
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import { spawn, type ChildProcess } from 'node:child_process'
 
 import { defineCommand } from 'citty'
-
 import type { Miniflare } from 'miniflare'
-import { build, wait, watch, createMiniflare, getDockerHost } from './utils'
-import { step, error, ready, warn } from '../../utils/log'
+import { _root, build, wait, watch, normalizePlatform, platformError, getRuntime, createMiniflare, getDockerHost } from './utils'
+import { step, error, event, warn } from '../../utils/log'
 import { withPort } from '../../utils/port'
 import shutdown from '../../utils/shutdown'
-
-const __dirname = join(dirname(new URL(import.meta.url).pathname), '../../../../../')
 
 export default defineCommand({
 	meta: {
@@ -36,8 +33,11 @@ export default defineCommand({
 			// required: true,
 		},
 	},
-	async run({ args }) {
-		const platform = args.p || args.platform
+	async run({ args }) { // @ts-ignore
+		const platform = normalizePlatform(args.p || args.platform || args._[0] || 'node')
+		if (!platform)
+			return platformError()
+
 		const desiredPort = args.port ? Number(args.port) : 3000
 		const host = args.host ? String(args.host) : 'localhost'
 		switch (platform) {
@@ -89,7 +89,7 @@ export default defineCommand({
 							[
 								'local', 'start-api',
 								'--warm-containers', 'LAZY',
-								'--debug', '--template-file', join(__dirname, 'template-dev.yaml'),
+								'--debug', '--template-file', join(_root, 'template-dev.yaml'),
 								'--port', String(port),
 							],
 							{
@@ -120,7 +120,7 @@ export default defineCommand({
 					}
 
 					await buildLambda()
-					ready(`API running on http://${host}:${port}`)
+					event(`API running on http://${host}:${port}`)
 
 					watch(async () => {
 						await buildLambda()
@@ -157,7 +157,7 @@ export default defineCommand({
 					}
 
 					await buildWorker()
-					ready(`API running on http://${host}:${port}`)
+					event(`API running on http://${host}:${port}`)
 
 					watch(async () => {
 						step('Restarting server')
@@ -168,10 +168,10 @@ export default defineCommand({
 			default:
 			case 'node':
 				return withPort(desiredPort, async (port) => {
-					const isBun = process?.isBun || typeof Bun != 'undefined'
+					const isBun = getRuntime() == 'bun'
 					const params = isBun
-						? ['run', '--port='+ port, '--hot', '--silent', '--no-clear-screen', '--no-summary', join(__dirname, 'node_modules/rajt/src/dev.ts')]
-						: [join(__dirname, 'node_modules/.bin/tsx'), 'watch', join(__dirname, 'node_modules/rajt/src/dev-node.ts')]
+						? ['run', '--port='+ port, '--hot', '--silent', '--no-clear-screen', '--no-summary', join(_root, 'node_modules/rajt/src/dev.ts')]
+						: [join(_root, 'node_modules/.bin/tsx'), 'watch', join(_root, 'node_modules/rajt/src/dev-node.ts')]
 
 					const child = spawn(
 						process.execPath,
@@ -182,7 +182,7 @@ export default defineCommand({
 						}
 					)
 
-					ready(`API running on http://${host}:${port}`)
+					event(`API running on http://${host}:${port}`)
 
 					if (isBun && child?.stdout) {
 						child.stdout?.on('data', data => {
@@ -199,10 +199,6 @@ export default defineCommand({
 							if (process.disconnect) process.disconnect()
 						})
 				})
-			// default:
-			// 	return warn(
-			// 		`🟠 Provide a valid platform: ${['aws', 'cf', 'node'].map(p => colors.blue(p)).join(', ')}.\n`
-			// 	)
     }
 	},
 })

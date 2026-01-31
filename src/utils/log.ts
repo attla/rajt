@@ -1,20 +1,23 @@
 import { blue, bold, gray, green, magenta, red, yellow, white } from 'picocolors'
 
 const _step = (color: Function, ...msg: any[]) => {
-  if (msg?.length && msg.length < 2)
-    return console.log(color('⁕') + ` ${msg[0]}\n`)
-
   const length = msg.length
-  const total = msg.length - 1
+  if (!length) return
+  if (length < 2)
+    return console.log(color('⁕') +' '+ msg[0])
 
+  const total = length - 1
   for (let i: number = 0; i < length; i++) {
     switch (i) {
       case 0:
-        return console.log(color('⁕') +' '+ msg[i])
+        console.log(color('⁕') + ' ' + msg[i])
+        continue
       case total:
-        return console.log(`   ${gray('⁕')} ${msg[i]}\n`)
+        console.log(`   ${gray('⁕')} ${msg[i]}\t`)
+        continue
       default:
-        return console.log(`   ${gray('⁕')} ` + msg[i])
+        console.log(`   ${gray('⁕')} ` + msg[i])
+        continue
     }
   }
 }
@@ -29,6 +32,7 @@ export const substep = (...msg: any[]) => {
 }
 
 export const ln = () => console.log('\n')
+export const rn = () => console.log('\t')
 
 export const logo = gray(bold('λ'))
 export const prefixes = {
