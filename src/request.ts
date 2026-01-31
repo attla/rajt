@@ -32,7 +32,7 @@ export default class $Request {
     this.#u = Authnz.fromToken(Token.fromRequest(this))
 
     const url = new URL(c.req.raw.url)
-    this.#host = url.protocol +'://'+ url.host
+    this.#host = url.protocol +'//'+ url.host
   }
 
   get user() {

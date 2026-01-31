@@ -99,11 +99,8 @@ function semiver(a, b, bool) {
 
 function directly() {
   try {
-    return process.env?.npm_lifecycle_script == 'rajt'
-      && (
-        process.argv[1]?.endsWith('node_modules/.bin/rajt')
-        || process.argv[1]?.endsWith('node_modules/rajt/bin/rajt.js')
-      )
+    return process.argv[1]?.endsWith('node_modules/.bin/rajt')
+      || process.argv[1]?.endsWith('node_modules/rajt/bin/rajt.js')
   } catch {
     return false
   }

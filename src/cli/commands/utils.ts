@@ -5,10 +5,36 @@ import { mkdirSync, existsSync, readdirSync, rmSync, copyFileSync } from 'node:f
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, relative } from 'node:path'
 
-import { cacheRoutes } from '../../../routes'
+import chokidar from 'chokidar'
+import type { ChokidarEventName, Platform } from './types'
 
-const __dirname = join(dirname(new URL(import.meta.url).pathname), '../../../../../../')
+import { cacheRoutes } from '../../routes'
+import { step, warn } from '../../utils/log'
+import { platforms } from './constants'
+
+const __dirname = join(dirname(new URL(import.meta.url).pathname), '../../../../../')
 const __rajt = join(__dirname, 'node_modules/rajt/src')
+
+export function normalizePlatform(platform: Platform) {
+  platform = platform.toLowerCase() as Platform
+  if (!platforms.includes(platform)) return null
+
+  switch (platform) {
+    case 'lambda':
+      return 'aws'
+
+    case 'cloudflare':
+    case 'worker':
+    case 'workers':
+      return 'cf'
+
+    case 'bun':
+      return 'node'
+
+    default:
+      return platform
+  }
+}
 
 export const formatSize = (bytes: number) => {
   if (bytes < 1024) return `${bytes}b`
@@ -21,7 +47,7 @@ export const formatTime = (ms: number) => {
   return `${(ms / 1000).toFixed(2)}s`
 }
 
-export const build = async (platform: 'aws' | 'cf' | 'node') => {
+export const build = async (platform: Platform) => {
   const startTime = Date.now()
 
   const isCF = platform == 'cf'
@@ -41,10 +67,12 @@ export const build = async (platform: 'aws' | 'cf' | 'node') => {
     }
   }
 
+  // @ts-ignore
+  platform = platform != 'node' ? '-'+ platform : ''
   const opts = {
-    entryPoints: [join(__rajt, `prod-${platform}.ts`)],
+    entryPoints: [join(__rajt, `prod${platform}.ts`)],
     bundle: true,
-    minify: false,
+    minify: true,
     outfile: join(__dirname, 'dist/index.js'),
     format: 'esm',
     target: isCF ? 'es2022' : 'node20',
@@ -116,17 +144,17 @@ export const build = async (platform: 'aws' | 'cf' | 'node') => {
 
   await cacheRoutes()
 
-  logger.step('Routes cached')
+  step('Routes cached')
 
   const result = await esbuild.build(opts)
   if (!result?.metafile) throw Error('build fail')
 
-  logger.step('Build completed successfully')
+  step('Build completed successfully')
 
   const stats = await stat(opts.outfile)
   const size = formatSize(stats.size)
 
-  logger.step(
+  step(
     `Build done in ${formatTime(Date.now() - startTime)}`,
     `${relative(join(__dirname, 'node_modules/rajt/src'), opts.entryPoints[0])} → ${relative(__dirname, opts.outfile)}`,
     `Size: ${size}`,
@@ -138,7 +166,7 @@ async function parseWranglerConfig(file: string) {
   try {
     return TOML.parse(await readFile(join(__dirname, file), 'utf-8'))
   } catch (e) {
-    logger.warn(`Could not parse ${file}, using defaults`)
+    warn(`Could not parse ${file}, using defaults`)
     return {}
   }
 }
@@ -167,7 +195,7 @@ export async function createMiniflare(options = {}, configPath = 'wrangler.toml'
       ...config.vars,
     },
 
-    d1Databases: Object.fromEntries(config.d1_databases.map(db => [db.binding, db.database_id])),
+    d1Databases: Array.isArray(config.d1_databases) ? Object.fromEntries(config.d1_databases.map(db => [db.binding, db.database_id])) : {},
 
     modules: [
       { type: "ESModule", path: "dist/index.js" },
@@ -211,4 +239,87 @@ export async function createMiniflare(options = {}, configPath = 'wrangler.toml'
 
     ...options
   })
+}
+
+
+
+function getAssetChangeMessage(
+	e: ChokidarEventName,
+	path: string
+): string {
+	path = relative(__dirname, path)
+	switch (e) {
+		case 'add':
+			return `File ${path} was added`
+		case 'addDir':
+			return `Directory ${path} was added`
+		case 'unlink':
+			return `File ${path} was removed`
+		case 'unlinkDir':
+			return `Directory ${path} was removed`
+		case 'change':
+		default:
+			return `${path} changed`
+	}
+}
+
+export async function watch(cb: (e: ChokidarEventName | string, file: string) => Promise<void>) {
+	const codeWatcher = chokidar.watch([
+		join(__dirname, '{actions,features,routes,configs,enums,locales,middlewares,models,utils}/**/*.ts'),
+		join(__dirname, '.env.dev'),
+		join(__dirname, '.env.prod'),
+		join(__dirname, 'package.json'),
+		join(__dirname, 'wrangler.toml'),
+	], {
+		ignored: /(^|[/\\])\../, // ignore hidden files
+		persistent: true,
+		ignoreInitial: true,
+		awaitWriteFinish: {
+			stabilityThreshold: 200,
+			pollInterval: 100,
+		},
+	})
+	let restartTimeout: NodeJS.Timeout | null = null
+
+	const watcher = (e: ChokidarEventName) => async (file: string) => {
+		step(getAssetChangeMessage(e, file))
+
+		if (restartTimeout)
+			clearTimeout(restartTimeout)
+
+		restartTimeout = setTimeout(async () => {
+			await cb(e, file)
+		}, 300)
+	}
+
+	codeWatcher.on('change', watcher('change'))
+	codeWatcher.on('add', watcher('add'))
+	codeWatcher.on('unlink', watcher('unlink'))
+	codeWatcher.on('addDir', watcher('addDir'))
+	codeWatcher.on('unlinkDir', watcher('unlinkDir'))
+
+	step('Watching for file changes')
+}
+
+export async function wait(ms: number) {
+	return new Promise(r => setTimeout(r, ms))
+}
+
+export function getDockerHost() {
+	const platform = process.platform
+
+	if (platform == 'darwin') {
+		for (const socket of [
+			'/Users/'+ process.env.USER +'/.docker/run/docker.sock',
+			'/var/run/docker.sock',
+			process.env.DOCKER_HOST
+		]) {
+			if (socket && existsSync(socket.replace(/^unix:\/\//, '')))
+				return socket.includes('://') ? socket : `unix://${socket}`
+		}
+
+		return 'tcp://localhost:2375'
+	}
+
+	return process.env.DOCKER_HOST || (platform == 'win32' ? 'tcp://localhost:2375' : 'unix:///var/run/docker.sock')
 }

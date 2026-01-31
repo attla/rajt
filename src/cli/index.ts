@@ -5,18 +5,11 @@ import { createConsola } from 'consola'
 
 import { version as rajtVersion } from '../../package.json'
 
-import logger, { type ILogger } from '../utils/logger'
+import { logo } from '../utils/log'
 
 import dev from './commands/dev'
-
-// Prevent non-internal logs
-(globalThis as any).logger = logger // Make it global in Node.js and browser
-declare global { var logger: ILogger }
-
-// console.log = () => {}
-console.info = () => {}
-console.warn = () => {}
-console.error = () => {}
+import build from './commands/build'
+import deploy from './commands/deploy'
 
 /**
  * The main entrypoint for the CLI.
@@ -26,7 +19,6 @@ const directly = () => {
   try {
     // @ts-ignore
     return typeof vitest == 'undefined'
-      && process.env?.npm_lifecycle_script == 'rajt'
       && import.meta.url == `file://${process.argv[1]}`
 	} catch {
 		return false
@@ -38,10 +30,13 @@ const version = [name, colors.isColorSupported ? colors.gray('v'+rajtVersion) : 
 
 if (directly()) {
   const _args = process.argv.slice(2)
-  if (_args.length == 1 && ['-v', '--version', '--v', '-version'].includes(_args[0])) {
+  const _aLength = _args.length
+  if (!_aLength || (_aLength == 1 && ['-v', '--version', '--v', '-version'].includes(_args[0]))) {
     console.log(version)
     process.exit(0)
   }
+
+  console.log(`\n${logo} ${version}\n`)
 
   const consola = createConsola({ formatOptions: {date: false} })
   async function showUsage<T extends ArgsDef = ArgsDef>(cmd: CommandDef<T>, parent?: CommandDef<T>) {
@@ -60,6 +55,8 @@ if (directly()) {
     },
     subCommands: {
       dev,
+      build,
+      deploy,
     },
   })
 

@@ -1,18 +1,16 @@
-import { existsSync } from 'node:fs'
-import { dirname, join, relative } from 'node:path'
+
+import { dirname, join } from 'node:path'
 import { spawn, type ChildProcess } from 'node:child_process'
 
-import chokidar from 'chokidar'
-// import colors from 'picocolors'
 import { defineCommand } from 'citty'
-import type { ChokidarEventName } from '../../types'
 
 import type { Miniflare } from 'miniflare'
-import { build, createMiniflare } from './utils'
-import { getAvailablePort } from '../../../utils/port'
-import shutdown from '../../../utils/shutdown'
+import { build, wait, watch, createMiniflare, getDockerHost } from './utils'
+import { step, error, ready, warn } from '../../utils/log'
+import { withPort } from '../../utils/port'
+import shutdown from '../../utils/shutdown'
 
-const __dirname = join(dirname(new URL(import.meta.url).pathname), '../../../../../../')
+const __dirname = join(dirname(new URL(import.meta.url).pathname), '../../../../../')
 
 export default defineCommand({
 	meta: {
@@ -51,12 +49,12 @@ export default defineCommand({
 					const buildLambda = async () => {
 						if (isBuilding) return
 						isBuilding = true
-						logger.step('Building lambda')
+						step('Building lambda')
 						try {
 							await build(platform)
 							if (!lambda) await startLambda()
 						} catch (e) {
-							logger.error('Build failed:', e)
+							error('Build failed:', e)
 							process.exit(0)
 						} finally {
 							isBuilding = false
@@ -65,7 +63,7 @@ export default defineCommand({
 
 					const stopLambda = async () => {
 						if (!lambda) return
-						logger.step('Stopping lambda process...')
+						step('Stopping lambda process...')
 						try {
 							if (!lambda?.killed) {
 								lambda.kill('SIGTERM')
@@ -79,7 +77,7 @@ export default defineCommand({
 
 							lambda = null
 						} catch (e) {
-							logger.warn('Error stopping lambda:', e)
+							warn('Error stopping lambda:', e)
 						}
 					}
 
@@ -101,9 +99,9 @@ export default defineCommand({
 								env: {...process.env, DOCKER_HOST: getDockerHost()},
 							}
 						).on('exit', code => {
-							logger.step(`Lambda process exited with code ${code ?? 0}`)
+							step(`Lambda process exited with code ${code ?? 0}`)
 							if (code != 0 && code != null)
-								logger.error('Lambda process crashed, waiting for restart...')
+								error('Lambda process crashed, waiting for restart...')
 
 							lambda = null
 						})
@@ -112,17 +110,17 @@ export default defineCommand({
 						}).on('disconnect', () => {
 							if (process.disconnect) process.disconnect()
 						}).on('error', e => {
-							logger.error('Lambda process error:', e)
+							error('Lambda process error:', e)
 							lambda = null
 						})
 
 						await wait(2000)
 
-						logger.step('Lambda process started successfully')
+						step('Lambda process started successfully')
 					}
 
 					await buildLambda()
-					logger.step(`API running on http://${host}:${port}`)
+					ready(`API running on http://${host}:${port}`)
 
 					watch(async () => {
 						await buildLambda()
@@ -139,12 +137,12 @@ export default defineCommand({
 					const buildWorker = async () => {
 						if (isBuilding) return
 						isBuilding = true
-						logger.step('Building worker')
+						step('Building worker')
 						try {
 							await build(platform)
 							await startWorker()
 						} catch (e) {
-							logger.error('Build failed:', e)
+							error('Build failed:', e)
 							process.exit(0)
 						} finally {
 							isBuilding = false
@@ -159,18 +157,17 @@ export default defineCommand({
 					}
 
 					await buildWorker()
-					logger.step(`API running on http://${host}:${port}`)
+					ready(`API running on http://${host}:${port}`)
 
 					watch(async () => {
-						logger.step('Restarting server')
+						step('Restarting server')
 						await buildWorker()
-						logger.step('Server restarted')
+						step('Server restarted')
 					})
 				})
 			default:
 			case 'node':
 				return withPort(desiredPort, async (port) => {
-					logger.step(`API running on http://${host}:${port}`)
 					const isBun = process?.isBun || typeof Bun != 'undefined'
 					const params = isBun
 						? ['run', '--port='+ port, '--hot', '--silent', '--no-clear-screen', '--no-summary', join(__dirname, 'node_modules/rajt/src/dev.ts')]
@@ -184,6 +181,8 @@ export default defineCommand({
 							env: {...process.env, PORT: port},
 						}
 					)
+
+					ready(`API running on http://${host}:${port}`)
 
 					if (isBun && child?.stdout) {
 						child.stdout?.on('data', data => {
@@ -201,100 +200,9 @@ export default defineCommand({
 						})
 				})
 			// default:
-			// 	return logger.warn(
+			// 	return warn(
 			// 		`🟠 Provide a valid platform: ${['aws', 'cf', 'node'].map(p => colors.blue(p)).join(', ')}.\n`
 			// 	)
     }
 	},
 })
-
-function withPort(desiredPort: number, cb: (port: number) => void) {
-	getAvailablePort(desiredPort)
-		.then((port: number) => {
-			if (port != desiredPort)
-				logger.stepWarn(`Port ${desiredPort} was in use, using ${port} as a fallback`)
-
-			cb(port)
-		}).catch(e => logger.error('Error finding available port:', e))
-}
-
-function getAssetChangeMessage(
-	e: ChokidarEventName,
-	path: string
-): string {
-	path = relative(__dirname, path)
-	switch (e) {
-		case 'add':
-			return `File ${path} was added`
-		case 'addDir':
-			return `Directory ${path} was added`
-		case 'unlink':
-			return `File ${path} was removed`
-		case 'unlinkDir':
-			return `Directory ${path} was removed`
-		case 'change':
-		default:
-			return `${path} changed`
-	}
-}
-
-async function watch(cb: (e: ChokidarEventName | string, file: string) => Promise<void>) {
-	const codeWatcher = chokidar.watch([
-		join(__dirname, '{actions,features,routes,configs,enums,locales,middlewares,models,utils}/**/*.ts'),
-		join(__dirname, '.env.dev'),
-		join(__dirname, '.env.prod'),
-		join(__dirname, 'package.json'),
-		join(__dirname, 'wrangler.toml'),
-	], {
-		ignored: /(^|[/\\])\../, // ignore hidden files
-		persistent: true,
-		ignoreInitial: true,
-		awaitWriteFinish: {
-			stabilityThreshold: 200,
-			pollInterval: 100,
-		},
-	})
-	let restartTimeout: NodeJS.Timeout | null = null
-
-	const watcher = (e: ChokidarEventName) => async (file: string) => {
-		logger.step(getAssetChangeMessage(e, file))
-
-		if (restartTimeout)
-			clearTimeout(restartTimeout)
-
-		restartTimeout = setTimeout(async () => {
-			await cb(e, file)
-		}, 300)
-	}
-
-	codeWatcher.on('change', watcher('change'))
-	codeWatcher.on('add', watcher('add'))
-	codeWatcher.on('unlink', watcher('unlink'))
-	codeWatcher.on('addDir', watcher('addDir'))
-	codeWatcher.on('unlinkDir', watcher('unlinkDir'))
-
-	logger.step('Watching for file changes')
-}
-
-async function wait(ms: number) {
-	return new Promise(r => setTimeout(r, ms))
-}
-
-function getDockerHost() {
-	const platform = process.platform
-
-	if (platform == 'darwin') {
-		for (const socket of [
-			'/Users/'+ process.env.USER +'/.docker/run/docker.sock',
-			'/var/run/docker.sock',
-			process.env.DOCKER_HOST
-		]) {
-			if (socket && existsSync(socket.replace(/^unix:\/\//, '')))
-				return socket.includes('://') ? socket : `unix://${socket}`
-		}
-
-		return 'tcp://localhost:2375'
-	}
-
-	return process.env.DOCKER_HOST || (platform == 'win32' ? 'tcp://localhost:2375' : 'unix:///var/run/docker.sock')
-}
