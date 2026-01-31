@@ -1,7 +1,7 @@
 {
   "name": "rajt",
   "description": "A serverless bundler layer, fully typed for AWS Lambda (Node.js and LLRT) and Cloudflare Workers.",
-  "version": "0.0.68",
+  "version": "0.0.69",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -26,13 +26,6 @@
   ],
   "scripts": {
     "rajt": "./src/bin/rajt.js",
-    "dev": "tsx watch src/dev.ts",
-    "aws:build": "bun run --silent cache:routes && bun run --silent aws:export && bun run --silent clean:temp",
-    "cf:build": "bun run --silent cache:routes && bun run --silent cf:export && bun run --silent clean:temp",
-    "aws:build:watch": "chokidar \"../../{actions,configs,enums,locales,middlewares,models,utils}/**/*.ts\" -c \"bun run --silent aws:build\" --initial",
-    "cf:build:watch": "chokidar \"../../{actions,configs,enums,locales,middlewares,models,utils}/**/*.ts\" -c \"bun run --silent cf:build\" --initial",
-    "aws:export": "node src/esbuild.mjs aws",
-    "cf:export": "node src/esbuild.mjs cf",
     "aws:local": "bun run --silent aws:build && bun run --silent sam:local",
     "aws:package": "bun run --silent aws:build && bun run --silent sam:package",
     "aws:deploy": "bun run --silent aws:build && bun run --silent sam:package && bun run --silent sam:deploy",
@@ -41,10 +34,6 @@
     "sam:package": "sam package --template-file ../../template-prod.yaml --output-template-file ../../packaged.yaml",
     "sam:deploy": "sam deploy --template-file ../../packaged.yaml --stack-name rajt-llrt --capabilities CAPABILITY_IAM",
     "sam:update": "source ../../.env.prod && aws lambda update-function-code --function-name $AWS_NAME --zip-file fileb://../../lambda.zip --region $AWS_REGION --no-cli-pager 2>&1 >/dev/null",
-    "cf:local-": "source ../../.env.dev && bun run --silent cf:build:watch -- cd ../../dist && bunx wrangler dev --port=$PORT --persist-to='../.wrangler/state'",
-    "cf:deploy": "bun run --silent cf:build && cd ../../dist && bunx wrangler deploy",
-    "cache:routes": "tsx src/scripts/cache-routes.ts",
-    "ensure-dirs": "rm -rf ../../dist ../../tmp && mkdir -p ../../tmp && chmod 755 ../../tmp && mkdir -p ../../dist && chmod 755 ../../dist",
     "clean": "rm -rf ../../dist ../../tmp",
     "clean:build": "rm -rf ../../dist",
     "clean:temp": "rm -rf ../../tmp",

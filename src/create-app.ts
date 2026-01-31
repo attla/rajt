@@ -10,7 +10,6 @@ import { createColors } from 'picocolors'
 import { getColorEnabledAsync } from 'hono/utils/color'
 import { Envir } from 't0n'
 import type { Routes } from './types'
-import { BadRequest, Unauthorized } from './exceptions'
 import { resolve, resolveMiddleware } from './utils/resolve'
 import { getMiddlewares, getHandler } from './register'
 import { isDev } from './utils/environment'
@@ -36,13 +35,10 @@ const EHandler = async (e: Error | HTTPResponseError) => {
   console.error(e)
 
   switch (true) {
-    case e instanceof Unauthorized:
     case 'status' in e && e.status == 401:
       return response.unauthorized()
 
-    case e instanceof BadRequest:
-    case 'status' in e && e.status == 400:
-      // @ts-ignore
+    case 'status' in e && e.status == 400: // @ts-ignore
       return response.badRequest(null, e?.message)
 
     default:
