@@ -1,5 +1,5 @@
 import net from 'node:net'
-import { exec } from 'child_process'
+import { exec } from 'node:child_process'
 import { error, warn } from './log'
 
 export function withPort(desiredPort: number, cb: (port: number) => void, maxAttempts = 10) {

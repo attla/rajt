@@ -1,8 +1,7 @@
 import { defineCommand } from 'citty'
-import { gray } from 'picocolors'
-
+import { gray } from '../../utils/colors'
 import { build, normalizePlatform, platformError } from './utils'
-import { wait, error, } from '../../utils/log'
+import { wait, error } from '../../utils/log'
 
 import { platforms } from './constants'
 

@@ -1,62 +1,40 @@
 import { ZodObject } from 'zod'
 import { zValidator } from '@hono/zod-validator'
-import type { ValidationTargets } from 'hono'
-import type { Rule, Rules } from './types'
 import response from './response'
+import type {
+  Rule, Rules,
+  ValidationTargets,
+} from './types'
 
 export default class $Validator {
-  private static cache = new Map<string, any>()
+  private static cache = new Map<string, (schema: ZodObject<any>) => Rule>()
 
   private static createRule<T extends keyof ValidationTargets>(
     target: T,
-    schema?: ZodObject<any>
-  ):
-    | { schema: (schema: ZodObject<any>) => Rule }
-    | Rule
-  {
-    if (schema != null) {
-      return {
-        target,
-        schema,
-        eTarget: 'fieldErrors'
-      } satisfies Rule
-    }
-
+    schema: ZodObject<any>
+  ): Rule {
     return {
-      schema: (schema: ZodObject<any>) => ({
-        target,
-        schema,
-        eTarget: 'fieldErrors'
-      })
+      target,
+      schema,
+      eTarget: 'fieldErrors'
     }
   }
 
-  private static getOrCreateAlias<T extends keyof ValidationTargets>(target: T) {
+  private static fn<T extends keyof ValidationTargets>(target: T) {
     if (this.cache.has(target))
       return this.cache.get(target)
 
-    const aliasFunc = (schema?: ZodObject<any>) => {
-      if (schema != null)
-        return this.createRule(target, schema)
-
-      return this.createRule(target)
-    }
-
-    const typedAlias = aliasFunc as {
-      (): { schema: (schema: ZodObject<any>) => Rule },
-      (schema: ZodObject<any>): Rule,
-    }
-
-    this.cache.set(target, typedAlias)
-    return typedAlias
+    const fn = (schema: ZodObject<any>) => this.createRule(target, schema)
+    this.cache.set(target, fn)
+    return fn
   }
 
-  static readonly json = $Validator.getOrCreateAlias('json')
-  static readonly form = $Validator.getOrCreateAlias('form')
-  static readonly query = $Validator.getOrCreateAlias('query')
-  static readonly param = $Validator.getOrCreateAlias('param')
-  static readonly header = $Validator.getOrCreateAlias('header')
-  static readonly cookie = $Validator.getOrCreateAlias('cookie')
+  static readonly json = $Validator.fn('json')
+  static readonly form = $Validator.fn('form')
+  static readonly query = $Validator.fn('query')
+  static readonly param = $Validator.fn('param')
+  static readonly header = $Validator.fn('header')
+  static readonly cookie = $Validator.fn('cookie')
 
   static parse(rules: Rules): Function[] {
     return (Array.isArray(rules) ? rules : [rules]) // @ts-ignore

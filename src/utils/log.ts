@@ -1,4 +1,4 @@
-import { blue, bold, gray, green, magenta, red, yellow, white } from 'picocolors'
+import { blue, bold, gray, green, magenta, red, yellow, white } from './colors'
 
 const _step = (color: Function, ...msg: any[]) => {
   const length = msg.length

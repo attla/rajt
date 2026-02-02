@@ -1,8 +1,4 @@
-import Action from '../action'
-import { MiddlewareType } from '../middleware'
-import type { ActionType } from '../types'
-
-export function resolve(obj: ActionType, id: string) {
+export function resolve(obj: any, id: string) {
   if (typeof obj == 'function' && obj?.length == 2)
     return [obj]
 
@@ -12,7 +8,7 @@ export function resolve(obj: ActionType, id: string) {
   if (obj?.handle)
     return obj.handle()
 
-  const instance = new (obj as new () => Action)()
+  const instance = new obj()
   if (obj?.prototype?.run)
     return instance.run()
 
@@ -22,7 +18,7 @@ export function resolve(obj: ActionType, id: string) {
   throw new Error(`Invalid action "${id}" - unsupported type`)
 }
 
-export function resolveMiddleware(obj: MiddlewareType) {
+export function resolveMiddleware(obj: any) {
   if (typeof obj == 'function' && obj.length == 2)
     return obj
 

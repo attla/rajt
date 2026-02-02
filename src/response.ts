@@ -1,13 +1,9 @@
-import type { ContentfulStatusCode, RedirectStatusCode, StatusCode } from 'hono/utils/http-status'
-import type { BaseMime } from 'hono/utils/mime'
-import type { ResponseHeader } from 'hono/utils/headers'
-import type { ErrorResponse, Errors } from './types'
 import { HtmlEscapedCallbackPhase, resolveCallback } from 'hono/utils/html'
-
-type HeaderRecord =
-  | Record<'Content-Type', BaseMime>
-  | Record<ResponseHeader, string | string[]>
-  | Record<string, string | string[]>
+import type {
+  ContentfulStatusCode, RedirectStatusCode, StatusCode,
+  BaseMime, HeaderRecord,
+  ErrorResponse, Errors,
+} from './types'
 
 type RBag = {
   status?: StatusCode,

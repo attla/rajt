@@ -1,7 +1,11 @@
-import type { Context, MiddlewareHandler, Next } from 'hono'
+import type {
+  Context, MiddlewareHandler, Next,
+  IRequest,
+} from './types'
 
 export type MiddlewareType = MiddlewareHandler | Middleware | (new () => Middleware)
-export default class Middleware {
+
+export class Middleware {
   static factory?: Function
   static opts?: object | any[]
   static path: string = '*'
@@ -9,3 +13,5 @@ export default class Middleware {
     await next()
   }
 }
+
+export const toHonoMiddleware = (mw: MiddlewareHandler) => async (req: IRequest, next: Next) => await mw(req.cx, next)

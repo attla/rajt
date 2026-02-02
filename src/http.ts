@@ -1,10 +1,12 @@
-import type { Context, Next } from 'hono'
 import { MiddlewareType } from './middleware'
 import response from './response'
 import { GET_REQUEST } from './request'
 import { Ability } from './auth'
 import mergeMiddleware from './utils/merge-middleware'
-import { IRequest } from './types'
+import type {
+  Context, Next,
+  IRequest
+} from './types'
 
 function method(method: string, ...args: any[]): void | ClassDecorator {
   if (args.length == 1 && typeof args[0] == 'function')

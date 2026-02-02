@@ -1,11 +1,10 @@
 import { defineCommand, runMain, renderUsage } from 'citty'
 import type { ArgsDef, CommandDef } from 'citty'
-import colors from 'picocolors'
 import { createConsola } from 'consola'
-
+import { logo } from '../utils/log'
+import { isColorSupported, gray } from '../utils/colors'
 import { version as rajtVersion } from '../../package.json'
 
-import { logo } from '../utils/log'
 
 import dev from './commands/dev'
 import build from './commands/build'
@@ -26,7 +25,7 @@ const directly = () => {
 }
 
 const name = 'Rajt CLI'
-const version = [name, colors.isColorSupported ? colors.gray('v'+rajtVersion) : rajtVersion].join(' ')
+const version = [name, isColorSupported ? gray('v'+rajtVersion) : rajtVersion].join(' ')
 
 if (directly()) {
   const _args = process.argv.slice(2)

@@ -1,14 +1,34 @@
-import type { Handler, ValidationTargets } from 'hono'
-import { ResponseHeader } from 'hono/utils/headers'
-import { StatusCode } from 'hono/utils/http-status'
-import { BaseMime } from 'hono/utils/mime'
+import type {
+  Hono, Env, Handler,
+  ErrorHandler, NotFoundHandler,
+  ValidationTargets,
+  // MiddlewareHandler,
+} from 'hono'
+import type { ResponseHeader } from 'hono/utils/headers'
+// import type { StatusCode } from 'hono/utils/http-status'
+import type { BaseMime } from 'hono/utils/mime'
 import z from 'zod'
 import Action from './action'
 import request from './request'
 import response from './response'
 import validator from './validator'
 
-export type { Context, Next } from 'hono'
+
+// export type { H, Handler, HandlerResponse } from 'hono/types'
+export type {
+  Env, Context, Next,
+  // ErrorHandler, NotFoundHandler,
+  MiddlewareHandler, // TODO: remove..
+  ValidationTargets,
+} from 'hono'
+export type { HTTPResponseError } from 'hono/types'
+
+export type {
+  ContentfulStatusCode,
+  RedirectStatusCode,
+  StatusCode,
+} from 'hono/utils/http-status'
+export type { BaseMime }
 
 type PublicMethods<T> = {
   [K in keyof T]: K extends `#${string}` | `$${string}` | symbol | 'prototype' ? never : K
@@ -34,16 +54,32 @@ export type Route = {
   handle: Handlers,
 }
 
-export type ActionType = Function | Handler | Action | (new () => Action)
+// export type ActionType = Function | Handler | Action | (new () => Action)
 
 export type Handlers = (Function | Handler | (new () => Action))[]
 
 export type Routes = Route[]
 
-export type LambdaResponse = {
-  statusCode: StatusCode,
-  body: string,
+export type HeaderRecord =
+  | Record<'Content-Type', BaseMime>
+  | Record<ResponseHeader, string | string[]>
+  | Record<string, string | string[]>
+
+
+export type InitFunction<E extends Env = Env> = (app: Hono<E>) => void
+export type ServerOptions<E extends Env = Env> = Partial<{
+  routes: Routes,
+  notFound: NotFoundHandler<E>,
+  onError: ErrorHandler<E>,
+  root: string,
+  app?: Hono<E>,
+  init?: InitFunction<E>,
+}>
+
+export interface MiddlewareFactory {
+
 }
+// export type MiddlewareType = MiddlewareHandler | Middleware | (new () => Middleware)
 
 export type Errors = Record<string, string | string[]>
 export type ErrorResponse = {
@@ -51,16 +87,23 @@ export type ErrorResponse = {
   e?: Errors, // error bag
 }
 
-export type ResponseHeadersInit = [
-    string,
-    string
-][] | Record<"Content-Type", BaseMime> | Record<ResponseHeader, string> | Record<string, string> | Headers
-export type ResponseInit<T extends StatusCode = StatusCode> = {
-    headers?: ResponseHeadersInit,
-    status?: T,
-    statusText?: string,
-}
-export type ResponseOrInit<T extends StatusCode = StatusCode> = ResponseInit<T> | Response
+// TODO: not used..
+
+// export type LambdaResponse = {
+//   statusCode: StatusCode,
+//   body: string,
+// }
+
+// export type ResponseHeadersInit = [
+//     string,
+//     string
+// ][] | Record<"Content-Type", BaseMime> | Record<ResponseHeader, string> | Record<string, string> | Headers
+// export type ResponseInit<T extends StatusCode = StatusCode> = {
+//     headers?: ResponseHeadersInit,
+//     status?: T,
+//     statusText?: string,
+// }
+// export type ResponseOrInit<T extends StatusCode = StatusCode> = ResponseInit<T> | Response
 // export type JSONValue =
 //   | string
 //   | number

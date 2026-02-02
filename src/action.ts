@@ -1,7 +1,10 @@
 import response from './response'
 import validator from './validator'
 import { GET_REQUEST } from './request'
-import type { Context, IRequest, IResponse, IValidator, Rules } from './types'
+import type {
+  Context,
+  IRequest, IResponse, IValidator, Rules
+} from './types'
 
 export default class Action {
   static run() {

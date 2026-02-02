@@ -6,7 +6,7 @@ import { readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, relative } from 'node:path'
 
 import chokidar from 'chokidar'
-import { gray } from 'picocolors'
+import { gray } from '../../utils/colors'
 import type { ChokidarEventName, Platform } from './types'
 
 import { cacheRoutes } from '../../routes'
