@@ -29,8 +29,8 @@ export function normalizePlatform(platform: Platform) {
     case 'workers':
       return 'cf'
 
-    case 'bun':
-      return 'node'
+    // case 'bun':
+    //   return 'node'
 
     default:
       return platform
@@ -77,6 +77,8 @@ export const build = async (platform: Platform) => {
         copyFileSync(file, join(_root, 'dist', basename(file)))
     }
   }
+
+  if (['bun', 'vercel'].includes(platform)) platform = 'cf'
 
   // @ts-ignore
   platform = platform != 'node' ? '-'+ platform : ''

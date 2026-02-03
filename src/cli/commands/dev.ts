@@ -106,9 +106,9 @@ export default defineCommand({
 							lambda = null
 						})
 						.on('message', msg => {
-							if (process.send) process.send(msg)
+							process.send && process.send(msg)
 						}).on('disconnect', () => {
-							if (process.disconnect) process.disconnect()
+							process.disconnect && process.disconnect()
 						}).on('error', e => {
 							error('Lambda process error:', e)
 							lambda = null
@@ -194,9 +194,9 @@ export default defineCommand({
 
 					child.on('exit', code => process.exit(code ?? 0))
 						.on('message', msg => {
-							if (process.send) process.send(msg)
+							process.send && process.send(msg)
 						}).on('disconnect', () => {
-							if (process.disconnect) process.disconnect()
+							process.disconnect && process.disconnect()
 						})
 				})
     }

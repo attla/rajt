@@ -51,6 +51,25 @@ export default defineCommand({
 					})
 
 				return
+			case 'vercel':
+				return error('Platform not yet implemented, contact the webmaster')
+				const vchild = spawn(
+					isBun ? 'bunx' : 'npx',
+					['vercel', 'deploy'],
+					{
+						stdio: 'inherit',
+						cwd: _root,
+					}
+				)
+
+				vchild.on('exit', code => process.exit(code ?? 0))
+					.on('message', msg => {
+						process.send && process.send(msg)
+					}).on('disconnect', () => {
+						process.disconnect && process.disconnect()
+					})
+
+				return
     }
 	},
 })

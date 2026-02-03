@@ -76,9 +76,6 @@ export type ServerOptions<E extends Env = Env> = Partial<{
   init?: InitFunction<E>,
 }>
 
-export interface MiddlewareFactory {
-
-}
 // export type MiddlewareType = MiddlewareHandler | Middleware | (new () => Middleware)
 
 export type Errors = Record<string, string | string[]>

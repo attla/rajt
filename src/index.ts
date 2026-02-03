@@ -1,5 +1,5 @@
 export { default as Action, default as Route } from './action'
-export * from './middleware'
+export { Middleware, toHonoMiddleware } from './middleware'
 export { default as Response } from './response'
 export { default as Config } from './config'
 
