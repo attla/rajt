@@ -25,7 +25,6 @@
     "src"
   ],
   "scripts": {
-    "rajt": "./src/bin/rajt.js",
     "aws:local": "bun run --silent aws:build && bun run --silent sam:local",
     "aws:package": "bun run --silent aws:build && bun run --silent sam:package",
     "aws:deploy": "bun run --silent aws:build && bun run --silent sam:package && bun run --silent sam:deploy",
@@ -34,11 +33,7 @@
     "sam:package": "sam package --template-file ../../template-prod.yaml --output-template-file ../../packaged.yaml",
     "sam:deploy": "sam deploy --template-file ../../packaged.yaml --stack-name rajt-llrt --capabilities CAPABILITY_IAM",
     "sam:update": "source ../../.env.prod && aws lambda update-function-code --function-name $AWS_NAME --zip-file fileb://../../lambda.zip --region $AWS_REGION --no-cli-pager 2>&1 >/dev/null",
-    "clean": "rm -rf ../../dist ../../tmp",
-    "clean:build": "rm -rf ../../dist",
-    "clean:temp": "rm -rf ../../tmp",
-    "zip": "zip -j ../../lambda.zip ../../dist/index.js",
-    "start": "node ../../dist/index.js"
+    "zip": "zip -j ../../lambda.zip ../../dist/index.js"
   },
   "dependencies": {
     "cripta": "^0.1",
@@ -97,8 +92,11 @@
     "application",
     "framework",
     "router",
+    "serverless",
+    "typescript",
     "cloudflare",
     "workers",
+    "vercel",
     "deno",
     "bun",
     "nodejs"

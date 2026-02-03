@@ -86,29 +86,29 @@ Compatible platforms:
  - `aws` - AWS Lambda (Node.js, Bun and LLRT runtime)
  - `cf` - Cloudflare Workers
  - `node` - Node.js
+ - `vercel` - Vercel
 
 
 ## Deploy
 
-```bash
-```
+Anatomy of the command: `bunx rajt deploy ${PLATFORM}`
 
 #### AWS Lambda Deployment
 
 ```bash
-bunx rajt deploy -p aws
+bunx rajt deploy aws
 ```
 
 Update only the lambda code:
 
 ```bash
-bunx rajt deploy:update -p aws
+bunx rajt deploy:update aws
 ```
 
 #### Cloudflare Workers Deployment
 
 ```bash
-bunx rajt deploy -p=cf
+bunx rajt deploy cf
 ```
 
 ## Routing

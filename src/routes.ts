@@ -93,7 +93,7 @@ function extractHttpPath(file: string) {
   return route == '/' ? '/' : route.replace(/\/$/, '')
 }
 
-function sortRoutes(routes: Route[]) {
+export function sortRoutes(routes: Route[]) {
   const metas = new Map<string, { score: number, segmentsCount: number }>()
 
   for (const route of routes)
