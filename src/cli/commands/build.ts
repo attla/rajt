@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty'
 import { gray } from '../../utils/colors'
 import { build, normalizePlatform, platformError } from './utils'
-import { wait, error } from '../../utils/log'
+import { wait, error, rn } from '../../utils/log'
 
 import { platforms } from './constants'
 
@@ -27,11 +27,11 @@ export default defineCommand({
 
 		try {
 			await build(platform)
-		} catch (e) {
-			error('Build failed:', e)
+		} catch (e: any) {
+			error('Build failed:', e?.message || e)
 			process.exit(0)
 		} finally {
-			console.log('\t')
+			rn()
 		}
 	},
 })

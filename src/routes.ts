@@ -9,6 +9,7 @@ import { isAnonFn } from './utils/func'
 import ensureDir from './utils/ensuredir'
 import versionSHA from './utils/version-sha'
 import type { Route } from './types'
+import { error, substep, warn } from './utils/log'
 
 const __filename = new URL(import.meta.url).pathname
 const __root = resolve(dirname(__filename), '../../..')
@@ -42,11 +43,16 @@ const walk = async (dir: string, baseDir: string, fn: Function, parentMw: string
   }
 }
 
+let hasDuplicatedRoutes = false
 export async function getRoutes(
   dirs: string[] = ['actions', 'features', 'routes']
 ): Promise<Route[]> {
+  hasDuplicatedRoutes = false
   const routes: Route[] = []
-  let mw: string[] = []
+
+  let length = 0
+  const keys: Set<string> = new Set()
+  const bag: Record<string, string[]> = {}
 
   await Promise.all(dirs.map(dir => walk(
     resolve(__root, dir),
@@ -66,8 +72,23 @@ export async function getRoutes(
         middlewares,
         handle,
       })
+
+      if (!keys.has(name)) {
+        keys.add(name)
+      } else {
+        ;(bag[name] ||= []).push(file)
+        length++
+      }
     }
   )))
+
+  if (length) {
+    hasDuplicatedRoutes = true
+    Object.entries(bag).forEach(([name, paths]) => {
+      warn(`Route "${name}" has `+ (paths.length > 1 ? `registered ${paths.length} times:` : 'already been registered:'))
+      substep(...paths)
+    })
+  }
 
   return sortRoutes(routes)
 }
@@ -99,7 +120,7 @@ export function sortRoutes(routes: Route[]) {
   for (const route of routes)
     metas.set(route.path, computeRouteMeta(route.path))
 
-  return routes.sort((a, b) => {
+  const list = routes.sort((a, b) => {
     const metaA = metas.get(a.path)!
     const metaB = metas.get(b.path)!
 
@@ -108,6 +129,13 @@ export function sortRoutes(routes: Route[]) {
 
     return metaB.score - metaA.score
   })
+
+  while (list.length && list.at(-1)?.path == '/') {
+    const last = list.pop()
+    last && list.unshift(last)
+  }
+
+  return list
 }
 
 function computeRouteMeta(path: string) {
@@ -116,7 +144,7 @@ function computeRouteMeta(path: string) {
   let score = 0
   for (const segment of segments) {
     if (segment === '*') {
-      score += 0
+      continue
     } else if (segment.startsWith(':')) {
       score += 1
     } else {
@@ -219,6 +247,9 @@ export async function cacheRoutes() {
     writeFileSync(rolePath, `export default {\n\n}`)
 
   const routes = await getRoutes()
+  if (hasDuplicatedRoutes)
+    throw new Error("The app can't build with duplicate routes")
+
   const middlewares = await getMiddlewares()
   const configs = Object.entries(await getConfigs())
 

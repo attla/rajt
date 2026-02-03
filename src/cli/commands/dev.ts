@@ -53,8 +53,8 @@ export default defineCommand({
 						try {
 							await build(platform)
 							if (!lambda) await startLambda()
-						} catch (e) {
-							error('Build failed:', e)
+						} catch (e: any) {
+							error('Build failed:', e?.message || e)
 							process.exit(0)
 						} finally {
 							isBuilding = false
@@ -141,8 +141,8 @@ export default defineCommand({
 						try {
 							await build(platform)
 							await startWorker()
-						} catch (e) {
-							error('Build failed:', e)
+						} catch (e: any) {
+							error('Build failed:', e?.message || e)
 							process.exit(0)
 						} finally {
 							isBuilding = false

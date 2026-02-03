@@ -5,10 +5,10 @@ import { logo } from '../utils/log'
 import { isColorSupported, gray } from '../utils/colors'
 import { version as rajtVersion } from '../../package.json'
 
-
 import dev from './commands/dev'
 import build from './commands/build'
 import deploy from './commands/deploy'
+import routes from './commands/routes'
 
 /**
  * The main entrypoint for the CLI.
@@ -56,6 +56,8 @@ if (directly()) {
       dev,
       build,
       deploy,
+      routes,
+      endpoints: routes,
     },
   })
 

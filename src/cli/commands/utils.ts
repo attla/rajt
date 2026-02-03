@@ -14,7 +14,7 @@ import { step, substep, event, error, warn } from '../../utils/log'
 import { platforms } from './constants'
 
 export const _root = join(dirname(new URL(import.meta.url).pathname), '../../../../../')
-const __rajt = join(_root, 'node_modules/rajt/src')
+export const __rajt = join(_root, 'node_modules/rajt/src')
 
 export function normalizePlatform(platform: Platform) {
   platform = platform?.toLowerCase() as Platform

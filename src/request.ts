@@ -3,6 +3,8 @@ import { HTTPException } from 'hono/http-exception'
 import { Authnz, Token } from './auth'
 
 import type { Context } from 'hono'
+import { routePath, matchedRoutes } from 'hono/route'
+import type { RouterRoute } from 'hono/types'
 import type { CookieOptions, CookiePrefixOptions } from 'hono/utils/cookie'
 import type { CustomHeader, RequestHeader } from 'hono/utils/headers'
 import type { BodyData, ParseBodyOptions } from 'hono/utils/body'
@@ -25,6 +27,8 @@ export default class $Request {
   #u: Authnz<any> | null = null
 
   #host: string
+  #routePath: string
+  #matchedRoutes: RouterRoute[]
 
   constructor(c: Context) {
     this.#c = c
@@ -33,6 +37,9 @@ export default class $Request {
 
     const url = new URL(c.req.raw.url)
     this.#host = url.protocol +'//'+ url.host
+
+    this.#routePath = routePath(c)
+    this.#matchedRoutes = matchedRoutes(c)
   }
 
   get user() {
@@ -83,7 +90,7 @@ export default class $Request {
   }
 
   get routePath() {
-    return this.#c.req.routePath
+    return this.#routePath
   }
 
   get url() {
@@ -98,12 +105,17 @@ export default class $Request {
     return this.#c.req.path
   }
 
+  get fullPath() {
+    const url = this.url
+    return url.slice(url.indexOf('/', 8))
+  }
+
   get method() {
     return this.#c.req.raw.method
   }
 
   get matchedRoutes() {
-    return this.#c.req.matchedRoutes
+    return this.#matchedRoutes
   }
 
   get raw() {

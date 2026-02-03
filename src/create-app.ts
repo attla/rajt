@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
+import { matchedRoutes } from 'hono/route'
 import { Envir } from 't0n'
 import type {
   Env, Context, Next,
@@ -64,8 +65,31 @@ export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
   // const root = options?.root ?? '/'
   const app = options?.app ?? new Hono<E>()
 
-  if (isDev())
-    app.use('*', logger((...args: any[]) => console.log(gray(localDate()), ...args)))
+  if (isDev()) {
+    app.use('*', async function (c: Context, next: Next) {
+      const method = c.req.method
+      const route = matchedRoutes(c).find(route => route.method == method)?.path
+      const logWithRoute = (args: string[]) => {
+        if (!route || !args.length) return args
+        return args.map(arg => {
+          if (!arg) return arg
+          const split = arg?.split(' ')
+          if (split.length < 3 || split[2] == route)
+            return arg
+
+          split.splice(Math.min(3, split.length), 0, gray(route))
+          return split.join(' ')
+        })
+      }
+
+      const devLogger = logger((...args: any[]) => {
+        const timestamp = gray(localDate())
+        console.log(timestamp, ...logWithRoute(args))
+      })
+
+      await devLogger(c, next)
+    })
+  }
 
   app.use(async (c: Context, next: Next) => {
     c.set(GET_REQUEST as unknown as string, new request(c))
