@@ -58,11 +58,12 @@ export const formatTime = (ms: number) => {
   return `${(ms / 1000).toFixed(2)}s`
 }
 
+const dist = '.rajt/dist'
 export const build = async (platform: Platform) => {
   const startTime = Date.now()
 
   const isCF = platform == 'cf'
-  const distDir = join(_root, 'dist')
+  const distDir = join(_root, dist)
 
   existsSync(distDir)
     ? readdirSync(distDir).forEach(file => rmSync(join(distDir, file), { recursive: true, force: true }))
@@ -74,7 +75,7 @@ export const build = async (platform: Platform) => {
     ]) {
       file = join(_root, file)
       if (existsSync(file))
-        copyFileSync(file, join(_root, 'dist', basename(file)))
+        copyFileSync(file, join(_root, dist, basename(file)))
     }
   }
 
@@ -86,7 +87,7 @@ export const build = async (platform: Platform) => {
     entryPoints: [join(__rajt, `prod${platform}.ts`)],
     bundle: true,
     minify: true,
-    outfile: join(_root, 'dist/index.js'),
+    outfile: join(_root, dist +'/index.js'),
     format: 'esm',
     target: isCF ? 'es2022' : 'node20',
     // platform: 'neutral',
@@ -194,7 +195,7 @@ export async function createMiniflare(options = {}, configPath = 'wrangler.toml'
     liveReload: options.liveReload !== false,
     updateCheck: false,
 
-    scriptPath: join(_root, 'dist/index.js'),
+    scriptPath: join(_root, dist +'/index.js'),
     compatibilityDate: config.compatibility_date || '2024-11-01',
     compatibilityFlags: config.compatibility_flags || [
       'nodejs_compat',
@@ -209,7 +210,7 @@ export async function createMiniflare(options = {}, configPath = 'wrangler.toml'
     d1Databases: Array.isArray(config.d1_databases) ? Object.fromEntries(config.d1_databases.map(db => [db.binding, db.database_id])) : {},
 
     modules: [
-      { type: "ESModule", path: "dist/index.js" },
+      { type: 'ESModule', path: dist +'/index.js' },
     ],
     // modules: true,
     // modulesRules: [
@@ -251,8 +252,6 @@ export async function createMiniflare(options = {}, configPath = 'wrangler.toml'
     ...options
   })
 }
-
-
 
 function getAssetChangeMessage(
 	e: ChokidarEventName,

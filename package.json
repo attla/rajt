@@ -1,9 +1,9 @@
 {
   "name": "rajt",
   "description": "A serverless bundler layer, fully typed for AWS Lambda (Node.js and LLRT) and Cloudflare Workers.",
-  "version": "0.0.73",
+  "version": "0.0.74",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "./src/index.ts",
   "bin": {
     "rajt": "./bin/rajt.js"
   },
@@ -35,7 +35,7 @@
     "sam:package": "sam package --template-file ../../template-prod.yaml --output-template-file ../../packaged.yaml",
     "sam:deploy": "sam deploy --template-file ../../packaged.yaml --stack-name rajt-llrt --capabilities CAPABILITY_IAM",
     "sam:update": "source ../../.env.prod && aws lambda update-function-code --function-name $AWS_NAME --zip-file fileb://../../lambda.zip --region $AWS_REGION --no-cli-pager 2>&1 >/dev/null",
-    "zip": "zip -j ../../lambda.zip ../../dist/index.js"
+    "zip": "zip -j ../../lambda.zip ../../.rajt/dist/index.js"
   },
   "dependencies": {
     "cripta": "^0.1",
