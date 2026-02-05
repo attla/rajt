@@ -4,12 +4,12 @@ import { dirname, join, resolve } from 'node:path'
 import glob from 'tiny-glob'
 import { config } from 'dotenv'
 
-import IMPORT from './utils/import'
+import { IMPORT } from 't0n'
 import { isAnonFn } from './utils/func'
 import ensureDir from './utils/ensuredir'
 import versionSHA from './utils/version-sha'
-import type { Route } from './types'
-import { error, substep, warn } from './utils/log'
+import type { Routes } from './types'
+import { substep, warn } from './utils/log'
 
 const __filename = new URL(import.meta.url).pathname
 const __root = resolve(dirname(__filename), '../../..')
@@ -46,9 +46,9 @@ const walk = async (dir: string, baseDir: string, fn: Function, parentMw: string
 let hasDuplicatedRoutes = false
 export async function getRoutes(
   dirs: string[] = ['actions', 'features', 'routes']
-): Promise<Route[]> {
+): Promise<Routes> {
   hasDuplicatedRoutes = false
-  const routes: Route[] = []
+  const routes: Routes = []
 
   let length = 0
   const keys: Set<string> = new Set()
@@ -114,7 +114,7 @@ function extractHttpPath(file: string) {
   return route == '/' ? '/' : route.replace(/\/$/, '')
 }
 
-export function sortRoutes(routes: Route[]) {
+export function sortRoutes(routes: Routes) {
   const metas = new Map<string, { score: number, segmentsCount: number }>()
 
   for (const route of routes)
@@ -157,8 +157,8 @@ function computeRouteMeta(path: string) {
 
 export async function getMiddlewares(
   dirs: string[] = ['middlewares']
-): Promise<Route[]> {
-  const mw: Route[] = []
+): Promise<Routes> {
+  const mw: Routes = []
 
   await Promise.all(dirs.map(dir => walk(
     resolve(__root, dir),
@@ -253,7 +253,7 @@ export async function cacheRoutes() {
   const middlewares = await getMiddlewares()
   const configs = Object.entries(await getConfigs())
 
-  const iPath = join(__root, 'tmp/import-routes.mjs')
+  const iPath = join(__root, '.rajt/import-routes.mjs')
   ensureDir(iPath)
   writeFileSync(iPath, `// AUTO-GENERATED FILE - DO NOT EDIT
 ${env?.length ? `import { Envir } from '../node_modules/t0n/dist/index'\nEnvir.add({${env.map(([key, val]) => key +':'+ stringifyToJS(val)).join(',')}})` : ''}
@@ -283,7 +283,7 @@ try {
 }
 `)
 
-  const rPath = join(__root, 'tmp/routes.json')
+  const rPath = join(__root, '.rajt/routes.json')
   ensureDir(rPath)
   writeFileSync(rPath, JSON.stringify(routes.filter(r => r.method && r.path).map(route => [
     route.method,

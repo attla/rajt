@@ -1,7 +1,7 @@
 {
   "name": "rajt",
   "description": "A serverless bundler layer, fully typed for AWS Lambda (Node.js and LLRT) and Cloudflare Workers.",
-  "version": "0.0.72",
+  "version": "0.0.73",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -10,6 +10,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./auth": "./src/auth/index.ts",
+    "./db": "./src/db/index.ts",
+    "./database": "./src/db/index.ts",
     "./d1": "./src/db/d1.ts",
     "./d1/types": "./src/db/d1.d.ts",
     "./dynamodb": "./src/db/dynamodb.ts",
@@ -37,7 +39,7 @@
   },
   "dependencies": {
     "cripta": "^0.1",
-    "forj": "^0.0.4",
+    "forj": "^0.0.6",
     "t0n": "^0.1",
     "@hono/node-server": "^1.19.9",
     "@hono/zod-validator": "^0.7.6",
@@ -50,7 +52,8 @@
     "miniflare": "^4.20251217.0",
     "tiny-glob": "^0.2",
     "tsx": "^4.19.3",
-    "ua-parser-js": "^2.0.8"
+    "ua-parser-js": "^2.0.8",
+    "wrangler": "^4.61.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251230.0",
@@ -65,8 +68,7 @@
     "@miniflare/web-sockets": "^2.14.4",
     "@types/node": "^20.11.0",
     "bun-types": "^1.2.14",
-    "typescript": "^5.9.3",
-    "wrangler": "^4.61.0"
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=18.0.0"

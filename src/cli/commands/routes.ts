@@ -1,10 +1,10 @@
 import { join } from 'node:path'
 import { defineCommand } from 'citty'
 import { inspectRoutes } from 'hono/dev'
+import { IMPORT } from 't0n'
 import { gray, purple, red, yellow } from '../../utils/colors'
 import { __rajt } from './utils'
 import { rn } from '../../utils/log'
-import IMPORT from '../../utils/import'
 
 export default defineCommand({
 	meta: {

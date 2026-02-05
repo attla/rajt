@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 import { matchedRoutes } from 'hono/route'
-import { Envir } from 't0n'
+import { Envir, Datte } from 't0n'
 import type {
   Env, Context, Next,
   HTTPResponseError,
@@ -12,7 +12,6 @@ import { getMiddlewares, getHandler } from './register'
 import request, { GET_REQUEST } from './request'
 import response from './response'
 import { isDev } from './utils/environment'
-import localDate from './utils/local-date'
 import { gray } from './utils/colors'
 
 const NFHandler = () => response.notFound()
@@ -83,7 +82,7 @@ export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
       }
 
       const devLogger = logger((...args: any[]) => {
-        const timestamp = gray(localDate())
+        const timestamp = gray(Datte.dateTime())
         console.log(timestamp, ...logWithRoute(args))
       })
 

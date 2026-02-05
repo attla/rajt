@@ -1,7 +1,7 @@
 import esbuild from 'esbuild'
 import TOML from '@iarna/toml'
 import { Miniflare } from 'miniflare'
-import { mkdirSync, existsSync, readdirSync, rmSync, copyFileSync } from 'node:fs'
+import { mkdirSync, existsSync, readdirSync, rmSync, copyFileSync, writeFileSync } from 'node:fs'
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, relative } from 'node:path'
 
@@ -334,3 +334,46 @@ export function getDockerHost() {
 
 	return process.env.DOCKER_HOST || (platform == 'win32' ? 'tcp://localhost:2375' : 'unix:///var/run/docker.sock')
 }
+
+export function makeFile(path: string, content: string) {
+  const dir = dirname(path)
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+
+  writeFileSync(path, content)
+}
+
+export function hasExt(path: string) {
+  const index = path.lastIndexOf('.')
+  return index > 0 && index < path.length - 1
+}
+
+function normalizeText(text: string, separator = '_') {
+  const validSeparators = ['_', '-']
+  const sep = validSeparators.includes(separator) ? separator : '_'
+
+  const lastDotIndex = text.lastIndexOf('.')
+  const hasExtension = lastDotIndex > 0 && lastDotIndex < text.length - 1
+  const fileName = hasExtension ? text.substring(0, lastDotIndex) : text
+  const extension = hasExtension ? text.substring(lastDotIndex + 1) : ''
+
+  const normalizedName = fileName
+    .replace(/([a-z])([A-Z])/g, `$1${sep}$2`)
+    .replace(/[\s\-_]+/g, sep)
+    .toLowerCase()
+    .replace(new RegExp(`[^\\w${sep}]+`, 'g'), '')
+    .replace(new RegExp(`${sep}{2,}`, 'g'), sep)
+    .replace(new RegExp(`^${sep}+|${sep}+$`, 'g'), '')
+
+  return hasExtension ? `${normalizedName}.${extension}` : normalizedName
+}
+
+export const snakeCase = (text: string) => normalizeText(text, '_')
+export const kebabCase = (text: string) => normalizeText(text, '-')
+
+export const camelCase = (text: string) =>
+  text.replace(/[^a-zA-Z0-9]+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(word => word.length > 0)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join('')

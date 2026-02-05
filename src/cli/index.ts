@@ -9,6 +9,8 @@ import dev from './commands/dev'
 import build from './commands/build'
 import deploy from './commands/deploy'
 import routes from './commands/routes'
+import migrate from './commands/migrate'
+import make from './commands/make'
 
 /**
  * The main entrypoint for the CLI.
@@ -58,6 +60,20 @@ if (directly()) {
       deploy,
       routes,
       endpoints: routes,
+      migrate,
+      make,
+      'make:config': make,
+      'make:enum': make,
+      'make:route': make,
+      'make:action': make,
+      'make:endpoint': make,
+      'make:migrate': make,
+      'make:migration': make,
+      'make:model': make,
+      'make:job': make,
+      'make:seed': make,
+      'make:seeder': make,
+      'make:test': make,
     },
   })
 

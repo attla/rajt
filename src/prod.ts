@@ -3,9 +3,9 @@ import { Ability } from './auth'
 import createApp from './create-app'
 
 // @ts-ignore
-import '../../../tmp/import-routes.mjs'
+import '../../../.rajt/import-routes.mjs'
 // @ts-ignore
-import routes from '../../../tmp/routes.json'
+import routes from '../../../.rajt/routes.json'
 
 // @ts-ignore
 Ability.fromRoutes(routes)
