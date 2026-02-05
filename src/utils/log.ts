@@ -43,6 +43,7 @@ export const prefixes = {
   info: white(bold(' ')),
   event: green(bold('✓')),
   trace: magenta(bold('»')),
+  log: gray(bold('⁕')),
 } as const
 
 const LOGGING_METHOD = {
@@ -74,6 +75,10 @@ function prefixedLog(prefixType: keyof typeof prefixes, ...msg: any[]) {
       console[consoleMethod](prefix, ...msg)
     }
   }
+}
+
+export function log(...msg: any[]) {
+  prefixedLog('log', ...msg)
 }
 
 export function wait(...msg: any[]) {

@@ -10,7 +10,7 @@ import { gray } from '../../utils/colors'
 import type { ChokidarEventName, Platform } from './types'
 
 import { cacheRoutes } from '../../routes'
-import { step, substep, event, error, warn } from '../../utils/log'
+import { step, substep, event, error, wait as wwait, warn, log } from '../../utils/log'
 import { platforms } from './constants'
 
 export const _root = join(dirname(new URL(import.meta.url).pathname), '../../../../../')
@@ -292,7 +292,7 @@ export async function watch(cb: (e: ChokidarEventName | string, file: string) =>
 	let restartTimeout: NodeJS.Timeout | null = null
 
 	const watcher = (e: ChokidarEventName) => async (file: string) => {
-		step(getAssetChangeMessage(e, file))
+		log(getAssetChangeMessage(e, file))
 
 		if (restartTimeout)
 			clearTimeout(restartTimeout)
@@ -308,7 +308,7 @@ export async function watch(cb: (e: ChokidarEventName | string, file: string) =>
 	codeWatcher.on('addDir', watcher('addDir'))
 	codeWatcher.on('unlinkDir', watcher('unlinkDir'))
 
-	step('Watching for file changes')
+	wwait('Watching for file changes')
 }
 
 export async function wait(ms: number) {
