@@ -74,7 +74,7 @@ export default defineCommand({
 				maxPathLength = Math.max(maxPathLength, path.length)
 
 				return [
-					!isMiddleware,
+					isMiddleware && method != 'ALL' || !isMiddleware,
 					opts.path ? path.startsWith(opts.path) : true,
 					opts.method ? method == opts.method : true,
 				].every(Boolean)
