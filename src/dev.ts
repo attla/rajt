@@ -25,6 +25,6 @@ middlewares.forEach(mw => registerMiddleware(mw.handle))
 Ability.fromRoutes(routes)
 Ability.roles = Config.get('roles', {})
 
-const app = createApp({ routes })
+const app = createApp({ routes, configs: Config.get('rajt', {}) })
 
 export default app

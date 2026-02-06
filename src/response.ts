@@ -28,13 +28,13 @@ export default class $Response {
     return new Response(body ?? null, b)
   }
 
-  static text(data?: string, status?: StatusCode) {
-    return this.raw(status, data, 'text/plain; charset=UTF-8' as BaseMime)
+  static text(str?: string, status?: StatusCode, headers?: HeaderRecord) {
+    return this.raw(status, str, 'text/plain; charset=UTF-8' as BaseMime, headers)
   }
 
   static json<T>(data?: T, status?: StatusCode, headers?: HeaderRecord) {
     if (data == null)
-      return this.raw(status)
+      return this.raw(status, null, undefined, headers)
 
     return this.raw(status, JSON.stringify(data), 'application/json', headers)
   }
@@ -64,70 +64,70 @@ export default class $Response {
   }
 
   static ok(): Response
-  static ok<T>(data: T): Response
-  static ok<T>(data?: T) {
-    return this.json(data, 200)
+  static ok<T>(data: T, headers?: HeaderRecord): Response
+  static ok<T>(data?: T, headers?: HeaderRecord) {
+    return this.json(data, 200, headers)
   }
 
   static created(): Response
-  static created<T>(data: T): Response
-  static created<T>(data?: T) {
-    return this.json(data, 201)
+  static created<T>(data: T, headers?: HeaderRecord): Response
+  static created<T>(data?: T, headers?: HeaderRecord) {
+    return this.json(data, 201, headers)
   }
 
   static accepted(): Response
-  static accepted<T>(data: T): Response
-  static accepted<T>(data?: T) {
-    return this.json(data, 202)
+  static accepted<T>(data: T, headers?: HeaderRecord): Response
+  static accepted<T>(data?: T, headers?: HeaderRecord) {
+    return this.json(data, 202, headers)
   }
 
-  static deleted() {
-    return this.noContent()
+  static deleted(headers?: HeaderRecord) {
+    return this.noContent(headers)
   }
 
-  static noContent() {
-    return this.raw(204)
+  static noContent(headers?: HeaderRecord) {
+    return this.json(null, 204, headers)
   }
 
   static badRequest(): Response
-  static badRequest(errors?: Errors, msg?: string) {
-    return this.error(errors, msg, 400)
+  static badRequest(errors?: Errors, msg?: string, headers?: HeaderRecord) {
+    return this.error(errors, msg, 400, headers)
   }
 
   static unauthorized(): Response
-  static unauthorized<T>(data: T): Response
-  static unauthorized<T>(data?: T) {
-    return this.json(data, 401)
+  static unauthorized<T>(data: T, headers?: HeaderRecord): Response
+  static unauthorized<T>(data?: T, headers?: HeaderRecord) {
+    return this.json(data, 401, headers)
   }
 
   static forbidden(): Response
-  static forbidden<T>(data: T): Response
-  static forbidden<T>(data?: T) {
-    return this.json(data, 403)
+  static forbidden<T>(data: T, headers?: HeaderRecord): Response
+  static forbidden<T>(data?: T, headers?: HeaderRecord) {
+    return this.json(data, 403, headers)
   }
 
   static notFound(): Response
-  static notFound(msg: string): Response
-  static notFound(msg?: string) {
-    return this.raw(404, msg)
+  static notFound<T>(msg: T, headers?: HeaderRecord): Response
+  static notFound<T>(msg?: T, headers?: HeaderRecord) {
+    return this.json(msg, 404, headers)
   }
 
   static conflict(): Response
-  static conflict(errors?: Errors, msg?: string) {
-    return this.error(errors, msg, 409)
+  static conflict(errors?: Errors, msg?: string, headers?: HeaderRecord) {
+    return this.error(errors, msg, 409, headers)
   }
 
   static unsupportedMediaType(): Response
-  static unsupportedMediaType(errors?: Errors, msg?: string) {
-    return this.error(errors, msg, 415)
+  static unsupportedMediaType(errors?: Errors, msg?: string, headers?: HeaderRecord) {
+    return this.error(errors, msg, 415, headers)
   }
 
   static internalError(): Response
-  static internalError(errors?: Errors, msg?: string) {
-    return this.error(errors, msg, 500)
+  static internalError(errors?: Errors, msg?: string, headers?: HeaderRecord) {
+    return this.error(errors, msg, 500, headers)
   }
 
-  static error(errors?: Errors, msg?: string, status?: ContentfulStatusCode) {
+  static error(errors?: Errors, msg?: string, status?: ContentfulStatusCode, headers?: HeaderRecord) {
     status ??= 500
     if (!errors && !msg)
       return this.raw(status, msg)
@@ -136,6 +136,6 @@ export default class $Response {
     if (msg) resp.m = msg
     if (errors) resp.e = errors
 
-    return this.json(resp, status)
+    return this.json(resp, status, headers)
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "rajt",
   "description": "A serverless bundler layer, fully typed for AWS Lambda (Node.js and LLRT) and Cloudflare Workers.",
-  "version": "0.0.75",
+  "version": "0.0.76",
   "type": "module",
   "main": "./src/index.ts",
   "bin": {
@@ -42,18 +42,21 @@
     "forj": "^0.0.6",
     "t0n": "^0.1",
     "@hono/node-server": "^1.19.9",
-    "@hono/zod-validator": "^0.7.6",
+    "@hono/standard-validator": "^0.2.2",
     "@iarna/toml": "^2.2.5",
+    "@scalar/hono-api-reference": "^0.9.40",
     "chokidar-cli": "^3.0.0",
     "citty": "^0.1.6",
     "dotenv": "^16.5.0",
     "esbuild": "^0.25.2",
     "hono": "^4.11.7",
+    "hono-openapi": "^1.2.0",
     "miniflare": "^4.20251217.0",
     "tiny-glob": "^0.2",
     "tsx": "^4.19.3",
     "ua-parser-js": "^2.0.8",
-    "wrangler": "^4.61.0"
+    "wrangler": "^4.61.0",
+    "zod-openapi": "4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251230.0",

@@ -12,4 +12,4 @@ Ability.fromRoutes(routes)
 Ability.roles = Config.get('roles', {})
 
 // @ts-ignore
-export const app = createApp({ routes })
+export const app = createApp({ routes, configs: Config.get('rajt', {}) })

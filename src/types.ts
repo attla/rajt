@@ -7,6 +7,7 @@ import type {
 import type { ResponseHeader } from 'hono/utils/headers'
 // import type { StatusCode } from 'hono/utils/http-status'
 import type { BaseMime } from 'hono/utils/mime'
+import type { DescribeRouteOptions } from 'hono-openapi'
 import z from 'zod'
 import Action from './action'
 import request from './request'
@@ -28,7 +29,7 @@ export type {
   RedirectStatusCode,
   StatusCode,
 } from 'hono/utils/http-status'
-export type { BaseMime }
+export type { BaseMime, DescribeRouteOptions }
 
 type PublicMethods<T> = {
   [K in keyof T]: K extends `#${string}` | `$${string}` | symbol | 'prototype' ? never : K
@@ -52,6 +53,7 @@ export type Route = {
   file: string,
   middlewares: Function[],
   handle: Handlers,
+  desc: DescribeRouteOptions,
 }
 
 // export type ActionType = Function | Handler | Action | (new () => Action)

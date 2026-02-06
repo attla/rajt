@@ -5,7 +5,8 @@ import { Ability } from './auth'
 import mergeMiddleware from './utils/merge-middleware'
 import type {
   Context, Next,
-  IRequest
+  IRequest,
+  DescribeRouteOptions,
 } from './types'
 
 function method(method: string, ...args: any[]): void | ClassDecorator {
@@ -104,6 +105,13 @@ export function Auth(...args: any[]): void | ClassDecorator {
 }
 
 function _auth(target: Function | any) {
+  if (!target?.d) target.d = {}
+  if (!target.d?.security) target.d.security = []
+  target.d.security.push({JWT: []})
+
+  if (!target.d?.responses) target.d.responses = {}
+  target.d.responses[401] = {description: 'Unauthorized'}
+
   mergeMiddleware(target, async (c: Context, next: Next) => {
     const req = c.get(GET_REQUEST as unknown as string) as IRequest
     const ability = Ability.fromAction(target)
@@ -114,3 +122,13 @@ function _auth(target: Function | any) {
     await next()
   })
 }
+
+function _describe(spec: DescribeRouteOptions): ClassDecorator{
+  return (target: any) => {
+    target.d = spec
+  }
+}
+
+export const OpenApi = _describe
+export const Describe = _describe
+export const Desc = _describe

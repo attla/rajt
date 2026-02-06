@@ -64,6 +64,15 @@ export async function getRoutes(
 
       const m = handle?.m?.toLowerCase()
       const [method, uri] = m ? [m, handle?.p] : [extractHttpVerb(path), extractHttpPath(path)]
+      const d = handle?.d || {}
+      const desc = {
+        summary: handle?.d?.summary || name,
+        ...d,
+        responses: {
+          500: {$ref: '#/components/responses/500'},
+          ...d?.responses,
+        }
+      }
       routes.push({
         method, path: uri,
         name,
@@ -71,6 +80,7 @@ export async function getRoutes(
         // @ts-ignore
         middlewares,
         handle,
+        desc,
       })
 
       if (!keys.has(name)) {
@@ -290,6 +300,7 @@ try {
     route.path,
     route.middlewares,
     route.name,
+    route.desc,
   ])))
 }
 
