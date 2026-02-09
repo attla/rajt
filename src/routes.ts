@@ -63,7 +63,7 @@ function isZodSchema(obj: any): obj is z.ZodType {
 function ResolveDescribeSchema(obj: any, deep: boolean = false) {
   if (!obj || typeof obj !== 'object') return obj
   if (isZodSchema(obj))
-    return { content: {'*/*': { schema: resolver(obj as unknown as StandardSchemaV1) }} }
+    return { content: {'application/json': { schema: resolver(obj as unknown as StandardSchemaV1) }} }
 
   if (obj.content && typeof obj.content == 'object') {
     for (const mediaType in obj.content) {
