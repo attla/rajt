@@ -4,7 +4,7 @@ import { Ability } from './auth'
 import createApp from './create-app'
 
 // @ts-ignore
-import '../../../.rajt/import-routes.mjs'
+import '../../../.rajt/imports.mjs'
 // @ts-ignore
 import routes from '../../../.rajt/routes.json'
 

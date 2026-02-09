@@ -111,7 +111,7 @@ export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
   const routes = options?.routes || []
   for (const route of routes) {
     if (Array.isArray(route)) { // @ts-ignore
-      app[route[0]](route[1], describeRoute(route[4]), ...mw(route[2], route[3]), ...resolve(getHandler(route[3]), route[3]))
+      app[route[0]](route[1], ...mw(route[2], route[3]), ...resolve(getHandler(route[3]), route[3]))
     } else { // @ts-ignore
       app[route.method](route.path, describeRoute(route.desc), ...mw(route.middlewares, route.name), ...resolve(route.handle, route.name))
     }

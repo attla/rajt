@@ -322,7 +322,7 @@ export async function cacheRoutes() {
   // @ts-ignore
   const openApi = await OAS.generateSpecs(createApp({ routes }), configs?.rajt || {})
 
-  const iPath = join(__root, '.rajt/import-routes.mjs')
+  const iPath = join(__root, '.rajt/imports.mjs')
   ensureDir(iPath)
   writeFileSync(iPath, `// AUTO-GENERATED FILE - DO NOT EDIT
 ${env?.length ? `import { Envir } from '../node_modules/t0n/dist/index'\nEnvir.add({${env.map(([key, val]) => key +':'+ stringifyToJS(val)).join(',')}})` : ''}
@@ -361,7 +361,6 @@ try {
     route.path,
     route.middlewares,
     route.name,
-    route.desc,
   ])))
 }
 
