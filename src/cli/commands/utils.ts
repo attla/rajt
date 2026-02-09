@@ -58,6 +58,14 @@ export const formatTime = (ms: number) => {
   return `${(ms / 1000).toFixed(2)}s`
 }
 
+const nodeModules = [
+  'crypto', 'buffer', 'http', 'fs', 'path', 'events', 'stream', 'util',
+  'url', 'querystring', 'os', 'child_process', 'cluster', 'dns', 'net',
+  'tls', 'https', 'zlib', 'readline', 'repl', 'vm', 'module', 'assert',
+  'timers', 'string_decoder', 'punycode', 'perf_hooks', 'dgram', 'tty',
+  'worker_threads', 'wasi'
+].flatMap(lib => ['node:'+ lib, lib])
+
 const dist = '.rajt/dist'
 export const build = async (platform: Platform) => {
   const startTime = Date.now()
@@ -99,8 +107,7 @@ export const build = async (platform: Platform) => {
       '@aws-sdk', '@smithy',
       ...(isCF ? [
         'cloudflare:workers',
-        'node:crypto', 'crypto',
-        'node:buffer', 'buffer',
+        ...nodeModules,
       ] : []),
     ],
     metafile: true,

@@ -6,17 +6,19 @@ import type {
 } from 'hono'
 import type { ResponseHeader } from 'hono/utils/headers'
 // import type { StatusCode } from 'hono/utils/http-status'
-import type { BaseMime } from 'hono/utils/mime'
-import type { DescribeRouteOptions } from 'hono-openapi'
+import { mimes, type BaseMime } from 'hono/utils/mime'
+import type { OpenAPIV3_1, OpenAPIV3 } from 'openapi-types'
+import type { StandardSchemaV1 } from '@standard-schema/spec'
+import type { DescribeRouteOptions as RawDescribeRouteOptions, ResolverReturnType } from 'hono-openapi'
 import z from 'zod'
 import Action from './action'
 import request from './request'
 import response from './response'
 import validator from './validator'
 
-
 // export type { H, Handler, HandlerResponse } from 'hono/types'
 export type {
+  Hono,
   Env, Context, Next,
   // ErrorHandler, NotFoundHandler,
   MiddlewareHandler, // TODO: remove..
@@ -29,7 +31,7 @@ export type {
   RedirectStatusCode,
   StatusCode,
 } from 'hono/utils/http-status'
-export type { BaseMime, DescribeRouteOptions }
+export type { BaseMime, StandardSchemaV1 }
 
 type PublicMethods<T> = {
   [K in keyof T]: K extends `#${string}` | `$${string}` | symbol | 'prototype' ? never : K
@@ -45,6 +47,26 @@ export type Rule = {
   eTarget?: 'fieldErrors' | 'formErrors'
 }
 export type Rules = Rule[] | Rule | null
+
+export type StandardSchema = StandardSchemaV1 | OpenAPIV3_1.ReferenceObject
+export type DescribeRouteOptions = Omit<RawDescribeRouteOptions, 'responses'> & {
+  responses?: {
+    [key: string | number]: (Omit<OpenAPIV3.ResponseObject, 'description' | 'headers' | 'content' | 'links'> & {
+      description?: string,
+      headers?: { // TODO maybe dont accept ResolverReturnType
+        [header: string]: OpenAPIV3_1.ReferenceObject | OpenAPIV3_1.HeaderObject
+      },
+      content?: {
+        [key: BaseMime | keyof typeof mimes]: Omit<OpenAPIV3_1.MediaTypeObject, 'schema'> & {
+          schema?: StandardSchema | OpenAPIV3_1.SchemaObject | ResolverReturnType,
+        },
+      },
+      links?: { // TODO maybe dont accept ResolverReturnType
+        [link: string]: OpenAPIV3_1.ReferenceObject | OpenAPIV3_1.LinkObject
+      },
+    }) | StandardSchema,
+  },
+}
 
 export type Route = {
   method: string,

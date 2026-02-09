@@ -5,11 +5,19 @@ import glob from 'tiny-glob'
 import { config } from 'dotenv'
 
 import { IMPORT } from 't0n'
+import { registerHandler, registerMiddleware } from './register'
+import createApp from './create-app'
 import { isAnonFn } from './utils/func'
 import ensureDir from './utils/ensuredir'
 import versionSHA from './utils/version-sha'
-import type { Routes } from './types'
+import type { Routes, StandardSchemaV1 } from './types'
 import { substep, warn } from './utils/log'
+
+import OAS from './oas'
+import z from 'zod'
+import { resolver } from 'hono-openapi'
+import { mimes } from 'hono/utils/mime'
+import { STATUS_CODES } from 'node:http'
 
 const __filename = new URL(import.meta.url).pathname
 const __root = resolve(dirname(__filename), '../../..')
@@ -43,6 +51,50 @@ const walk = async (dir: string, baseDir: string, fn: Function, parentMw: string
   }
 }
 
+function isZodSchema(obj: any): obj is z.ZodType {
+  return (
+    obj &&
+    typeof obj == 'object' &&
+    ('_def' in obj || '_type' in obj) &&
+    (obj.safeParse !== undefined || obj.parse !== undefined)
+  )
+}
+
+function ResolveDescribeSchema(obj: any, deep: boolean = false) {
+  if (!obj || typeof obj !== 'object') return obj
+  if (isZodSchema(obj))
+    return { content: {'*/*': { schema: resolver(obj as unknown as StandardSchemaV1) }} }
+
+  if (obj.content && typeof obj.content == 'object') {
+    for (const mediaType in obj.content) {
+      const contentItem = obj.content[mediaType]
+      if (contentItem?.schema && isZodSchema(contentItem.schema))
+        contentItem.schema = resolver(contentItem.schema)
+
+      if (mediaType in mimes) {
+        obj.content[mimes[mediaType]] = contentItem
+        delete obj.content[mediaType]
+      }
+    }
+
+    return obj
+  }
+
+  for (const key in obj) {
+    if (obj[key] && typeof obj[key] == 'object') {
+      obj[key] = ResolveDescribeSchema(obj[key], true)
+
+      if (!deep && !obj[key]?.description) {
+        const desription = (new Response(null, { status: Number(key) })).statusText || STATUS_CODES[key]
+        if (desription) obj[key].description = desription
+      }
+
+    }
+  }
+
+  return obj
+}
+
 let hasDuplicatedRoutes = false
 export async function getRoutes(
   dirs: string[] = ['actions', 'features', 'routes']
@@ -70,9 +122,10 @@ export async function getRoutes(
         ...d,
         responses: {
           500: {$ref: '#/components/responses/500'},
-          ...d?.responses,
+          ...ResolveDescribeSchema(d?.responses),
         }
       }
+
       routes.push({
         method, path: uri,
         name,
@@ -261,15 +314,23 @@ export async function cacheRoutes() {
     throw new Error("The app can't build with duplicate routes")
 
   const middlewares = await getMiddlewares()
-  const configs = Object.entries(await getConfigs())
+  const configs = await getConfigs()
+
+  routes.forEach(r => registerHandler(r.name, r.handle))
+  middlewares.forEach(mw => registerMiddleware(mw.handle))
+
+  // @ts-ignore
+  const openApi = await OAS.generateSpecs(createApp({ routes }), configs?.rajt || {})
 
   const iPath = join(__root, '.rajt/import-routes.mjs')
   ensureDir(iPath)
   writeFileSync(iPath, `// AUTO-GENERATED FILE - DO NOT EDIT
 ${env?.length ? `import { Envir } from '../node_modules/t0n/dist/index'\nEnvir.add({${env.map(([key, val]) => key +':'+ stringifyToJS(val)).join(',')}})` : ''}
-${configs?.length ? `import Config from '../node_modules/rajt/src/config'\nConfig.add({${configs.map(([key, val]) => key +':'+ stringifyToJS(val)).join(',')}})` : ''}
+${Object.entries(configs)?.length ? `import Config from '../node_modules/rajt/src/config'\nConfig.add(${stringifyToJS(configs)})` : ''}
 
 import { registerHandler, registerMiddleware } from '../node_modules/rajt/src/register'
+
+${Object.entries(openApi)?.length ? `registerHandler('RAJT_OPENAPI', ${stringifyToJS(openApi)})` : ''}
 
 ${routes.map(r => `import ${r.name} from '../${normalizeImportPath(r.file)}'`).join('\n')}
 ${middlewares.map(r => `import ${r.name} from '../${normalizeImportPath(r.file)}'`).join('\n')}

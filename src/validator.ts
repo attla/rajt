@@ -40,7 +40,7 @@ export default class $Validator {
     return (Array.isArray(rules) ? rules : [rules]) // @ts-ignore
       .flatMap(rule => validator(rule.target, rule.schema, (result, c) => {
         if (!result.success) // @ts-ignore
-          return response.badRequest({ ...result.error.flatten()[rule.eTarget] })
+          return response.badRequest(result.error)
       }))
   }
 }

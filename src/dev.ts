@@ -1,9 +1,10 @@
 import { dirname, join } from 'node:path'
 import { config } from 'dotenv'
-import createApp from './create-app'
 import { getRoutes, getMiddlewares, getConfigs } from './routes'
 import { registerHandler, registerMiddleware } from './register'
 import Config from './config'
+import OAS from './oas'
+import createApp from './create-app'
 import { Ability } from 'rajt/auth'
 import { setEnv, detectEnvironment } from 'rajt/env'
 
@@ -25,6 +26,8 @@ middlewares.forEach(mw => registerMiddleware(mw.handle))
 Ability.fromRoutes(routes)
 Ability.roles = Config.get('roles', {})
 
-const app = createApp({ routes, configs: Config.get('rajt', {}) })
+// @ts-ignore
+const app = createApp({ routes })
+OAS.register(app, Config.get('rajt', {}))
 
 export default app

@@ -1,15 +1,12 @@
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 import { matchedRoutes } from 'hono/route'
-import { basicAuth } from 'hono/basic-auth'
-import { openAPIRouteHandler, describeRoute, resolver } from 'hono-openapi'
-import { Scalar } from '@scalar/hono-api-reference'
+import { describeRoute } from 'hono-openapi'
 import { Envir, Datte } from 't0n'
 import type {
   Env, Context, Next,
   HTTPResponseError,
   ServerOptions,
-  DescribeRouteOptions,
 } from './types'
 import { resolve, resolveMiddleware } from './utils/resolve'
 import { getMiddlewares, getHandler } from './register'
@@ -17,7 +14,6 @@ import request, { GET_REQUEST } from './request'
 import response from './response'
 import { isDev } from './utils/environment'
 import { gray } from './utils/colors'
-import packageJson from '../../../package.json'
 
 const NFHandler = () => response.notFound()
 const EHandler = async (e: Error | HTTPResponseError) => {
@@ -65,7 +61,7 @@ const EHandler = async (e: Error | HTTPResponseError) => {
   // stack: isDev (? e.stack : undefined
 }
 
-export const createApp = <E extends Env>(options?: ServerOptions<E> & { configs: any }) => {
+export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
   // const root = options?.root ?? '/'
   const app = options?.app ?? new Hono<E>()
 
@@ -120,96 +116,6 @@ export const createApp = <E extends Env>(options?: ServerOptions<E> & { configs:
       app[route.method](route.path, describeRoute(route.desc), ...mw(route.middlewares, route.name), ...resolve(route.handle, route.name))
     }
   }
-
-  const _docs = options?.configs?.docs ?? {}
-  const docs = {
-    ..._docs,
-    disable: !!_docs?.disable,
-    path: _docs?.path || '/docs',
-    auth: _docs?.auth || {},
-  }
-
-  if (docs.disable) return app
-
-  if (docs?.auth?.username && docs?.auth?.password) {
-    app.use(docs.path +'/*', async (c, next) => {
-      const realm = docs.auth?.realm || 'Docs'
-      const unauthorized = response.unauthorized(
-        null,
-        {'WWW-Authenticate': `Basic realm="${realm.replace(/"/g, '\\"')}", charset="UTF-8"`}
-      )
-      if (!c.req.raw.headers.get('Authorization')) return unauthorized
-      const auth = basicAuth({ username: docs.auth.username, password: docs.auth.password, realm })
-
-      try {
-        await auth(c, next)
-      } catch {
-        return unauthorized
-      }
-    })
-  }
-
-  const appName = Envir.get('APP_NAME', packageJson?.name || 'API Docs')
-  const appVersion = Envir.get('APP_VERSION', packageJson?.version || '1.0.0')
-
-  app.get(
-    docs.path +'/openapi',
-    openAPIRouteHandler(app, {
-      documentation: {
-        info: {
-          title: appName,
-          version: appVersion,
-          description: Envir.get('APP_DESCRIPTION', packageJson?.description || ''),
-        },
-        components: {
-          securitySchemes: {
-            JWT: {
-              type: 'http',
-              scheme: 'bearer',
-              bearerFormat: 'JWT',
-            },
-          },
-          responses: {
-            500: {
-              description: 'Internal Server Error',
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                    properties: {
-                      m: {
-                        type: 'array',
-                        items: { type: 'string' },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-            ...docs?.responses,
-          },
-        },
-      },
-    })
-  )
-
-  app.get(
-    docs.path,
-    Scalar({
-      theme: 'saturn',
-      url: docs.path +'/openapi',
-      showDeveloperTools: 'never',
-      telemetry: false,
-      documentDownloadType: 'json', //'direct',
-      isLoading: true,
-      persistAuth: true,
-      hideClientButton: true,
-      slug: appName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s_-]/g, '').replace(/[\s_-]+/g, '_').replace(/[^\x00-\x7F]/g, '') +'_'+ appVersion,
-      // hideDownloadButton: true,
-      // onLoaded: () => document?.querySelectorAll('[href="https://www.scalar.com"]')?.forEach(el => el.remove()),
-      customCss: `[href="https://www.scalar.com"]{display:none}`,
-    })
-  )
 
   return app
 }
