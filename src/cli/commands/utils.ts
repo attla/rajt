@@ -282,7 +282,7 @@ function getAssetChangeMessage(
 
 export async function watch(cb: (e: ChokidarEventName | string, file: string) => Promise<void>) {
 	const codeWatcher = chokidar.watch([
-		join(_root, '{actions,features,routes,configs,enums,locales,middlewares,models,utils}/**/*.ts'),
+		join(_root, '{actions,features,routes,configs,enums,libs,locales,middlewares,models,utils}/**/*.ts'),
 		join(_root, '.env.dev'),
 		join(_root, '.env.prod'),
 		join(_root, 'package.json'),

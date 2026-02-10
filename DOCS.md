@@ -54,18 +54,128 @@ deno run -A npm:create-rajt@latest
 
 The Rajt has a vast list of commands to assist you in development.
 
-```bash
-bunx rajt dev --platform=cf --port=4200
-```
-
 List of available commands:
 
 | Command | Description |
 | -: | :- |
-| `dev` | Start the localhost server |
-| `build` | Perform the build |
-| `deploy` | Perform the build and execute deploy |
-| `clean` | Remove all auto-generated files: build, cache, etc.. |
+| [`dev`](#dev-command) | Start the localhost server |
+| [`build`](#build-command) | Perform the build |
+| [`deploy`](#deploy-command) | Perform the build and execute deploy |
+| [`make`](#make-command) | Create new files |
+| [`migrate`](#migrate-command) | Migration performs |
+| [`routes`](#routes-command) | Displays all registered routes |
+
+### Dev command
+
+```bash
+# if exists in "scripts" at "package.json"
+bun dev
+# OR
+bunx rajt dev aws --port=4200
+# OR
+bunx rajt dev -p=aws
+# OR
+bunx rajt dev --platform=cf --port=4200
+```
+
+### Build command
+
+```bash
+# if exists in "scripts" at "package.json"
+bun run build
+# OR
+bunx rajt build aws
+# OR
+bunx rajt build -p=aws
+# OR
+bunx rajt build --platform=cf
+```
+
+### Deploy command
+
+```bash
+# if exists in "scripts" at "package.json"
+bun run deploy
+# OR
+bunx rajt deploy aws
+# OR
+bunx rajt deploy -p=aws
+# OR
+bunx rajt deploy --platform=cf
+```
+
+### Make command
+
+Create a config file:
+
+```bash
+bun run make:config
+# OR
+bun run make config
+```
+
+Create a route/endpoint file:
+
+```bash
+bun run make route
+# OR
+bun run make endpoint
+# OR
+bun run make action
+```
+
+Create a migration file:
+
+```bash
+bun run make migration
+# OR
+bun run make migrate
+```
+
+It also works with `bunx rajt`
+
+
+### Migrate command
+
+> Use this if you are using D1 database, it is under development for other providers.
+
+Performs the migration on development environment:
+
+```bash
+bun run migrate apply [DB_NAME]
+# OR
+bun run migrate migrate [DB_NAME]
+```
+
+Performs the migration on production environment:
+
+```bash
+bun run migrate apply [DB_NAME] --remote
+# OR
+bun run migrate migrate [DB_NAME] --remote
+```
+
+Check migration status:
+
+```bash
+bun run migrate status [DB_NAME]
+```
+
+### Routes command
+
+```bash
+# Displays all registered routes
+bun run routes
+
+# Filter registered routes
+bun run routes --path=/api
+
+# Filter the routes by method
+bun run routes --method=POST
+
+# Filter the routes by method with reverse order
+bun run routes --method=POST --reverse
+```
 
 ## Environments
 
