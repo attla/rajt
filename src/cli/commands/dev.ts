@@ -3,7 +3,11 @@ import { spawn, type ChildProcess } from 'node:child_process'
 
 import { defineCommand } from 'citty'
 import type { Miniflare } from 'miniflare'
-import { _root, build, wait, watch, normalizePlatform, platformError, getRuntime, createMiniflare, getDockerHost } from './utils'
+import {
+	_root, build, wait, watch, normalizePlatform, platformError, getRuntime,
+	wranglerConfig, createMiniflare, localflareManifest,
+	getDockerHost
+} from './utils'
 import { error, event, log, rn, warn } from '../../utils/log'
 import { withPort } from '../../utils/port'
 import shutdown from '../../utils/shutdown'
@@ -103,6 +107,8 @@ export default defineCommand({
 
 		const started = (port: number) => {
 			log(`Starting API on http://${host}:${port}`)
+			if (platform == 'cf')
+				log(`Localflare on https://studio.localflare.dev`)
 			rn()
 		}
 
@@ -156,9 +162,28 @@ export default defineCommand({
 				return withPort(desiredPort, async (port) => {
 					started(port)
 					let worker: Miniflare | null = null
+					let localflare: Miniflare | null = null
 					const startWorker = async () => {
 						if (worker) await worker.dispose()
-						worker = await createMiniflare({ port, host, liveReload: false })
+						if (localflare) await localflare.dispose()
+
+						const workerConfig = await wranglerConfig()
+						workerConfig.host = host
+						workerConfig.liveReload = false
+
+						worker = createMiniflare({ ...workerConfig, port })
+						await worker.ready
+						localflare = createMiniflare({
+							...workerConfig,
+							vars: {
+								...workerConfig.vars,
+								LOCALFLARE_MANIFEST: JSON.stringify(localflareManifest(workerConfig)),
+							},
+							main: 'node_modules/localflare-api/dist/worker/index.js',
+							port: 8788,
+							inspectorPort: 9230,
+						})
+						await localflare.ready
 					}
 
 					await startApp(startWorker)

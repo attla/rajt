@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process'
 import { Migrator } from 'forj'
 import { gray } from '../../utils/colors'
 import { _root, getRuntime } from './utils'
-import { wait, info, event, rn, error } from '../../utils/log'
+import { wait, info, event, rn, error, log } from '../../utils/log'
 
 export default defineCommand({
 	meta: {
@@ -34,11 +34,11 @@ export default defineCommand({
 			switch (action) {
 				case 'migrate':
 				case 'apply':
-					wait('Running migrations')
 					if (!pending?.length)
-						return info(' Nothing to migrate')
+						log('Nothing to compile')
+					wait('Running migrations')
 
-					await Migrator.compile(pending)
+					await Migrator.compile([...migrated, ...pending])
 
 					const child = spawn(
 						isBun ? 'bunx' : 'npx',

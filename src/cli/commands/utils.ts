@@ -1,16 +1,18 @@
 import esbuild from 'esbuild'
-import TOML from '@iarna/toml'
 import { Miniflare } from 'miniflare'
 import { mkdirSync, existsSync, readdirSync, rmSync, copyFileSync, writeFileSync } from 'node:fs'
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, relative } from 'node:path'
 
+import { findWranglerConfig, parseWranglerConfig, WRANGLER_CONFIG_FILES } from 'localflare-core'
+import type { WranglerConfig, LocalflareManifest } from 'localflare-core'
+
 import chokidar from 'chokidar'
-import { gray } from '../../utils/colors'
+import { gray, red } from '../../utils/colors'
 import type { ChokidarEventName, Platform } from './types'
 
 import { cacheRoutes } from '../../routes'
-import { step, substep, event, error, wait as wwait, warn, log } from '../../utils/log'
+import { substep, event, error, wait as wwait, warn, log } from '../../utils/log'
 import { platforms } from './constants'
 
 export const _root = join(dirname(new URL(import.meta.url).pathname), '../../../../../')
@@ -78,9 +80,7 @@ export const build = async (platform: Platform) => {
     : mkdirSync(distDir, { recursive: true })
 
   if (isCF) {
-    for (let file of [
-      'wrangler.toml',
-    ]) {
+    for (let file of WRANGLER_CONFIG_FILES) {
       file = join(_root, file)
       if (existsSync(file))
         copyFileSync(file, join(_root, dist, basename(file)))
@@ -181,48 +181,88 @@ export const build = async (platform: Platform) => {
   )
 }
 
-async function parseWranglerConfig(file: string) {
+export function wranglerConfig(file?: string) {
+  file ??= findWranglerConfig(_root)
+  if (!file) {
+    console.log(red(`  ✗ Could not find wrangler config file`))
+    console.log(red(`    Looking for: ${WRANGLER_CONFIG_FILES.join(', ')}`))
+    process.exit(1)
+  }
+
   try {
-    return TOML.parse(await readFile(join(_root, file), 'utf-8'))
+    return parseWranglerConfig(file)
   } catch (e) {
     warn(`Could not parse ${file}, using defaults`)
     return {}
   }
 }
 
-export async function createMiniflare(options = {}, configPath = 'wrangler.toml') {
-  const config = await parseWranglerConfig(configPath)
+export function localflareManifest(opts: WranglerConfig): LocalflareManifest {
+  return {
+    name: opts.name || 'worker',
+    d1: (opts.d1_databases || []).map((db) => ({
+      binding: db.binding,
+      database_name: db.database_name,
+    })),
+    kv: (opts.kv_namespaces || []).map((kv) => ({
+      binding: kv.binding,
+    })),
+    r2: (opts.r2_buckets || []).map((r2) => ({
+      binding: r2.binding,
+      bucket_name: r2.bucket_name,
+    })),
+    queues: {
+      producers: (opts.queues?.producers || []).map((p) => ({
+        binding: p.binding,
+        queue: p.queue,
+      })),
+      consumers: (opts.queues?.consumers || []).map((c) => ({
+        queue: c.queue,
+        max_batch_size: c.max_batch_size,
+        max_batch_timeout: c.max_batch_timeout,
+        max_retries: c.max_retries,
+        dead_letter_queue: c.dead_letter_queue,
+      })),
+    },
+    do: (opts.durable_objects?.bindings || []).map((d) => ({
+      binding: d.name,
+      className: d.class_name,
+    })),
+    vars: Object.entries(opts.vars || {}).map(([key, value]) => ({
+      key,
+      value,
+      isSecret: false,
+      // isSecret: looksLikeSecret(key, value),
+    })),
+  }
+}
 
+export function createMiniflare(opts = {}) {
+  const entry = join(_root, opts?.main || opts?.script)
   return new Miniflare({
-    host: options.host || 'localhost',
-    port: options.port || 8787,
-    https: options.https || false,
-    httpsKey: options.httpsKey,
-    httpsCert: options.httpsCert,
-    liveReload: options.liveReload !== false,
+    host: opts.host || 'localhost',
+    port: opts.port || 8787,
+    https: opts.https || false,
+    httpsKey: opts.httpsKey,
+    httpsCert: opts.httpsCert,
+    liveReload: opts.liveReload !== false,
     updateCheck: false,
-
-    scriptPath: join(_root, dist +'/index.js'),
-    compatibilityDate: config.compatibility_date || '2024-11-01',
-    compatibilityFlags: config.compatibility_flags || [
+    scriptPath: entry,
+    modules: [
+      {type: 'ESModule', path: entry},
+    ],
+    compatibilityDate: opts.compatibility_date || '2024-11-01',
+    compatibilityFlags: opts.compatibility_flags || [
       'nodejs_compat',
     ],
-
     bindings: {
-      // MY_VARIABLE: 'value',
-      // ENVIRONMENT: 'development',
-      ...config.vars,
+      ...opts.vars,
     },
 
-    d1Databases: Array.isArray(config.d1_databases) ? Object.fromEntries(config.d1_databases.map(db => [db.binding, db.database_id])) : {},
-
-    modules: [
-      { type: 'ESModule', path: dist +'/index.js' },
-    ],
-    // modules: true,
-    // modulesRules: [
-    //   { type: 'ESModule', include: ['**/*.js', '**/*.ts'] },
-    // ],
+    d1Databases: Array.isArray(opts.d1_databases) ? Object.fromEntries(opts.d1_databases.map(db => [db.binding, db.database_id])) : {},
+    kvNamespaces: Object.fromEntries((opts.kv_namespaces || []).map(ns => [ns.binding, ns.id])),
+    // r2Buckets: Object.fromEntries((opts.r2_buckets || []).map(r2 => [r2.binding, r2.bucket_name])),
+    // durableObjects: Object.fromEntries((opts.durable_objects?.bindings || []).map(do => [do.name, do.class_name])),
 
     kvPersist: join(_root, '.wrangler/state/v3/kv'),
     cachePersist: join(_root, '.wrangler/state/v3/cache'),
@@ -240,23 +280,21 @@ export async function createMiniflare(options = {}, configPath = 'wrangler.toml'
     // }),
 
     cfFetch: false, // disable cf requests
-    upstream: config.upstream || 'https://example.com',
+    upstream: opts.upstream || 'https://example.com',
 
-    sitePath: config.site?.bucket ?
-      join(_root, config.site.bucket) : undefined,
-    siteInclude: config.site?.include || ['**/*'],
-    siteExclude: config.site?.exclude || [],
+    sitePath: opts.site?.bucket ?
+      join(_root, opts.site.bucket) : undefined,
+    siteInclude: opts.site?.include || ['**/*'],
+    siteExclude: opts.site?.exclude || [],
 
     globalAsyncIO: true,
     globalTimers: true,
     globalRandom: true,
 
-    inspectorPort: options.inspectorPort || 9229,
+    inspectorPort: opts.inspectorPort || 9229,
 
     cache: true,
     cacheWarnUsage: true,
-
-    ...options
   })
 }
 
@@ -285,8 +323,8 @@ export async function watch(cb: (e: ChokidarEventName | string, file: string) =>
 		join(_root, '{actions,features,routes,configs,enums,libs,locales,middlewares,models,utils}/**/*.ts'),
 		join(_root, '.env.dev'),
 		join(_root, '.env.prod'),
-		join(_root, 'package.json'),
-		join(_root, 'wrangler.toml'),
+    join(_root, 'package.json'),
+    ...WRANGLER_CONFIG_FILES.map(f => join(_root, f)),
 	], {
 		ignored: /(^|[/\\])\../, // ignore hidden files
 		persistent: true,
