@@ -27,7 +27,7 @@ export default defineCommand({
 		const isRemote = !!args?.remote
 
 		try {
-			const migrations = await Migrator.queue()
+			const migrations = await Migrator.dir(database).queue()
 			const pending = migrations.pending
 			const migrated = migrations.migrated
 

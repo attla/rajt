@@ -11,8 +11,11 @@ export default defineCommand({
 		description: '📄 Create new files\n',
 	},
 	async run({ args }) {
-		const action = process.argv.at(args._.length > 1 ? 3 : 2)?.replace('make:', '') || ''
-		const name = args._[1] || args._[0] || ''
+		const alias = process.argv[2]?.startsWith('make:')
+		const action = alias ? process.argv[2].replace('make:', '') : process.argv[3]
+		const name = alias ? args._[0] : args._[1]
+		const binding = alias ? args._[1] : args._[2]
+
 		if (!name)
 			return error('File name is required')
 
@@ -38,7 +41,7 @@ export default defineCommand({
 			case 'migration':
 				fileName = Migrator.fileName(name)
 				const [table, create] = Migrator.guess(name)
-				fileName = path(fileName, 'migration')
+				fileName = path(join(binding || '', fileName), 'migration')
 				if (!fileName.endsWith('.ts')) fileName += '.ts'
 				makeFile(fileName, stub.replace(stub.migration, {
 					M_NAME: Migrator.className(name),
