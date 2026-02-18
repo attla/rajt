@@ -8,7 +8,7 @@ import { findWranglerConfig, parseWranglerConfig, WRANGLER_CONFIG_FILES } from '
 import type { WranglerConfig, LocalflareManifest } from 'localflare-core'
 
 import chokidar from 'chokidar'
-import { gray, red } from '../utils/colors'
+import { gray, bold, italic } from '../utils/colors'
 import type { ChokidarEventName, Platform } from './types'
 
 import { cacheRoutes } from '../routes'
@@ -39,7 +39,8 @@ export function normalizePlatform(platform: Platform) {
   }
 }
 
-export const platformError = () => error(`Provide a valid platform: ${platforms.map(p => gray(p)).join(', ')}.\n`)
+const formatArgs = (...args: any[]) => args.flat().map(a => gray(italic(bold(a)))).join(', ')
+export const platformError = () => error(`Provide a valid platform: ${formatArgs(platforms)}.\n`)
 
 export function getRuntime() {
   try {
@@ -196,18 +197,18 @@ export function cleanDir(path: string) {
   } catch {}
 }
 
-export function wranglerConfig(file?: string) {
+export function wranglerConfig(file: string | null = null) {
   file ??= findWranglerConfig(_root)
   if (!file) {
-    console.log(red(`  ✗ Could not find wrangler config file`))
-    console.log(red(`    Looking for: ${WRANGLER_CONFIG_FILES.join(', ')}`))
+    error('Could not find wrangler config file')
+    error('Looking for: '+ formatArgs(WRANGLER_CONFIG_FILES))
     process.exit(1)
   }
 
   try {
     return parseWranglerConfig(file)
   } catch (e) {
-    warn(`Could not parse ${file}, using defaults`)
+    warn(`Could not parse '${file}', using defaults`)
     return {}
   }
 }

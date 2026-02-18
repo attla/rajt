@@ -3,6 +3,7 @@ import { join, relative } from 'node:path'
 import { Migrator } from 'forj'
 import { _root, makeFile, hasExt, camelCase, kebabCase } from '../utils'
 import { event, error } from '../../utils/log'
+import { dim } from '../../utils/colors'
 import * as stub from '../stubs'
 
 export default defineCommand({
@@ -14,7 +15,8 @@ export default defineCommand({
 		const alias = process.argv[2]?.startsWith('make:')
 		const action = alias ? process.argv[2].replace('make:', '') : process.argv[3]
 		const name = alias ? args._[0] : args._[1]
-		const binding = alias ? args._[1] : args._[2]
+
+		const command = 'make'+ (alias ? ':': ' ') + action +' <name> '
 
 		if (!name)
 			return error('File name is required')
@@ -39,6 +41,10 @@ export default defineCommand({
 				break
 			case 'migrate':
 			case 'migration':
+				const binding = alias ? args._[1] : args._[2]
+				if (!binding)
+					return error(`Provide a database: `+ dim(command +'<database>'))
+
 				fileName = Migrator.fileName(name)
 				const [table, create] = Migrator.guess(name)
 				fileName = path(join(binding || '', fileName), 'migration')
@@ -64,7 +70,16 @@ export default defineCommand({
 				error('Action not yet implemented, contact the webmaster')
 				break
 			default:
-				return error('Invalid action')
+				return error('Invalid action: '+ dim('make <action>['+ [
+					'config',
+					'enum',
+					'route', // 'action', 'endpoint',
+					'migrate', // 'migration',
+					'model',
+					'job',
+					'seed', // 'seeder',
+					'test',
+				].join('|') +'] <name>'))
 		}
 
 		event(action.charAt(0).toUpperCase() + action.slice(1) +' "'+ relative(_root, fileName) +'" created successfully')
