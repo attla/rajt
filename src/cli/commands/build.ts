@@ -1,9 +1,9 @@
 import { defineCommand } from 'citty'
 import { gray } from '../../utils/colors'
-import { build, normalizePlatform, platformError } from './utils'
+import { build, normalizePlatform, platformError } from '../utils'
 import { wait, error, rn } from '../../utils/log'
 
-import { platforms } from './constants'
+import { platforms } from '../constants'
 
 export default defineCommand({
 	meta: {

@@ -1,8 +1,9 @@
 import { defineCommand } from 'citty'
 import { join, relative } from 'node:path'
 import { Migrator } from 'forj'
-import { _root, makeFile, hasExt, camelCase, kebabCase } from './utils'
+import { _root, makeFile, hasExt, camelCase, kebabCase } from '../utils'
 import { event, error } from '../../utils/log'
+import * as stub from '../stubs'
 
 export default defineCommand({
 	meta: {
@@ -31,32 +32,20 @@ export default defineCommand({
 			case 'endpoint':
 				fileName = path(kebabCase(name))
 				if (!fileName.endsWith('.ts')) fileName += '.ts'
-				const className = camelCase(name)
-				makeFile(fileName, `import { Action } from 'rajt'
-import { IRequest, IResponse } from 'rajt/types'
-
-export default class ${className} extends Action {
-	static async handle(req: IRequest, res: IResponse) {
-		return res.ok('${className}')
-	}
-}
-`)
+				makeFile(fileName, stub.replace(stub.route, { R_NAME: camelCase(name) }))
 				break
 			case 'migrate':
 			case 'migration':
-				fileName = path(Migrator.fileName(name), 'migration')
+				fileName = Migrator.fileName(name)
+				const [table, create] = Migrator.guess(fileName)
+				fileName = path(fileName, 'migration')
 				if (!fileName.endsWith('.ts')) fileName += '.ts'
-				makeFile(fileName, `import { Migration, Schema, Blueprint } from 'rajt/db'
-
-export default class ${Migrator.className(name)} extends Migration {
-	static async run() {
-		Schema.${name.includes('create') ? 'create' : 'table'}('users', (table: Blueprint) => {
-			table.id()
-			table.timestamps()
-		})
-	}
-}
-`)
+				makeFile(fileName, stub.replace(stub.migration, {
+					M_NAME: Migrator.className(name),
+					S_NAME: create ? 'create' : 'table',
+					T_NAME: table || 'TABLE_NAME',
+					M_CONTENT: create ? stub.migrationCreate : '//',
+				}))
 				break
 			case 'model':
 				error('Action not yet implemented, contact the webmaster')

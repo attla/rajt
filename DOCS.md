@@ -155,6 +155,14 @@ bun run migrate apply [DB_NAME] --remote
 bun run migrate migrate [DB_NAME] --remote
 ```
 
+Drop all tables and re-run all migrations:
+
+```bash
+bun run migrate fresh [DB_NAME]
+# OR
+bun run migrate refresh [DB_NAME] --remote
+```
+
 Check migration status:
 
 ```bash

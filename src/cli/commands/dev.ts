@@ -7,7 +7,7 @@ import {
 	_root, build, wait, watch, normalizePlatform, platformError, getRuntime,
 	wranglerConfig, createMiniflare, localflareManifest,
 	getDockerHost
-} from './utils'
+} from '../utils'
 import { error, event, log, rn, warn } from '../../utils/log'
 import { withPort } from '../../utils/port'
 import shutdown from '../../utils/shutdown'

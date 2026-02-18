@@ -3,7 +3,7 @@ import { defineCommand } from 'citty'
 import { inspectRoutes } from 'hono/dev'
 import { IMPORT } from 't0n'
 import { gray, purple, red, yellow } from '../../utils/colors'
-import { __rajt } from './utils'
+import { __rajt } from '../utils'
 import { rn } from '../../utils/log'
 
 export default defineCommand({

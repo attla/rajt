@@ -2,7 +2,7 @@ import { defineCommand } from 'citty'
 import { spawn } from 'node:child_process'
 import { Migrator } from 'forj'
 import { gray } from '../../utils/colors'
-import { _root, getRuntime } from './utils'
+import { _root, getRuntime, cleanDir, d1Path, wait as WAIT } from '../utils'
 import { wait, info, event, rn, error, log } from '../../utils/log'
 
 export default defineCommand({
@@ -34,9 +34,16 @@ export default defineCommand({
 			switch (action) {
 				case 'migrate':
 				case 'apply':
+				case 'fresh':
+				case 'refresh':
 					if (!pending?.length)
 						log('Nothing to compile')
 					wait('Running migrations')
+
+					if (action.includes('fresh')) {
+						cleanDir(d1Path)
+						await WAIT(2000)
+					}
 
 					await Migrator.compile([...migrated, ...pending])
 
@@ -50,11 +57,8 @@ export default defineCommand({
 					)
 
 					child.on('exit', code => process.exit(code ?? 0))
-						.on('message', msg => {
-							process.send && process.send(msg)
-						}).on('disconnect', () => {
-							process.disconnect && process.disconnect()
-						})
+						.on('message', msg => process.send && process.send(msg))
+						.on('disconnect', () => process.disconnect && process.disconnect())
 
 					pending.forEach(item => event(item.name))
 					break

@@ -1,6 +1,6 @@
 import esbuild from 'esbuild'
 import { Miniflare } from 'miniflare'
-import { mkdirSync, existsSync, readdirSync, rmSync, copyFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, existsSync, statSync, readdirSync, rmSync, unlinkSync, copyFileSync, writeFileSync } from 'node:fs'
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, relative } from 'node:path'
 
@@ -8,14 +8,14 @@ import { findWranglerConfig, parseWranglerConfig, WRANGLER_CONFIG_FILES } from '
 import type { WranglerConfig, LocalflareManifest } from 'localflare-core'
 
 import chokidar from 'chokidar'
-import { gray, red } from '../../utils/colors'
+import { gray, red } from '../utils/colors'
 import type { ChokidarEventName, Platform } from './types'
 
-import { cacheRoutes } from '../../routes'
-import { substep, event, error, wait as wwait, warn, log } from '../../utils/log'
+import { cacheRoutes } from '../routes'
+import { substep, event, error, wait as wwait, warn, log } from '../utils/log'
 import { platforms } from './constants'
 
-export const _root = join(dirname(new URL(import.meta.url).pathname), '../../../../../')
+export const _root = join(dirname(new URL(import.meta.url).pathname), '../../../../')
 export const __rajt = join(_root, 'node_modules/rajt/src')
 
 export function normalizePlatform(platform: Platform) {
@@ -73,11 +73,7 @@ export const build = async (platform: Platform) => {
   const startTime = Date.now()
 
   const isCF = platform == 'cf'
-  const distDir = join(_root, dist)
-
-  existsSync(distDir)
-    ? readdirSync(distDir).forEach(file => rmSync(join(distDir, file), { recursive: true, force: true }))
-    : mkdirSync(distDir, { recursive: true })
+  cleanDir(join(_root, dist))
 
   if (isCF) {
     for (let file of WRANGLER_CONFIG_FILES) {
@@ -181,6 +177,24 @@ export const build = async (platform: Platform) => {
   )
 }
 
+export function cleanDir(path: string) {
+  try {
+    if (!existsSync(path))
+      return mkdirSync(path, {recursive: true})
+
+    const files = readdirSync(path)
+
+    for (const file of files) {
+      const filePath = join(path, file)
+      const stat = statSync(filePath)
+
+      stat.isDirectory()
+        ? rmSync(filePath, {recursive: true, force: true})
+        : unlinkSync(filePath)
+    }
+  } catch {}
+}
+
 export function wranglerConfig(file?: string) {
   file ??= findWranglerConfig(_root)
   if (!file) {
@@ -237,6 +251,12 @@ export function localflareManifest(opts: WranglerConfig): LocalflareManifest {
   }
 }
 
+const wranglerPath = '.wrangler/state/v3'
+export const kvPath = join(_root, wranglerPath, 'kv')
+export const d1Path = join(_root, wranglerPath, 'd1')
+export const r2Path = join(_root, wranglerPath, 'r2')
+export const doPath = join(_root, wranglerPath, 'durable_objects')
+
 export function createMiniflare(opts = {}) {
   const entry = join(_root, opts?.main || opts?.script)
   return new Miniflare({
@@ -264,11 +284,11 @@ export function createMiniflare(opts = {}) {
     // r2Buckets: Object.fromEntries((opts.r2_buckets || []).map(r2 => [r2.binding, r2.bucket_name])),
     // durableObjects: Object.fromEntries((opts.durable_objects?.bindings || []).map(do => [do.name, do.class_name])),
 
-    kvPersist: join(_root, '.wrangler/state/v3/kv'),
-    cachePersist: join(_root, '.wrangler/state/v3/cache'),
-    d1Persist: join(_root, '.wrangler/state/v3/d1'),
-    r2Persist: join(_root, '.wrangler/state/v3/r2'),
-    durablesPersist: join(_root, '.wrangler/state/v3/durable_objects'),
+    kvPersist: kvPath,
+    cachePersist: join(_root, wranglerPath, 'cache'),
+    d1Persist: d1Path,
+    r2Persist: r2Path,
+    durablesPersist: doPath,
 
     verbose: false,
 
