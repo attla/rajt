@@ -65,7 +65,8 @@ const nodeModules = [
   'url', 'querystring', 'os', 'child_process', 'cluster', 'dns', 'net',
   'tls', 'https', 'zlib', 'readline', 'repl', 'vm', 'module', 'assert',
   'timers', 'string_decoder', 'punycode', 'perf_hooks', 'dgram', 'tty',
-  'worker_threads', 'wasi'
+  'worker_threads', 'wasi', 'process', 'diagnostics_channel', 'sqlite',
+  'async_hooks', 'console', 'fsevents',
 ].flatMap(lib => ['node:'+ lib, lib])
 
 const dist = '.rajt/dist'
