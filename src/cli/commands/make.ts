@@ -37,7 +37,7 @@ export default defineCommand({
 			case 'migrate':
 			case 'migration':
 				fileName = Migrator.fileName(name)
-				const [table, create] = Migrator.guess(fileName)
+				const [table, create] = Migrator.guess(name)
 				fileName = path(fileName, 'migration')
 				if (!fileName.endsWith('.ts')) fileName += '.ts'
 				makeFile(fileName, stub.replace(stub.migration, {
