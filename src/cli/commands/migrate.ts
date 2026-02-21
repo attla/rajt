@@ -53,6 +53,10 @@ export default defineCommand({
 						{
 							stdio: 'inherit',
 							cwd: _root,
+							env: {
+								...process.env,
+								CI: 'true', // bypass wrangler confirmation msg
+							},
 						}
 					)
 
