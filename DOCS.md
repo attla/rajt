@@ -109,9 +109,9 @@ bunx rajt deploy --platform=cf
 Create a config file:
 
 ```bash
-bun run make:config
+bun run make:config [CONFIG_NAME]
 # OR
-bun run make config
+bun run make config [CONFIG_NAME]
 ```
 
 Create a route/endpoint file:
@@ -127,9 +127,9 @@ bun run make action
 Create a migration file:
 
 ```bash
-bun run make migration
+bun run make migration [MIGRATION_NAME] [DB_NAME]
 # OR
-bun run make migrate
+bun run make migrate [MIGRATION_NAME] [DB_NAME]
 ```
 
 It also works with `bunx rajt`
@@ -143,16 +143,12 @@ Performs the migration on development environment:
 
 ```bash
 bun run migrate apply [DB_NAME]
-# OR
-bun run migrate migrate [DB_NAME]
 ```
 
 Performs the migration on production environment:
 
 ```bash
 bun run migrate apply [DB_NAME] --remote
-# OR
-bun run migrate migrate [DB_NAME] --remote
 ```
 
 Drop all tables and re-run all migrations:
