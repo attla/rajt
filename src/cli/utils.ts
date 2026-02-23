@@ -3,6 +3,7 @@ import { Miniflare } from 'miniflare'
 import { mkdirSync, existsSync, statSync, readdirSync, rmSync, unlinkSync, copyFileSync, writeFileSync } from 'node:fs'
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, relative } from 'node:path'
+import crypto, { createHash } from 'node:crypto'
 
 import { findWranglerConfig, parseWranglerConfig, WRANGLER_CONFIG_FILES } from 'localflare-core'
 import type { WranglerConfig, LocalflareManifest } from 'localflare-core'
@@ -195,6 +196,37 @@ export function cleanDir(path: string) {
         : unlinkSync(filePath)
     }
   } catch {}
+}
+
+function durableObjectNamespace(name: string, uniqueKey: string) {
+  const key = crypto.createHash('sha256').update(uniqueKey).digest()
+  const nameHmac = crypto.createHmac('sha256', key).update(name).digest().subarray(0, 16)
+  return Buffer.concat([
+    nameHmac,
+    crypto.createHmac('sha256', key).update(nameHmac).digest().subarray(0, 16)
+  ]).toString('hex')
+}
+
+export function cleanDB(key: string, config?: WranglerConfig) {
+  config ??= wranglerConfig()
+  if (!config?.d1_databases) return
+  for (const db of config.d1_databases) {
+    if (key == db.database_name || key == db.binding) {
+      const ns = 'miniflare-D1DatabaseObject'
+      const fileName = join(ns, durableObjectNamespace(db.preview_database_id || db.database_id || db.binding, ns) +'.sqlite')
+
+      for (const file of [
+        fileName,
+        fileName +'-shm',
+        fileName +'-wal',
+      ]) {
+        const filePath = join(d1Path, file)
+        console.log('filePath:', filePath)
+        if (!existsSync(filePath)) continue
+        unlinkSync(filePath)
+      }
+    }
+  }
 }
 
 export function wranglerConfig(file: string | null = null) {

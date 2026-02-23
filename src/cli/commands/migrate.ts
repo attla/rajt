@@ -2,7 +2,7 @@ import { defineCommand } from 'citty'
 import { spawn } from 'node:child_process'
 import { Migrator } from 'forj'
 import { gray } from '../../utils/colors'
-import { _root, getRuntime, cleanDir, d1Path, wait as WAIT } from '../utils'
+import { _root, getRuntime, cleanDB } from '../utils'
 import { wait, info, event, rn, error, log } from '../../utils/log'
 
 export default defineCommand({
@@ -41,8 +41,7 @@ export default defineCommand({
 					wait('Running migrations')
 
 					if (action.includes('fresh')) {
-						cleanDir(d1Path)
-						await WAIT(2000)
+						cleanDB(database)
 					}
 
 					await Migrator.compile([...migrated, ...pending])
