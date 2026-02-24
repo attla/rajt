@@ -20,7 +20,7 @@ const directly = () => {
   try {
     // @ts-ignore
     return typeof vitest == 'undefined'
-      && import.meta.url.replace('///', '//') == `file://${process.argv[1].replace(/\\/g, '/')}`
+      && import.meta.url == `file://${process.argv[1].replace(/\\/g, '/')}`
 	} catch {
 		return false
 	}
