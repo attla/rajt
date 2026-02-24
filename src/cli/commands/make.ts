@@ -1,5 +1,5 @@
 import { defineCommand } from 'citty'
-import { join, relative } from 'node:path'
+import { join, relative } from 'pathe'
 import { Migrator } from 'forj'
 import { _root, makeFile, hasExt, camelCase, kebabCase } from '../utils'
 import { event, error } from '../../utils/log'

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-import { spawn } from "node:child_process";
-import { join, dirname } from "node:path";
-import { existsSync } from "node:fs";
+import { spawn } from 'node:child_process';
+import { join, dirname } from 'node:path';
+import { existsSync } from 'node:fs';
 
 const __dirname = dirname(new URL(import.meta.url).pathname);
 
-const ERR_NODE_VERSION = "18.0.0";
-const MIN_NODE_VERSION = "18.0.0";
+const ERR_NODE_VERSION = '18.0.0';
+const MIN_NODE_VERSION = '18.0.0';
 
 let rajtProcess;
 
@@ -23,30 +23,29 @@ Consider using a Node.js version manager such as https://volta.sh or https://git
 
   const isBun = process?.isBun || typeof Bun != 'undefined';
   let tsxPath;
-  // const params = isBun ? bunParams() : nodeParams();
 
   if (!isBun) {
     const tsxPaths = [
-      // join(__dirname, "../node_modules/.bin/tsx"),
-      // join(__dirname, "../../.bin/tsx"),
-      join(__dirname, "../node_modules/.bin/tsx"),
-      join(__dirname, "../../node_modules/.bin/tsx"),
-      join(process.cwd(), "node_modules/.bin/tsx"),
-      "tsx",
+      // join(__dirname, '../node_modules/.bin/tsx'),
+      // join(__dirname, '../../.bin/tsx'),
+      join(__dirname, '../node_modules/.bin/tsx'),
+      join(__dirname, '../../node_modules/.bin/tsx'),
+      join(process.cwd(), 'node_modules/.bin/tsx'),
+      'tsx',
     ];
 
     for (const pathOption of tsxPaths) {
-      if (pathOption == "tsx" || existsSync(pathOption)) {
+      if (pathOption == 'tsx' || existsSync(pathOption)) {
         tsxPath = pathOption;
         break;
       }
     }
 
     if (!tsxPath) {
-      console.error("TypeScript file found but tsx is not available. Please install tsx:");
-      console.error("  npm i -D tsx");
-      console.error("  or");
-      console.error("  bun i -D tsx");
+      console.error('TypeScript file found but tsx is not available. Please install tsx:');
+      console.error('  npm i -D tsx');
+      console.error('  or');
+      console.error('  bun i -D tsx');
       process.exit(1);
       return;
     }
@@ -55,52 +54,46 @@ Consider using a Node.js version manager such as https://volta.sh or https://git
   return spawn(
     process.execPath,
     [
-      "--no-warnings",
+      '--no-warnings',
       ...process.execArgv,
       tsxPath,
-      join(__dirname, "../src/cli/index.ts"),
+      join(__dirname, '../src/cli/index.ts').replace(/^\\/, ''),
       ...process.argv.slice(2),
     ].filter(arg => arg && !arg.includes('experimental-vm-modules') && !arg.includes('loader')),
     {
-      stdio: ["inherit", "inherit", "inherit", "ipc"],
+      stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
       env: {
         ...process.env,
         NODE_ENV: process.env.NODE_ENV || 'development',
         TSX_DISABLE_CACHE: process.env.TSX_DISABLE_CACHE || '1',
       }
     }
-  ).on("exit", (code) =>
-    process.exit(code == null ? 0 : code)
-  ).on("message", (message) => {
-    if (process.send) {
-      process.send(message);
-    }
-  }).on("disconnect", () => {
-    if (process.disconnect) {
-      process.disconnect();
-    }
-  });
+  )
+  .on('exit', code => process.exit(code == null ? 0 : code))
+  .on('message', message => process.send && process.send(message))
+  .on('disconnect', () => process.disconnect && process.disconnect());
 }
 
 var fn = new Intl.Collator(0, { numeric: 1 }).compare;
 
 function semiver(a, b, bool) {
-  a = a.split(".");
-  b = b.split(".");
+  a = a.split('.');
+  b = b.split('.');
 
   return (
     fn(a[0], b[0]) ||
     fn(a[1], b[1]) ||
-    ((b[2] = b.slice(2).join(".")),
-      (bool = /[.-]/.test((a[2] = a.slice(2).join(".")))),
+    ((b[2] = b.slice(2).join('.')),
+      (bool = /[.-]/.test((a[2] = a.slice(2).join('.')))),
       bool == /[.-]/.test(b[2]) ? fn(a[2], b[2]) : bool ? -1 : 1)
   );
 }
 
 function directly() {
   try {
-    return process.argv[1]?.endsWith('node_modules/.bin/rajt')
-      || process.argv[1]?.endsWith('node_modules/rajt/bin/rajt.js')
+    const arg = (process.argv[1] || '')?.replace(/\\/g, '/');
+    return arg?.endsWith('node_modules/.bin/rajt')
+      || arg?.endsWith('node_modules/rajt/bin/rajt.js')
   } catch {
     return false
   }
@@ -108,10 +101,6 @@ function directly() {
 
 if (directly()) {
   rajtProcess = runRajt();
-  process.on("SIGINT", () => {
-    rajtProcess && rajtProcess.kill();
-  });
-  process.on("SIGTERM", () => {
-    rajtProcess && rajtProcess.kill();
-  });
+  process.on('SIGINT', () => rajtProcess && rajtProcess.kill())
+    .on('SIGTERM', () => rajtProcess && rajtProcess.kill());
 }

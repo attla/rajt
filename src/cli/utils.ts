@@ -2,7 +2,7 @@ import esbuild from 'esbuild'
 import { Miniflare } from 'miniflare'
 import { mkdirSync, existsSync, statSync, readdirSync, rmSync, unlinkSync, copyFileSync, writeFileSync } from 'node:fs'
 import { readFile, stat, writeFile } from 'node:fs/promises'
-import { basename, dirname, join, relative } from 'node:path'
+import { basename, dirname, join, relative } from 'pathe'
 import crypto, { createHash } from 'node:crypto'
 
 import { findWranglerConfig, parseWranglerConfig, WRANGLER_CONFIG_FILES } from 'localflare-core'

@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, join } from 'pathe'
 
 export default function jsonImport<T = any>(filePath: string, defaultValue: T = {} as T): T {
   const __dirname = dirname(new URL(import.meta.url).pathname)

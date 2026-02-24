@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join } from 'pathe'
 
 export default function getLastCommitHash(path: string = '.git') {
   try {

@@ -1,4 +1,4 @@
-import { join } from 'node:path'
+import { join } from 'pathe'
 import { spawn, type ChildProcess } from 'node:child_process'
 
 import { defineCommand } from 'citty'
@@ -193,10 +193,10 @@ export default defineCommand({
 				return withPort(desiredPort, async (port) => {
 					started(port)
 					const isBun = getRuntime() == 'bun'
+					const isWin32 = process.platform == 'win32'
 					const params = isBun
-						? ['run', '--port='+ port, '--hot', '--silent', '--no-clear-screen', '--no-summary', join(_root, 'node_modules/rajt/src/dev.ts')]
-						: [join(_root, 'node_modules/.bin/tsx'), 'watch', join(_root, 'node_modules/rajt/src/dev-node.ts')]
-
+						? ['run', '--port=' + port, '--hot', '--silent', '--no-clear-screen', '--no-summary', join(_root, 'node_modules/rajt/src/dev.ts')]
+						: [join(_root, 'node_modules/.bin/tsx' + (isWin32 ? '.exe' : '')), 'watch', join(_root, 'node_modules/rajt/src/dev-node.ts')]
 
 					let nodeApp: ChildProcess | null = null
 					const stopNode = async () => {
@@ -207,7 +207,7 @@ export default defineCommand({
 						if (nodeApp) await stopNode()
 
 						nodeApp = spawn(
-							process.execPath,
+							isBun && isWin32 ? 'bun' : process.execPath,
 							params,
 							{
 								stdio: ['inherit', isBun ? 'pipe' : 'inherit', 'inherit', 'ipc'],
@@ -219,7 +219,7 @@ export default defineCommand({
 							nodeApp.stdout?.on('data', data => {
 								const output = data.toString()
 								if (!output.includes('Started development server'))
-										process.stdout.write(output)
+									process.stdout.write(output)
 							})
 						}
 

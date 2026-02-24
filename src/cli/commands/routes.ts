@@ -1,4 +1,4 @@
-import { join } from 'node:path'
+import { join } from 'pathe'
 import { defineCommand } from 'citty'
 import { inspectRoutes } from 'hono/dev'
 import { IMPORT } from 't0n'

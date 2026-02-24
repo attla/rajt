@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, statSync, writeFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'pathe'
 
 import glob from 'tiny-glob'
 import { config } from 'dotenv'
@@ -246,6 +246,7 @@ function extractName(file: string) {
 export async function getConfigs(
   dirs: string[] = ['configs']
 ): Promise<Record<string, any>> {
+  dirs = dirs.filter(dir => existsSync(join(__root, dir)))
   if (!dirs?.length) return {}
   const configs: Record<string, any> = {}
 

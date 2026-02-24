@@ -1,4 +1,4 @@
-import { dirname, join } from 'node:path'
+import { dirname, join } from 'pathe'
 import { config } from 'dotenv'
 import { getRoutes, getMiddlewares, getConfigs } from './routes'
 import { registerHandler, registerMiddleware } from './register'
