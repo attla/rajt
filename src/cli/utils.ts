@@ -221,9 +221,8 @@ export function cleanDB(key: string, config?: WranglerConfig) {
         fileName +'-wal',
       ]) {
         const filePath = join(d1Path, file)
-        console.log('filePath:', filePath)
-        if (!existsSync(filePath)) continue
-        unlinkSync(filePath)
+        if (existsSync(filePath))
+          unlinkSync(filePath)
       }
     }
   }

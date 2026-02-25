@@ -25,12 +25,13 @@ Consider using a Node.js version manager such as https://volta.sh or https://git
   let tsxPath;
 
   if (!isBun) {
+    const _tsxPath = 'node_modules/.bin/tsx'
     const tsxPaths = [
       // join(__dirname, '../node_modules/.bin/tsx'),
       // join(__dirname, '../../.bin/tsx'),
-      join(__dirname, '../node_modules/.bin/tsx'),
-      join(__dirname, '../../node_modules/.bin/tsx'),
-      join(process.cwd(), 'node_modules/.bin/tsx'),
+      join(__dirname, '../'+ _tsxPath),
+      join(__dirname, '../../'+ _tsxPath),
+      join(process.cwd(), _tsxPath),
       'tsx',
     ];
 
