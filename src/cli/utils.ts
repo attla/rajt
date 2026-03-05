@@ -1,23 +1,21 @@
 import esbuild from 'esbuild'
 import { Miniflare } from 'miniflare'
-import { mkdirSync, existsSync, statSync, readdirSync, rmSync, unlinkSync, copyFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, existsSync, statSync, readdirSync, rmSync, unlinkSync, copyFileSync, writeFileSync, readFileSync } from 'node:fs'
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, relative } from 'pathe'
-import crypto, { createHash } from 'node:crypto'
+import { createHash, createHmac } from 'node:crypto'
 
 import { findWranglerConfig, parseWranglerConfig, WRANGLER_CONFIG_FILES } from 'localflare-core'
 import type { WranglerConfig, LocalflareManifest } from 'localflare-core'
 
 import chokidar from 'chokidar'
-import { gray, bold, italic } from '../utils/colors'
+import { gray, bold, italic, purple, yellow, red } from '../utils/colors'
 import type { ChokidarEventName, Platform } from './types'
 
 import { cacheRoutes } from '../routes'
 import { substep, event, error, wait as wwait, warn, log } from '../utils/log'
 import { platforms } from './constants'
-
-export const _root = join(dirname(new URL(import.meta.url).pathname), '../../../../')
-export const __rajt = join(_root, 'node_modules/rajt/src')
+import { _rajt, _root } from '../utils/paths'
 
 export function normalizePlatform(platform: Platform) {
   platform = platform?.toLowerCase() as Platform
@@ -91,7 +89,7 @@ export const build = async (platform: Platform) => {
   // @ts-ignore
   platform = platform != 'node' ? '-'+ platform : ''
   const opts = {
-    entryPoints: [join(__rajt, `prod${platform}.ts`)],
+    entryPoints: [join(_rajt, `prod${platform}.ts`)],
     bundle: true,
     minify: true,
     outfile: join(_root, dist +'/index.js'),
@@ -122,6 +120,12 @@ export const build = async (platform: Platform) => {
     // sourcemap: true,
     // logLevel: 'info',
     plugins: [
+      {
+        name: 'rajt-resolver',
+        setup(build) {
+          build.onResolve({ filter: /\.rajt[\/\\]/ }, args => ({ path: join(_root, args.path) }))
+        }
+      },
       {
         name: 'preserve-class-names',
         setup(build) {
@@ -199,11 +203,11 @@ export function cleanDir(path: string) {
 }
 
 function durableObjectNamespace(name: string, uniqueKey: string) {
-  const key = crypto.createHash('sha256').update(uniqueKey).digest()
-  const nameHmac = crypto.createHmac('sha256', key).update(name).digest().subarray(0, 16)
+  const key = createHash('sha256').update(uniqueKey).digest()
+  const nameHmac = createHmac('sha256', key).update(name).digest().subarray(0, 16)
   return Buffer.concat([
     nameHmac,
-    crypto.createHmac('sha256', key).update(nameHmac).digest().subarray(0, 16)
+    createHmac('sha256', key).update(nameHmac).digest().subarray(0, 16)
   ]).toString('hex')
 }
 
@@ -474,3 +478,30 @@ export const camelCase = (text: string) =>
     .filter(word => word.length > 0)
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join('')
+
+export const highlightedMethod = (method: string, str?: string | null, siblings: boolean = false): string => {
+  const val = str || method
+
+  switch (method) {
+    case 'HEAD':
+    case 'OPTIONS':
+    case 'CONNECT':
+    case 'TRACE':
+      return gray(val)
+    case 'GET':
+      return purple(val) + (siblings ? gray('|') + highlightedMethod('HEAD') : '')
+    case 'POST':
+    case 'PUT':
+    case 'PATCH':
+      return yellow(val)
+    case 'DELETE':
+      return red(val)
+  }
+
+  return val
+}
+
+export const highlightedURI = (uri: string, method: string) => uri.replace(
+  /(?::([a-zA-Z_][a-zA-Z0-9_]*)(\{[^}]+\})?|\*)/g,
+  _ => highlightedMethod(method, _)
+)

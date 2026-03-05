@@ -1,8 +1,9 @@
 import { spawn } from 'node:child_process'
 import { defineCommand } from 'citty'
 
-import { _root, normalizePlatform, platformError, getRuntime } from '../utils'
+import { normalizePlatform, platformError, getRuntime } from '../utils'
 import { error } from '../../utils/log'
+import { _root } from '../../utils/paths'
 import { platforms } from '../constants'
 
 import build from './build'

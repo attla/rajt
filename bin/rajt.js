@@ -93,8 +93,8 @@ function semiver(a, b, bool) {
 function directly() {
   try {
     const arg = (process.argv[1] || '')?.replace(/\\/g, '/');
-    return arg?.endsWith('node_modules/.bin/rajt')
-      || arg?.endsWith('node_modules/rajt/bin/rajt.js')
+    return arg?.endsWith('.bin/rajt')
+      || arg?.endsWith('rajt/bin/rajt.js')
   } catch {
     return false
   }

@@ -1,5 +1,5 @@
-import { existsSync, readdirSync, statSync, writeFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'pathe'
+import { copyFileSync, existsSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { join, resolve, relative } from 'pathe'
 
 import glob from 'tiny-glob'
 import { config } from 'dotenv'
@@ -11,7 +11,8 @@ import { isAnonFn } from './utils/func'
 import ensureDir from './utils/ensuredir'
 import versionSHA from './utils/version-sha'
 import type { Routes, StandardSchemaV1 } from './types'
-import { substep, warn } from './utils/log'
+import { rn, substep, warn } from './utils/log'
+import { _root } from './utils/paths'
 
 import OAS from './oas'
 import z from 'zod'
@@ -19,8 +20,7 @@ import { resolver } from 'hono-openapi'
 import { mimes } from 'hono/utils/mime'
 import { STATUS_CODES } from 'node:http'
 
-const __filename = new URL(import.meta.url).pathname
-const __root = resolve(dirname(__filename), '../../..')
+import { highlightedMethod, highlightedURI } from './cli/utils'
 
 const importName = (name?: string) => (name || 'Fn'+ Math.random().toString(36).substring(2)).replace(/\.ts$/, '')
 const walk = async (dir: string, baseDir: string, fn: Function, parentMw: string[] = []): Promise<void> => {
@@ -105,9 +105,17 @@ export async function getRoutes(
   let length = 0
   const keys: Set<string> = new Set()
   const bag: Record<string, string[]> = {}
+  const _route = (key: string, _: string) => {
+    if (!keys.has(key)) {
+      keys.add(key)
+    } else {
+      ;(bag[key] ||= []).push(_)
+      length++
+    }
+  }
 
   await Promise.all(dirs.map(dir => walk(
-    resolve(__root, dir),
+    resolve(_root, dir),
     dir,
     (path: string, baseDir: string, handle: any, middlewares: string[]) => {
       const name = importName(handle?.name)
@@ -136,21 +144,26 @@ export async function getRoutes(
         desc,
       })
 
-      if (!keys.has(name)) {
-        keys.add(name)
-      } else {
-        ;(bag[name] ||= []).push(file)
-        length++
-      }
+      const routeKey = method +'|'+ uri
+      _route(name, file)
+      _route(routeKey, file)
     }
   )))
 
   if (length) {
     hasDuplicatedRoutes = true
     Object.entries(bag).forEach(([name, paths]) => {
-      warn(`Route "${name}" has `+ (paths.length > 1 ? `registered ${paths.length} times:` : 'already been registered:'))
+      if (name.includes('|')) {
+        let [method, uri] = name.split('|')
+        method = method.toUpperCase()
+        name =  `${highlightedMethod(method, null, true)}  "${highlightedURI(uri, method)}"`
+      }
+
+      warn(`Route ${name} has `+ (paths.length > 1 ? `registered ${paths.length} times:` : 'already been registered:'))
       substep(...paths)
     })
+
+    rn()
   }
 
   return sortRoutes(routes)
@@ -224,7 +237,7 @@ export async function getMiddlewares(
   const mw: Routes = []
 
   await Promise.all(dirs.map(dir => walk(
-    resolve(__root, dir),
+    resolve(_root, dir),
     dir,
     (fullPath: string, baseDir: string, handle: any) => {
       // @ts-ignore
@@ -246,15 +259,15 @@ function extractName(file: string) {
 export async function getConfigs(
   dirs: string[] = ['configs']
 ): Promise<Record<string, any>> {
-  dirs = dirs.filter(dir => existsSync(join(__root, dir)))
+  dirs = dirs.filter(dir => existsSync(join(_root, dir)))
   if (!dirs?.length) return {}
   const configs: Record<string, any> = {}
 
-  const files = (await glob(join(__root, dirs?.length > 1 ? `{${dirs.join(',')}}` : dirs[0], '/**/*.{ts,js,cjs,mjs,json}')))
+  const files = (await glob(join(_root, dirs?.length > 1 ? `{${dirs.join(',')}}` : dirs[0], '/**/*.{ts,js,cjs,mjs,json}')))
     .filter(file => !file.includes('.d.'))
 
   for (const file of files) {
-    const mod = await IMPORT(join(__root, file))
+    const mod = await IMPORT(join(_root, file))
     const keyPath = extractName(file).split('.')
 
     keyPath.reduce((acc, key, index) => {
@@ -296,16 +309,26 @@ function stringifyToJS(value: unknown): string {
   return 'undefined'
 }
 
+export async function dependencyEntry(lib: string, root: string) {
+  const path = await import.meta.resolve(lib)
+  return relative(root, path.replace('file://', ''))
+}
+
+async function dependencyPath(lib: string) {
+  const entry = await dependencyEntry(lib, join(_root, '.rajt'))
+  return entry.substring(0, entry.lastIndexOf(lib) + lib.length)
+}
+
 export async function cacheRoutes() {
   const env = Object.entries(
-    config({ path: '../../.env.prod' })?.parsed || {}
+    config({ path: join(_root, '.env.prod') })?.parsed || {}
   ).filter(([key, val]) => key?.toLowerCase().indexOf('aws') != 0) // prevent AWS credentials
 
   const version = versionSHA('../../.git') // @ts-ignore
   env.push(['VERSION_SHA', process.env['VERSION_SHA'] = version]) // @ts-ignore
   env.push(['VERSION_HASH', process.env['VERSION_HASH'] = version?.substring(0, 7)])
 
-  const rolePath = join(__root, 'configs/roles.ts')
+  const rolePath = join(_root, 'configs/roles.ts')
   ensureDir(rolePath)
   if (!existsSync(rolePath))
     writeFileSync(rolePath, `export default {\n\n}`)
@@ -323,13 +346,18 @@ export async function cacheRoutes() {
   // @ts-ignore
   const openApi = await OAS.generateSpecs(createApp({ routes }), configs?.rajt || {})
 
-  const iPath = join(__root, '.rajt/imports.mjs')
+  const iPath = join(_root, '.rajt/imports.mjs')
   ensureDir(iPath)
-  writeFileSync(iPath, `// AUTO-GENERATED FILE - DO NOT EDIT
-${env?.length ? `import { Envir } from '../node_modules/t0n/dist/index'\nEnvir.add({${env.map(([key, val]) => key +':'+ stringifyToJS(val)).join(',')}})` : ''}
-${Object.entries(configs)?.length ? `import Config from '../node_modules/rajt/src/config'\nConfig.add(${stringifyToJS(configs)})` : ''}
 
-import { registerHandler, registerMiddleware } from '../node_modules/rajt/src/register'
+  const localfireEntry = await dependencyEntry('localflare-api', _root)
+  copyFileSync(localfireEntry, join(_root, '.rajt/localfire.js'))
+
+  const _rajtDir = await dependencyPath('rajt')
+  writeFileSync(iPath, `// AUTO-GENERATED FILE - DO NOT EDIT
+${env?.length ? `import { Envir } from '${await dependencyPath('t0n')}/dist/index'\nEnvir.add({${env.map(([key, val]) => key +':'+ stringifyToJS(val)).join(',')}})` : ''}
+${Object.entries(configs)?.length ? `import Config from '${_rajtDir}/src/config'\nConfig.add(${stringifyToJS(configs)})` : ''}
+
+import { registerHandler, registerMiddleware } from '${_rajtDir}/src/register'
 
 ${Object.entries(openApi)?.length ? `registerHandler('RAJT_OPENAPI', ${stringifyToJS(openApi)})` : ''}
 
@@ -355,7 +383,7 @@ try {
 }
 `)
 
-  const rPath = join(__root, '.rajt/routes.json')
+  const rPath = join(_root, '.rajt/routes.json')
   ensureDir(rPath)
   writeFileSync(rPath, JSON.stringify(routes.filter(r => r.method && r.path).map(route => [
     route.method,

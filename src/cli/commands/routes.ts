@@ -2,9 +2,9 @@ import { join } from 'pathe'
 import { defineCommand } from 'citty'
 import { inspectRoutes } from 'hono/dev'
 import { IMPORT } from 't0n'
-import { gray, purple, red, yellow } from '../../utils/colors'
-import { __rajt } from '../utils'
+import { _rajt } from '../../utils/paths'
 import { rn } from '../../utils/log'
+import { highlightedURI, highlightedMethod } from '../utils'
 
 export default defineCommand({
 	meta: {
@@ -26,7 +26,7 @@ export default defineCommand({
 		},
 	},
 	async run({ args }) {
-		const mod = await IMPORT(join(__rajt, 'dev.ts'))
+		const mod = await IMPORT(join(_rajt, 'dev.ts'))
 		const app = mod.default
 
 		const opts = {
@@ -38,28 +38,6 @@ export default defineCommand({
 		const keys: Set<string> = new Set()
 		let maxMethodLength = 0
 		let maxPathLength = 0
-
-		const colorMethod = (method: string, str?: string) => {
-			const val = str || method
-
-			switch (method) {
-				case 'HEAD':
-				case 'OPTIONS':
-				case 'CONNECT':
-				case 'TRACE':
-					return gray(val)
-				case 'GET':
-					return purple(val)
-				case 'POST':
-				case 'PUT':
-				case 'PATCH':
-					return yellow(val)
-				case 'DELETE':
-					return red(val)
-			}
-
-			return val
-		}
 
 		let routes = inspectRoutes(app)
 			.filter(({ method, path, isMiddleware }) => {
@@ -88,17 +66,12 @@ export default defineCommand({
 			const { method, path } = route
 
 			let mLength = method.length
-			let str = colorMethod(method)
+			let str = highlightedMethod(method, null, true)
 
-			if (method == 'GET') {
+			if (method == 'GET')
 				mLength += 5
-				str += gray('|') + colorMethod('HEAD')
-			}
 
-			console.log(str + ' '.repeat(maxMethodLength - mLength) +'  '+ path.replace(
-				/(?::([a-zA-Z_][a-zA-Z0-9_]*)(\{[^}]+\})?|\*)/g,
-				_ => colorMethod(method, _)
-			))
+			console.log(str + ' '.repeat(maxMethodLength - mLength) +'  '+ highlightedURI(path, method))
 		})
 
 		rn()

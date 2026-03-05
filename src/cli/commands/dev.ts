@@ -4,11 +4,12 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import { defineCommand } from 'citty'
 import type { Miniflare } from 'miniflare'
 import {
-	_root, build, wait, watch, normalizePlatform, platformError, getRuntime,
+	build, wait, watch, normalizePlatform, platformError, getRuntime,
 	wranglerConfig, createMiniflare, localflareManifest,
 	getDockerHost
 } from '../utils'
 import { error, event, log, rn, warn } from '../../utils/log'
+import { _root } from '../../utils/paths'
 import { withPort } from '../../utils/port'
 import shutdown from '../../utils/shutdown'
 
@@ -179,7 +180,7 @@ export default defineCommand({
 								...workerConfig.vars,
 								LOCALFLARE_MANIFEST: JSON.stringify(localflareManifest(workerConfig)),
 							},
-							main: 'node_modules/localflare-api/dist/worker/index.js',
+							main: '.rajt/localfire.js',
 							port: 8788,
 							inspectorPort: 9230,
 						})

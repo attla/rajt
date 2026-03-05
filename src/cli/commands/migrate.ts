@@ -3,7 +3,8 @@ import { spawn } from 'node:child_process'
 import { join } from 'pathe'
 import { Migrator } from 'forj'
 import { gray } from '../../utils/colors'
-import { _root, getRuntime, cleanDB, cleanDir } from '../utils'
+import { getRuntime, cleanDB, cleanDir } from '../utils'
+import { _root } from '../../utils/paths'
 import { wait, info, event, rn, error, log } from '../../utils/log'
 
 export default defineCommand({
