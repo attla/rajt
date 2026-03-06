@@ -11,6 +11,9 @@ indent_size = 2
 # [*.{js,jsx,ts,tsx,json,yaml,yml}]
 # Inherits all settings from [*] and applies to these extensions
 
+[*.{json,jsonc}]
+insert_final_newline = false
+
 [*.md]
 trim_trailing_whitespace = false
 

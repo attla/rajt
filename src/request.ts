@@ -78,11 +78,13 @@ export default class $Request {
   }
 
   get ip(): string | undefined {
-    return this.#c.req.header('cf-connecting-ip')
-      || this.#c.req.header('x-forwarded-for')?.split(',')[0]?.trim()
+    return this.#c.req.header('cf-connecting-ip') // cf
+      || this.#c.req.header('x-forwarded-for')?.split(',').at(-1)?.trim() // aws lambda
       || this.#c.env?.aws?.lambda?.event?.requestContext?.identity?.sourceIp
-      || this.#c.req.header('x-real-ip')
-      || this.#c.env?.remoteAddr?.hostname
+      || this.#c.env?.event?.Records[0]?.cf?.request?.clientIp // aws lambda@edge
+      || this.#c.req.header('x-real-ip') // vercel
+      || this.#c.env?.context?.ip // netlify
+      || this.#c.env?.remoteAddr?.hostname // deno
   }
 
   get userAgent(): string | undefined {

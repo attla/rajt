@@ -39,6 +39,7 @@ export default class Config {
     this.#c.clear()
   }
 
+  // @ts-ignore
   static get length(): number {
     return this.#c.length
   }

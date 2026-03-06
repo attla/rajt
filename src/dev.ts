@@ -3,7 +3,7 @@ import { config } from 'dotenv'
 import { getRoutes, getMiddlewares, getConfigs } from './routes'
 import { registerHandler, registerMiddleware } from './register'
 import Config from './config'
-import OAS from './oas'
+import { registerOpenAPI } from './oas'
 import createApp from './create-app'
 import { Ability } from 'rajt/auth'
 import { setEnv, detectEnvironment } from 'rajt/env'
@@ -28,6 +28,6 @@ Ability.roles = Config.get('roles', {})
 
 // @ts-ignore
 const app = createApp({ routes })
-OAS.register(app, Config.get('rajt', {}))
+registerOpenAPI(app, Config.get('rajt', {}))
 
 export default app

@@ -2,7 +2,7 @@ import { defineCommand, runMain, renderUsage } from 'citty'
 import type { ArgsDef, CommandDef } from 'citty'
 import { createConsola } from 'consola'
 import { logo } from '../utils/log'
-import { isColorSupported, gray } from '../utils/colors'
+import { isColorSupported, gray } from 't0n/color'
 import { version as rajtVersion } from '../../package.json'
 
 import dev from './commands/dev'

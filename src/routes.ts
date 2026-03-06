@@ -14,7 +14,7 @@ import type { Routes, StandardSchemaV1 } from './types'
 import { rn, substep, warn } from './utils/log'
 import { _root } from './utils/paths'
 
-import OAS from './oas'
+import { generateOpenAPI } from './oas'
 import z from 'zod'
 import { resolver } from 'hono-openapi'
 import { mimes } from 'hono/utils/mime'
@@ -344,7 +344,7 @@ export async function cacheRoutes() {
   middlewares.forEach(mw => registerMiddleware(mw.handle))
 
   // @ts-ignore
-  const openApi = await OAS.generateSpecs(createApp({ routes }), configs?.rajt || {})
+  const openApi = await generateOpenAPI(createApp({ routes }), configs?.rajt || {})
 
   const iPath = join(_root, '.rajt/imports.mjs')
   ensureDir(iPath)

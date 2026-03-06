@@ -1,7 +1,36 @@
-import { Envir } from 't0n'
-import { Token as Factory } from 'cripta'
-import { UAParser } from 'ua-parser-js'
+import { Envir, parseUA } from 't0n'
+import { Token as Factory, sha256 } from 'cripta'
 import type { IRequest } from '@/types'
+
+const STABLE_HEADERS = [
+  'host',
+  'connection',
+  'sec-ch-ua',
+  'sec-ch-ua-mobile',
+  'sec-ch-ua-platform',
+  'upgrade-insecure-requests',
+  'user-agent',
+  'accept',
+  'sec-fetch-site',
+  'sec-fetch-mode',
+  'sec-fetch-user',
+  'sec-fetch-dest',
+  'accept-encoding',
+  'accept-language',
+]
+
+function headerOrdering(headers: Record<string, string>) {
+  const order: string[] = []
+
+  for (const name in headers) {
+    const key = name.toLowerCase()
+
+    if (STABLE_HEADERS.includes(key))
+      order.push(key)
+  }
+
+  return order
+}
 
 export class Token {
   static #cookieName: string = '__auth_'
@@ -48,8 +77,7 @@ export class Token {
     return Factory.parse(token)
       .issuedBy(serveHost)
       .permittedFor(host)
-      .withClaim('u', this.userAgent(req))
-      .withClaim('i', this.ip(req))
+      .withClaim('_', this.fingerprint(req))
   }
 
   static create(req: IRequest, user: any, exp: number = 7200) {
@@ -61,8 +89,7 @@ export class Token {
       .permittedFor(host)
       .issuedAt(time)
       .expiresAt(time + exp)
-      .withClaim('u', this.userAgent(req))
-      .withClaim('i', this.ip(req))
+      .withClaim('_', this.fingerprint(req))
       .body(user)
   }
 
@@ -90,11 +117,18 @@ export class Token {
     }
   }
 
-  static userAgent(req: IRequest) {
-    const ua = req?.userAgent
-    if (!ua) return 0
-    const { browser, device, os } = UAParser(ua)
-    return (browser?.name || '') + (browser?.major || '') + (device?.model || '') + (os?.name || '')
+  static fingerprint(req: IRequest) {
+    const ua = parseUA(req.header('user-agent'))
+
+    const id = sha256(
+      // (req.header('accept-language') || '')
+      this.ip(req)
+      + ua.browser.name + ua.browser.version.split('.')[0]
+      + ua.os.type + ua.os.name
+      + headerOrdering(req.header()).join('')
+    )
+
+    return id.substring(0, 8) + id.substring(56, 64)
   }
 
   static ip(req: IRequest) {

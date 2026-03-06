@@ -1,5 +1,5 @@
 import { defineCommand } from 'citty'
-import { gray } from '../../utils/colors'
+import { gray } from 't0n/color'
 import { build, normalizePlatform, platformError } from '../utils'
 import { wait, error, rn } from '../../utils/log'
 

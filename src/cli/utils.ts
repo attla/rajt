@@ -1,6 +1,6 @@
 import esbuild from 'esbuild'
 import { Miniflare } from 'miniflare'
-import { mkdirSync, existsSync, statSync, readdirSync, rmSync, unlinkSync, copyFileSync, writeFileSync, readFileSync } from 'node:fs'
+import { mkdirSync, existsSync, statSync, readdirSync, rmSync, unlinkSync, copyFileSync, writeFileSync } from 'node:fs'
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, relative } from 'pathe'
 import { createHash, createHmac } from 'node:crypto'
@@ -9,7 +9,7 @@ import { findWranglerConfig, parseWranglerConfig, WRANGLER_CONFIG_FILES } from '
 import type { WranglerConfig, LocalflareManifest } from 'localflare-core'
 
 import chokidar from 'chokidar'
-import { gray, bold, italic, purple, yellow, red } from '../utils/colors'
+import { gray, bold, italic, purple, yellow, red } from 't0n/color'
 import type { ChokidarEventName, Platform } from './types'
 
 import { cacheRoutes } from '../routes'

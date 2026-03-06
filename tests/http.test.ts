@@ -14,7 +14,6 @@ import {
 } from '@/http'
 
 describe('HTTP', () => {
-
   describe('Method Decorators', () => {
     const methods = [
       { decorator: Get, method: 'get', path: '/list' },

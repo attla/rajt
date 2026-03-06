@@ -13,7 +13,7 @@ import { getMiddlewares, getHandler } from './register'
 import request, { GET_REQUEST } from './request'
 import response from './response'
 import { isDev } from './utils/environment'
-import { gray } from './utils/colors'
+import { gray } from 't0n/color'
 
 const NFHandler = () => response.notFound()
 const EHandler = async (e: Error | HTTPResponseError) => {

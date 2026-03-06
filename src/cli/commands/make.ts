@@ -4,7 +4,7 @@ import { Migrator } from 'forj'
 import { makeFile, hasExt, camelCase, kebabCase } from '../utils'
 import { _root } from '../../utils/paths'
 import { event, error } from '../../utils/log'
-import { dim } from '../../utils/colors'
+import { dim } from 't0n/color'
 import * as stub from '../stubs'
 
 export default defineCommand({

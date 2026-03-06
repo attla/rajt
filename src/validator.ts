@@ -1,4 +1,4 @@
-import { ZodObject } from 'zod'
+import type { ZodObject } from 'zod'
 import { validator } from 'hono-openapi'
 import response from './response'
 import type {

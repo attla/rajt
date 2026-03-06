@@ -1,5 +1,5 @@
 import Config from './config'
-import OAS from './oas'
+import { registerOpenAPI } from './oas'
 import { Ability } from './auth'
 import createApp from './create-app'
 
@@ -14,6 +14,6 @@ Ability.roles = Config.get('roles', {})
 
 // @ts-ignore
 const app = createApp({ routes })
-OAS.register(app, Config.get('rajt', {}))
+registerOpenAPI(app, Config.get('rajt', {}))
 
 export { app }

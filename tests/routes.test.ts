@@ -25,5 +25,4 @@ describe('Routes', () => {
       '/*',
     ].map(route => ({path: route} as Route)))
   })
-
 })
