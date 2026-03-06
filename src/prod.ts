@@ -1,5 +1,5 @@
 import Config from './config'
-import { registerOpenAPI } from './oas'
+import { registerOpenAPI } from './open-api/register'
 import { Ability } from './auth'
 import createApp from './create-app'
 

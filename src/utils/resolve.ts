@@ -1,3 +1,5 @@
+import { getHandler } from '../register'
+
 export function resolve(obj: any, id: string) {
   if (typeof obj == 'function' && obj?.length == 2)
     return [obj]
@@ -32,4 +34,12 @@ export function resolveMiddleware(obj: any) {
     return (new obj()).handle
 
   throw new Error('Invalid middleware provided. Must be a Hono middleware function or MiddlewareClass instance/constructor')
+}
+
+export function mw(...objs: string[]): Function[] {
+  return objs.flatMap(obj => {
+    if (typeof obj != 'string') return null
+    // @ts-ignore
+    return getHandler(obj)?.mw || null
+  }).flat().filter(Boolean)
 }

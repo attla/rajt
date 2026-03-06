@@ -1,19 +1,19 @@
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 import { matchedRoutes } from 'hono/route'
-import { describeRoute } from 'hono-openapi'
 import { Envir, Datte } from 't0n'
 import type {
   Env, Context, Next,
   HTTPResponseError,
   ServerOptions,
 } from './types'
-import { resolve, resolveMiddleware } from './utils/resolve'
+import { resolve, resolveMiddleware, mw } from './utils/resolve'
 import { getMiddlewares, getHandler } from './register'
 import request, { GET_REQUEST } from './request'
 import response from './response'
 import { isDev } from './utils/environment'
 import { gray } from 't0n/color'
+import { Route } from './types'
 
 const NFHandler = () => response.notFound()
 const EHandler = async (e: Error | HTTPResponseError) => {
@@ -108,24 +108,19 @@ export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
 
   if (options?.init) options.init(app)
 
-  const routes = options?.routes || []
-  for (const route of routes) {
+  const routes = options?.routes || [] // @ts-ignore
+  const routeRegister = options?.routeRegister ? options.routeRegister : (_: Hono, route: Route) => { // @ts0ignore
     if (Array.isArray(route)) { // @ts-ignore
-      app[route[0]](route[1], ...mw(route[2], route[3]), ...resolve(getHandler(route[3]), route[3]))
+      _[route[0]](route[1], ...mw(route[2], route[3]), ...resolve(getHandler(route[3]), route[3]))
     } else { // @ts-ignore
-      app[route.method](route.path, describeRoute(route.desc), ...mw(route.middlewares, route.name), ...resolve(route.handle, route.name))
+      _[route.method](route.path, ...mw(route.middlewares, route.name), ...resolve(route.handle, route.name))
     }
   }
 
-  return app
-}
+  for (const route of routes)
+    routeRegister(app, route)
 
-function mw(...objs: string[]): Function[] {
-  return objs.flatMap(obj => {
-    if (typeof obj != 'string') return null
-    // @ts-ignore
-    return getHandler(obj)?.mw || null
-  }).flat().filter(Boolean)
+  return app
 }
 
 export default createApp

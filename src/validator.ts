@@ -1,5 +1,5 @@
-import type { ZodObject } from 'zod'
-import { validator } from 'hono-openapi'
+import type * as z from 'zod'
+import { zValidator } from '@hono/zod-validator'
 import response from './response'
 import type {
   Rule, Rules,
@@ -7,11 +7,11 @@ import type {
 } from './types'
 
 export default class $Validator {
-  private static cache = new Map<string, (schema: ZodObject<any>) => Rule>()
+  private static cache = new Map<string, (schema: z.ZodObject<any>) => Rule>()
 
   private static createRule<T extends keyof ValidationTargets>(
     target: T,
-    schema: ZodObject<any>
+    schema: z.ZodObject<any>
   ): Rule {
     return {
       target,
@@ -24,7 +24,7 @@ export default class $Validator {
     if (this.cache.has(target))
       return this.cache.get(target)
 
-    const fn = (schema: ZodObject<any>) => this.createRule(target, schema)
+    const fn = (schema: z.ZodObject<any>) => this.createRule(target, schema)
     this.cache.set(target, fn)
     return fn
   }
@@ -38,9 +38,9 @@ export default class $Validator {
 
   static parse(rules: Rules): Function[] {
     return (Array.isArray(rules) ? rules : [rules]) // @ts-ignore
-      .flatMap(rule => validator(rule.target, rule.schema, (result, c) => {
+      .flatMap(rule => zValidator(rule.target, rule.schema, (result, c) => {
         if (!result.success) // @ts-ignore
-          return response.badRequest(result.error)
+          return response.badRequest({ ...result.error.flatten()[rule.eTarget] })
       }))
   }
 }

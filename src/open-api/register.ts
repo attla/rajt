@@ -1,12 +1,9 @@
-import { STATUS_CODES } from 'node:http'
 import { basicAuth } from 'hono/basic-auth'
 import { Scalar } from '@scalar/hono-api-reference'
-import { generateSpecs, resolver } from 'hono-openapi'
 import { Envir } from 't0n'
-import z from 'zod'
-import response from './response'
-import { getHandler } from './register'
-import type { Hono } from './types'
+import response from '../response'
+import { getHandler } from '../register'
+import type { Hono } from '../types'
 
 export function config(opts: any) {
   const docs = opts?.docs ?? {}
@@ -67,39 +64,4 @@ export function registerOpenAPI(app: Hono, conf: any) {
       customCss: `[href="https://www.scalar.com"]{display:none}`,
     })
   )
-}
-
-export async function generateOpenAPI(app: Hono, conf: any) {
-  const opts = config(conf)
-  if (opts.disable) return {}
-
-  return await generateSpecs(app, {
-    documentation: {
-      info: {
-        title: opts.appName,
-        version: opts.appVersion,
-        description: Envir.get('APP_DESCRIPTION', ''),
-      },
-      components: {
-        securitySchemes: {
-          JWT: {
-            type: 'http',
-            scheme: 'bearer',
-            bearerFormat: 'JWT',
-          },
-        },
-        responses: {
-          500: {
-            description: STATUS_CODES[500],
-            content: { // @ts-ignore
-              'application/json': await resolver(z.object({
-                m: z.array(z.string()),
-              })).toOpenAPISchema(),
-            },
-          },
-          ...opts?.responses,
-        },
-      },
-    },
-  })
 }

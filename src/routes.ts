@@ -13,12 +13,12 @@ import versionSHA from './utils/version-sha'
 import type { Routes, StandardSchemaV1 } from './types'
 import { rn, substep, warn } from './utils/log'
 import { _root } from './utils/paths'
-
-import { generateOpenAPI } from './oas'
-import z from 'zod'
-import { resolver } from 'hono-openapi'
+import { generateOpenAPI } from './open-api/spec'
+import type * as z from 'zod'
+import { describeRoute, resolver } from 'hono-openapi'
 import { mimes } from 'hono/utils/mime'
 import { STATUS_CODES } from 'node:http'
+import { mw, resolve as _resolve } from './utils/resolve'
 
 import { highlightedMethod, highlightedURI } from './cli/utils'
 
@@ -344,7 +344,9 @@ export async function cacheRoutes() {
   middlewares.forEach(mw => registerMiddleware(mw.handle))
 
   // @ts-ignore
-  const openApi = await generateOpenAPI(createApp({ routes }), configs?.rajt || {})
+  const openApi = await generateOpenAPI(createApp({ routes, routeRegister: (app: Hono, route: Route) => {
+    app[route.method](route.path, describeRoute(route.desc), ...mw(route.middlewares, route.name), ..._resolve(route.handle, route.name))
+  } }), configs?.rajt || {})
 
   const iPath = join(_root, '.rajt/imports.mjs')
   ensureDir(iPath)
