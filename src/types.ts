@@ -11,6 +11,7 @@ import type { OpenAPIV3_1, OpenAPIV3 } from 'openapi-types'
 import type { StandardSchemaV1 } from '@standard-schema/spec'
 import type { DescribeRouteOptions as RawDescribeRouteOptions, ResolverReturnType } from 'hono-openapi'
 import type * as z from 'zod'
+import type zm from 'zod/mini'
 import Action from './action'
 import request from './request'
 import response from './response'
@@ -33,6 +34,7 @@ export type {
 } from 'hono/utils/http-status'
 export type { BaseMime, StandardSchemaV1 }
 
+export type zObject = z.ZodTypeAny | zm.ZodMiniObject
 type PublicMethods<T> = {
   [K in keyof T]: K extends `#${string}` | `$${string}` | symbol | 'prototype' ? never : K
 }[keyof T]
@@ -42,11 +44,12 @@ export type IResponse = Pick<typeof response, PublicMethods<typeof response>>
 
 export type IValidator = Pick<typeof validator, PublicMethods<typeof validator>>
 export type Rule = {
-  schema: z.ZodObject<any>
+  schema: zObject
   target: keyof ValidationTargets
   eTarget?: 'fieldErrors' | 'formErrors'
 }
 export type Rules = Rule[] | Rule | null
+export type RuleFn = (schema: zObject) => Rule
 
 export type StandardSchema = StandardSchemaV1 | OpenAPIV3_1.ReferenceObject
 export type DescribeRouteOptions = Omit<RawDescribeRouteOptions, 'responses'> & {

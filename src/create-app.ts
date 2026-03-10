@@ -7,13 +7,14 @@ import type {
   HTTPResponseError,
   ServerOptions,
 } from './types'
-import { resolve, resolveMiddleware, mw } from './utils/resolve'
-import { getMiddlewares, getHandler } from './register'
+import { resolve, resolveMiddleware } from './utils/resolve'
+import { getMiddlewares } from './register'
 import request, { GET_REQUEST } from './request'
 import response from './response'
 import { isDev } from './utils/environment'
 import { gray } from 't0n/color'
 import { Route } from './types'
+import { getVerb } from './http'
 
 const NFHandler = () => response.notFound()
 const EHandler = async (e: Error | HTTPResponseError) => {
@@ -96,11 +97,14 @@ export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
     if (c.env) Envir.add(c.env)
     await next()
   })
-  getMiddlewares().forEach(mw => {
+
+  const middlewares = getMiddlewares()
+  for (const mw of middlewares) {
     const h = async (c: Context, next: Next) => await resolveMiddleware(mw)(c.get(GET_REQUEST as unknown as string), next)
     // @ts-ignore
     mw?.path ? app.use(String(mw.path), h) : app.use(h)
-  })
+  }
+
   // @ts-ignore
   app.onError(options?.onError || EHandler)
   // @ts-ignore
@@ -111,9 +115,9 @@ export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
   const routes = options?.routes || [] // @ts-ignore
   const routeRegister = options?.routeRegister ? options.routeRegister : (_: Hono, route: Route) => { // @ts0ignore
     if (Array.isArray(route)) { // @ts-ignore
-      _[route[0]](route[1], ...mw(route[2], route[3]), ...resolve(getHandler(route[3]), route[3]))
+      _[getVerb[route[0]]](route[1], ...resolve(...route[2], route[3]))
     } else { // @ts-ignore
-      _[route.method](route.path, ...mw(route.middlewares, route.name), ...resolve(route.handle, route.name))
+      _[route.method](route.path, ...resolve(...route.middlewares), route.handle)
     }
   }
 

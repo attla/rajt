@@ -1,3 +1,4 @@
+import ts from 'typescript'
 import esbuild from 'esbuild'
 import { Miniflare } from 'miniflare'
 import { mkdirSync, existsSync, statSync, readdirSync, rmSync, unlinkSync, copyFileSync, writeFileSync } from 'node:fs'
@@ -69,6 +70,52 @@ const nodeModules = [
   'async_hooks', 'console', 'fsevents',
 ].flatMap(lib => ['node:'+ lib, lib])
 
+const printer = ts.createPrinter()
+function stripDecorators(source: string) {
+  const sourceFile = ts.createSourceFile(
+    'tmp.ts', source, ts.ScriptTarget.ESNext, false
+  )
+
+  const transformer: ts.TransformerFactory<ts.SourceFile> = (context) => {
+    const visit: ts.Visitor = (node) => {
+      if (ts.isClassDeclaration(node) && node.modifiers?.length) {
+        let hasDecorator = false
+        const modifiers = []
+
+        for (const m of node.modifiers) {
+          if (m.kind === ts.SyntaxKind.Decorator) {
+            hasDecorator = true
+            continue
+          }
+          modifiers.push(m)
+        }
+
+        if (hasDecorator) {
+          return ts.factory.updateClassDeclaration(
+            node,
+            modifiers.length ? modifiers : undefined,
+            node.name,
+            node.typeParameters,
+            node.heritageClauses,
+            node.members
+          )
+        }
+      }
+
+      return ts.visitEachChild(node, visit, context)
+    }
+
+    return (node) => ts.visitNode(node, visit) as ts.SourceFile
+  }
+
+  const result = ts.transform(sourceFile, [transformer])
+  const code = printer.printFile(result.transformed[0])
+
+  result.dispose()
+
+  return code
+}
+
 const dist = '.rajt/dist'
 export const build = async (platform: Platform) => {
   const startTime = Date.now()
@@ -85,6 +132,10 @@ export const build = async (platform: Platform) => {
   }
 
   if (['bun', 'vercel'].includes(platform)) platform = 'cf'
+
+  const USE_STRICT_RE = /(["'`])\s*use strict\s*\1;?/g
+  const decoder = new TextDecoder()
+  const encoder = new TextEncoder()
 
   // @ts-ignore
   platform = platform != 'node' ? '-'+ platform : ''
@@ -112,54 +163,45 @@ export const build = async (platform: Platform) => {
     // define: {
     //   'process.env.NODE_ENV': '"development"'
     // },
-    // loader: {
-    //   '.ts': 'ts',
-    //   '.js': 'js'
-    // },
     // tsconfig: join(_root, 'tsconfig.json'),
     // sourcemap: true,
     // logLevel: 'info',
     plugins: [
       {
-        name: 'rajt-resolver',
+        name: 'rajt',
         setup(build) {
           build.onResolve({ filter: /\.rajt[\/\\]/ }, args => ({ path: join(_root, args.path) }))
-        }
-      },
-      {
-        name: 'preserve-class-names',
-        setup(build) {
-          build.onLoad(
-            { filter: /(actions|features|routes)\/.*\.ts$/ },
-            async (args) => {
-              const contents = await readFile(args.path, 'utf8')
-              const result = await esbuild.transform(contents, {
-                loader: 'ts',
-                minify: true,
-                keepNames: true
-              })
-              return { contents: result.code, loader: 'ts' }
-            }
-          )
-        },
-      },
-      {
-        name: 'remove-use-strict',
-        setup(build) {
+
+          // strip decorators
+          build.onLoad({ filter: /\.ts$/ }, async (args) => {
+            const source = await readFile(args.path, 'utf8')
+            return { contents: stripDecorators(source), loader: 'ts' }
+          })
+
+          // remove "use strict"
+          const write = build.initialOptions.write
           build.onEnd(async (result) => {
-            if (!result.outputFiles) return
+            const files = result.outputFiles
+            if (!files) return
 
-            const files = result.outputFiles.filter(file => file.path.endsWith('.js'))
-            await Promise.all(files.map(async file => {
-              if (!file.path.endsWith('.js')) return
+            const tasks: Promise<void>[] = []
 
-              await writeFile(
-                file.path,
-                new TextDecoder()
-                  .decode(file.contents)
-                  .replace(/(["'`])\s*use strict\s*\1;?|`use strict`;?/g, '')
-              )
-            }))
+            for (const file of files) {
+              if (!file.path.endsWith('.js')) continue
+
+              let code = decoder.decode(file.contents)
+
+              if (USE_STRICT_RE.test(code))
+                code = code.replace(USE_STRICT_RE, '')
+
+              if (write) {
+                file.contents = encoder.encode(code)
+              } else {
+                tasks.push(writeFile(file.path, code))
+              }
+            }
+
+            if (tasks.length) await Promise.all(tasks)
           })
         }
       },

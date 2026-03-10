@@ -27,7 +27,7 @@ export default class $Request {
   #u: Authnz<any> | null = null
 
   #host: string
-  #routePath: string
+  #routePath?: string
   #matchedRoutes: RouterRoute[]
 
   constructor(c: Context) {
@@ -38,7 +38,6 @@ export default class $Request {
     const url = new URL(c.req.raw.url)
     this.#host = url.protocol +'//'+ url.host
 
-    this.#routePath = routePath(c)
     this.#matchedRoutes = matchedRoutes(c)
   }
 
@@ -91,10 +90,6 @@ export default class $Request {
     return this.#c.req.header('user-agent')
   }
 
-  get routePath() {
-    return this.#routePath
-  }
-
   get url() {
     return this.#c.req.raw.url
   }
@@ -114,6 +109,15 @@ export default class $Request {
 
   get method() {
     return this.#c.req.raw.method
+  }
+
+  get routePath() {
+    this.#routePath ??= routePath(this.#c)
+    return this.#routePath
+  }
+
+  get routeIndex() {
+    return this.#c.req.routeIndex
   }
 
   get matchedRoutes() {

@@ -7,12 +7,11 @@ import { registerOpenAPI } from './open-api/register'
 import createApp from './create-app'
 import { Ability } from 'rajt/auth'
 import { setEnv, detectEnvironment } from 'rajt/env'
+import { _root } from './utils/paths'
 
 setEnv(detectEnvironment())
 
-const __dirname = join(dirname(new URL(import.meta.url).pathname), '../../../')
-
-config({ path: join(__dirname, '.env.dev') })
+config({ path: join(_root, '.env.dev') })
 
 Config.add(await getConfigs())
 

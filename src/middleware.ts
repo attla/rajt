@@ -15,3 +15,7 @@ export class Middleware {
 }
 
 export const toHonoMiddleware = (mw: MiddlewareHandler) => async (req: IRequest, next: Next) => await mw(req.cx, next)
+
+export function mergeMiddleware(target: Function | any, ...handlers: MiddlewareType[]) {
+  target.mw = [...target?.mw, ...handlers.flat()]
+}

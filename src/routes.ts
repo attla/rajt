@@ -1,26 +1,26 @@
 import { copyFileSync, existsSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { join, resolve, relative } from 'pathe'
 
+import { IMPORT } from 't0n'
 import glob from 'tiny-glob'
 import { config } from 'dotenv'
-
-import { IMPORT } from 't0n'
+import { describeRoute, resolver } from 'hono-openapi'
+import { mimes } from 'hono/utils/mime'
+import { STATUS_CODES } from 'node:http'
 import { registerHandler, registerMiddleware } from './register'
 import createApp from './create-app'
 import { isAnonFn } from './utils/func'
 import ensureDir from './utils/ensuredir'
 import versionSHA from './utils/version-sha'
-import type { Routes, StandardSchemaV1 } from './types'
 import { rn, substep, warn } from './utils/log'
-import { _root } from './utils/paths'
+import { _root, _rajt } from './utils/paths'
 import { generateOpenAPI } from './open-api/spec'
-import type * as z from 'zod'
-import { describeRoute, resolver } from 'hono-openapi'
-import { mimes } from 'hono/utils/mime'
-import { STATUS_CODES } from 'node:http'
-import { mw, resolve as _resolve } from './utils/resolve'
-
+import { verbAlias } from './http'
+import { resolve as _resolve } from './utils/resolve'
 import { highlightedMethod, highlightedURI } from './cli/utils'
+
+import type * as z from 'zod'
+import type { Routes, StandardSchemaV1 } from './types'
 
 const importName = (name?: string) => (name || 'Fn'+ Math.random().toString(36).substring(2)).replace(/\.ts$/, '')
 const walk = async (dir: string, baseDir: string, fn: Function, parentMw: string[] = []): Promise<void> => {
@@ -61,7 +61,7 @@ function isZodSchema(obj: any): obj is z.ZodType {
 }
 
 function ResolveDescribeSchema(obj: any, deep: boolean = false) {
-  if (!obj || typeof obj !== 'object') return obj
+  if (!obj || typeof obj != 'object') return obj
   if (isZodSchema(obj))
     return { content: {'application/json': { schema: resolver(obj as unknown as StandardSchemaV1) }} }
 
@@ -134,12 +134,16 @@ export async function getRoutes(
         }
       }
 
+      const mw = (handle.mw?.length ? [...handle.mw, ...middlewares] : middlewares).flatMap(obj => {
+        return typeof obj == 'string' ? obj : obj?.name || null
+      }).filter(Boolean) as Function[]
+
       routes.push({
         method, path: uri,
         name,
         file,
         // @ts-ignore
-        middlewares,
+        middlewares: mw,
         handle,
         desc,
       })
@@ -339,13 +343,24 @@ export async function cacheRoutes() {
 
   const middlewares = await getMiddlewares()
   const configs = await getConfigs()
+  const handlers = [
+    ['auth/middlewares', 'Autorized', 'Autorized'],
+  ]
 
-  routes.forEach(r => registerHandler(r.name, r.handle))
-  middlewares.forEach(mw => registerMiddleware(mw.handle))
+  for (const r of routes)
+    registerHandler(r.name, r.handle)
+
+  for (const mw of middlewares)
+    registerMiddleware(mw.handle)
+
+  for (const h of handlers) {
+    const mod = await IMPORT(join(_rajt, h[0]))
+    registerHandler(h[1], mod[h[1]])
+  }
 
   // @ts-ignore
   const openApi = await generateOpenAPI(createApp({ routes, routeRegister: (app: Hono, route: Route) => {
-    app[route.method](route.path, describeRoute(route.desc), ...mw(route.middlewares, route.name), ..._resolve(route.handle, route.name))
+    app[route.method](route.path, describeRoute(route.desc), ..._resolve(...route.middlewares), route.handle)
   } }), configs?.rajt || {})
 
   const iPath = join(_root, '.rajt/imports.mjs')
@@ -355,13 +370,18 @@ export async function cacheRoutes() {
   copyFileSync(localfireEntry, join(_root, '.rajt/localfire.js'))
 
   const _rajtDir = await dependencyPath('rajt')
+
+  stringifyToJS(Object.fromEntries(routes.map(r => ([r.path + r.method, r.name]))))
+
   writeFileSync(iPath, `// AUTO-GENERATED FILE - DO NOT EDIT
 ${env?.length ? `import { Envir } from '${await dependencyPath('t0n')}/dist/index'\nEnvir.add({${env.map(([key, val]) => key +':'+ stringifyToJS(val)).join(',')}})` : ''}
 ${Object.entries(configs)?.length ? `import Config from '${_rajtDir}/src/config'\nConfig.add(${stringifyToJS(configs)})` : ''}
 
 import { registerHandler, registerMiddleware } from '${_rajtDir}/src/register'
+${handlers.map(([file, name, _export]) => `\nimport ${_export ? `{ ${name} }` : name} from '${_rajtDir}/src/${file}'\nregisterHandler('${name}', ${name})`).join('\n')}
 
 ${Object.entries(openApi)?.length ? `registerHandler('RAJT_OPENAPI', ${stringifyToJS(openApi)})` : ''}
+Config.set('routes', ${stringifyToJS(Object.fromEntries(routes.map(r => ([r.path+'$'+verbAlias[r.method], r.name]))))})
 
 ${routes.map(r => `import ${r.name} from '../${normalizeImportPath(r.file)}'`).join('\n')}
 ${middlewares.map(r => `import ${r.name} from '../${normalizeImportPath(r.file)}'`).join('\n')}
@@ -370,9 +390,7 @@ try {
   const handlers = {${routes.map(r => r.name).join()}}
 
   for (const [name, handler] of Object.entries(handlers)) {
-    if (typeof handler == 'function' || handler.prototype?.handle) {
-      registerHandler(name, handler)
-    }
+    registerHandler(name, handler)
   }
 
   const middlewares = {${middlewares.map(r => r.name).join()}}
@@ -388,7 +406,7 @@ try {
   const rPath = join(_root, '.rajt/routes.json')
   ensureDir(rPath)
   writeFileSync(rPath, JSON.stringify(routes.filter(r => r.method && r.path).map(route => [
-    route.method,
+    verbAlias[route.method],
     route.path,
     route.middlewares,
     route.name,

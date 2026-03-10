@@ -31,7 +31,7 @@ export default defineCommand({
 		try {
 			const migrations = await Migrator.dir(database).queue()
 			const pending = migrations.pending
-			const migrated = migrations.migrated
+      const migrated = migrations.migrated
 
 			switch (action) {
 				case 'migrate':

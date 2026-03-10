@@ -1,23 +1,36 @@
 import { getHandler } from '../register'
 
-export function resolve(obj: any, id: string) {
-  if (typeof obj == 'function' && obj?.length == 2)
-    return [obj]
+export function resolve(...objs: any[]) {
+  const _ = []
+  for (let obj of objs) {
+    if (typeof obj == 'string')
+      obj = getHandler(obj)
 
-  if (obj?.run)
-    return obj.run()
+    if (typeof obj == 'function' && obj?.length == 2) {
 
-  if (obj?.handle)
-    return obj.handle()
+    } else if (obj?.run) {
+      _.push(...obj.run())
+      continue
+    } else if (obj?.handle) {
+      obj = obj.handle
+    } else if (obj?.factory) {
+      obj = obj?.opts ? obj.factory(...Array.isArray(obj.opts) ? obj.opts : [obj.opts]) : obj.factory()
+    } else {
+      const instance = new obj()
+      if (obj?.prototype?.run) {
+        _.push(...instance.run())
+        continue
+      } else if (obj?.prototype?.handle) {
+        obj = instance.handle
+      }
 
-  const instance = new obj()
-  if (obj?.prototype?.run)
-    return instance.run()
+      throw new Error(`Invalid action "${obj?.name || String(obj)}" - unsupported type`)
+    }
 
-  if (obj?.prototype?.handle)
-    return [instance.handle]
+   obj &&  _.push(obj)
+  }
 
-  throw new Error(`Invalid action "${id}" - unsupported type`)
+  return _
 }
 
 export function resolveMiddleware(obj: any) {
@@ -34,12 +47,4 @@ export function resolveMiddleware(obj: any) {
     return (new obj()).handle
 
   throw new Error('Invalid middleware provided. Must be a Hono middleware function or MiddlewareClass instance/constructor')
-}
-
-export function mw(...objs: string[]): Function[] {
-  return objs.flatMap(obj => {
-    if (typeof obj != 'string') return null
-    // @ts-ignore
-    return getHandler(obj)?.mw || null
-  }).flat().filter(Boolean)
 }

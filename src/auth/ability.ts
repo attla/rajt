@@ -19,7 +19,7 @@ export class Ability {
   }
 
   static fromAction(target: any): string {
-    return !target ? '' : this.format(target.name.length > 3 ? target.name : (target?.p || ''))
+    return !target ? '' : this.format(typeof target == 'string' ? target : (target.name.length > 3 ? target.name : (target?.p || '')))
   }
 
   static format(path: string) {

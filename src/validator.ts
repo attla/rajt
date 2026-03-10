@@ -1,17 +1,17 @@
-import type * as z from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import response from './response'
 import type {
-  Rule, Rules,
+  Rule, Rules, RuleFn,
   ValidationTargets,
+  zObject,
 } from './types'
 
 export default class $Validator {
-  private static cache = new Map<string, (schema: z.ZodObject<any>) => Rule>()
+  private static cache = new Map<string, RuleFn>()
 
   private static createRule<T extends keyof ValidationTargets>(
     target: T,
-    schema: z.ZodObject<any>
+    schema: zObject
   ): Rule {
     return {
       target,
@@ -24,7 +24,7 @@ export default class $Validator {
     if (this.cache.has(target))
       return this.cache.get(target)
 
-    const fn = (schema: z.ZodObject<any>) => this.createRule(target, schema)
+    const fn = (schema: zObject) => this.createRule(target, schema)
     this.cache.set(target, fn)
     return fn
   }

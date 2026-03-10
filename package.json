@@ -1,7 +1,7 @@
 {
   "name": "rajt",
   "description": "A serverless bundler layer, fully typed for AWS Lambda (Node.js and LLRT) and Cloudflare Workers.",
-  "version": "0.0.99",
+  "version": "0.0.100",
   "type": "module",
   "main": "./src/index.ts",
   "files": ["bin", "src"],
@@ -71,7 +71,8 @@
     "node": ">=18.0.0"
   },
   "resolutions": {
-    "@smithy/types": "^4.3.0"
+    "@smithy/types": "^4.3.0",
+    "zod": "^4.3.6"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
