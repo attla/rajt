@@ -28,7 +28,7 @@ export default defineCommand({
 
 		// @ts-ignore
 		await build.run({ args: { platform } })
-		const isBun = getRuntime() == 'bun'
+		const isBun = getRuntime() === 'bun'
 
 		switch (platform) {
 			case 'aws':

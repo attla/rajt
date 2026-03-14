@@ -3,10 +3,10 @@ import { getHandler } from '../register'
 export function resolve(...objs: any[]) {
   const _ = []
   for (let obj of objs) {
-    if (typeof obj == 'string')
+    if (typeof obj === 'string')
       obj = getHandler(obj)
 
-    if (typeof obj == 'function' && obj?.length == 2) {
+    if (typeof obj === 'function' && obj?.length === 2) {
 
     } else if (obj?.run) {
       _.push(...obj.run())
@@ -34,7 +34,7 @@ export function resolve(...objs: any[]) {
 }
 
 export function resolveMiddleware(obj: any) {
-  if (typeof obj == 'function' && obj.length == 2)
+  if (typeof obj === 'function' && obj.length === 2)
     return obj
 
   if (obj?.factory)

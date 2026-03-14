@@ -19,13 +19,13 @@ export default defineCommand({
 		},
 	},
 	async run({ args }) {
-		if (args._.length != 2) {
+		if (args._.length !== 2) {
 			error('Invalid args: '+ gray('[ACTION] [DATABASE]'))
 			return rn()
 		}
 
 		const [action, database] = args._
-		const isBun = getRuntime() == 'bun'
+		const isBun = getRuntime() === 'bun'
 		const isRemote = !!args?.remote
 
 		try {

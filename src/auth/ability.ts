@@ -19,11 +19,11 @@ export class Ability {
   }
 
   static fromAction(target: any): string {
-    return !target ? '' : this.format(typeof target == 'string' ? target : (target.name.length > 3 ? target.name : (target?.p || '')))
+    return !target ? '' : this.format(typeof target === 'string' ? target : (target.name.length > 3 ? target.name : (target?.p || '')))
   }
 
   static format(path: string) {
-    return path == '/'
+    return path === '/'
       ? 'index'
       : path.normalize('NFD')
          .replace(/[\u0300-\u036f]/g, '')

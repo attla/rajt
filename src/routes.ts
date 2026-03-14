@@ -46,7 +46,7 @@ const walk = async (dir: string, baseDir: string, fn: Function, parentMw: string
 
     if (stat.isDirectory()) {
       await walk(fullPath, baseDir, fn, currentMw)
-    } else if (file != 'index.ts' && file.endsWith('.ts') && !file.endsWith('.d.ts')) {
+    } else if (file !== 'index.ts' && file.endsWith('.ts') && !file.endsWith('.d.ts')) {
       const mod = await IMPORT(fullPath)
       fn(fullPath, baseDir, mod.default, currentMw)
     }
@@ -56,18 +56,18 @@ const walk = async (dir: string, baseDir: string, fn: Function, parentMw: string
 function isZodSchema(obj: any): obj is z.ZodType {
   return (
     obj &&
-    typeof obj == 'object' &&
+    typeof obj === 'object' &&
     ('_def' in obj || '_type' in obj) &&
     (obj.safeParse !== undefined || obj.parse !== undefined)
   )
 }
 
 function ResolveDescribeSchema(obj: any, deep: boolean = false) {
-  if (!obj || typeof obj != 'object') return obj
+  if (!obj || typeof obj !== 'object') return obj
   if (isZodSchema(obj))
     return { content: {'application/json': { schema: resolver(obj as unknown as StandardSchemaV1) }} }
 
-  if (obj.content && typeof obj.content == 'object') {
+  if (obj.content && typeof obj.content === 'object') {
     for (const mediaType in obj.content) {
       const contentItem = obj.content[mediaType]
       if (contentItem?.schema && isZodSchema(contentItem.schema))
@@ -83,7 +83,7 @@ function ResolveDescribeSchema(obj: any, deep: boolean = false) {
   }
 
   for (const key in obj) {
-    if (obj[key] && typeof obj[key] == 'object') {
+    if (obj[key] && typeof obj[key] === 'object') {
       obj[key] = ResolveDescribeSchema(obj[key], true)
 
       if (!deep && !obj[key]?.description) {
@@ -137,7 +137,7 @@ export async function getRoutes(
       }
 
       const mw = (handle.mw?.length ? [...handle.mw, ...middlewares] : middlewares).flatMap(obj => {
-        return typeof obj == 'string' ? obj : obj?.name || null
+        return typeof obj === 'string' ? obj : obj?.name || null
       }).filter(Boolean) as Function[]
 
       routes.push({
@@ -193,7 +193,7 @@ function extractHttpPath(file: string) {
     .map(part => part.startsWith('[') && part.endsWith(']') ? ':'+ part.slice(1, -1) : part)
     .join('/')
 
-  return route == '/' ? '/' : route.replace(/\/$/, '')
+  return route === '/' ? '/' : route.replace(/\/$/, '')
 }
 
 export function sortRoutes(routes: Routes) {
@@ -212,7 +212,7 @@ export function sortRoutes(routes: Routes) {
     return metaB.score - metaA.score
   })
 
-  while (list.length && list.at(-1)?.path == '/') {
+  while (list.length && list.at(-1)?.path === '/') {
     const last = list.pop()
     last && list.unshift(last)
   }
@@ -277,9 +277,9 @@ export async function getConfigs(
     const keyPath = extractName(file).split('.')
 
     keyPath.reduce((acc, key, index) => {
-      if (index == keyPath.length - 1) {
+      if (index === keyPath.length - 1) {
         acc[key] = mod.default
-      } else if (!acc[key] || typeof acc[key] != 'object') {
+      } else if (!acc[key] || typeof acc[key] !== 'object') {
         acc[key] = {}
       }
 
@@ -297,15 +297,15 @@ function stringifyToJS(value: unknown): string {
 
   const type = typeof value
 
-  if (type == 'string') return JSON.stringify(value)
-  if (type == 'number' || type == 'boolean') return String(value)
-  if (type == 'bigint') return `${value}n`
-  if (type == 'function') return value.toString()
+  if (type === 'string') return JSON.stringify(value)
+  if (type === 'number' || type === 'boolean') return String(value)
+  if (type === 'bigint') return `${value}n`
+  if (type === 'function') return value.toString()
 
   if (Array.isArray(value))
     return `[${value.map(stringifyToJS).join(',')}]`
 
-  if (type == 'object') {
+  if (type === 'object') {
     const entries = Object.entries(value as Record<string, unknown>)
       .map(([key, val]) => `${IDENTIFIER_RE.test(key) ? key : JSON.stringify(key)}:${stringifyToJS(val)}`)
 
@@ -328,7 +328,7 @@ async function dependencyPath(lib: string) {
 export async function cacheRoutes() {
   const env = Object.entries(
     config({ path: join(_root, '.env.prod') })?.parsed || {}
-  ).filter(([key, val]) => key?.toLowerCase().indexOf('aws') != 0) // prevent AWS credentials
+  ).filter(([key, val]) => key?.toLowerCase().startsWith('aws')) // prevent AWS credentials
 
   const version = versionSHA('../../.git') // @ts-ignore
   env.push(['VERSION_SHA', process.env['VERSION_SHA'] = version]) // @ts-ignore

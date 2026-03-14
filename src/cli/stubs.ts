@@ -1,11 +1,11 @@
 export const replace = (str: string, map: Record<string, string>) => {
-  if (!str || typeof str != 'string' || !map || typeof map != 'object') return str
+  if (!str || typeof str !== 'string' || !map || typeof map !== 'object') return str
   const entries = Object.entries(map)
   const length = entries?.length || 0
   if (!length) return str
 
   str = str.trimStart()
-  if (length == 1)
+  if (length === 1)
     return str.replaceAll(entries[0][0], entries[0][1])
 
   return entries.reduce(

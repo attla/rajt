@@ -58,7 +58,7 @@ export default class $Response {
     headers?: HeaderRecord
   ): Response | Promise<Response> {
     const res = (html: string) => this.raw(status, html, 'text/html; charset=UTF-8' as BaseMime, headers)
-    return typeof html == 'string'
+    return typeof html === 'string'
       ? res(html)
       : resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then(res)
   }

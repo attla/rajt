@@ -29,10 +29,10 @@ export const getVerb = [
 ]
 
 function method(method: string, ...args: any[]): void | ClassDecorator {
-  if (args.length == 1 && typeof args[0] == 'function')
+  if (args.length === 1 && typeof args[0] === 'function')
     return _method(method, '/', args[0])
 
-  const path = typeof args[0] == 'string' ? args[0] : '/'
+  const path = typeof args[0] === 'string' ? args[0] : '/'
   return (target: Function) => _method(method, path, target)
 }
 
@@ -117,7 +117,7 @@ export function Middlewares(...handlers: MiddlewareType[]) {
 export function Auth(target: Function): void
 export function Auth(): ClassDecorator
 export function Auth(...args: any[]): void | ClassDecorator {
-  if (args.length == 1 && typeof args[0] == 'function')
+  if (args.length === 1 && typeof args[0] === 'function')
     return _auth(args[0])
 
   return (target: any) => _auth(target)

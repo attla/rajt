@@ -44,7 +44,7 @@ export const platformError = () => error(`Provide a valid platform: ${formatArgs
 
 export function getRuntime() {
   try {
-    return process?.isBun || typeof Bun != 'undefined' ? 'bun' : 'node'
+    return process?.isBun || typeof Bun !== 'undefined' ? 'bun' : 'node'
   } catch {
     return 'node'
   }
@@ -120,7 +120,7 @@ const dist = '.rajt/dist'
 export const build = async (platform: Platform, env: string = 'prd') => {
   const startTime = Date.now()
 
-  const isCF = platform == 'cf'
+  const isCF = platform === 'cf'
   cleanDir(join(_root, dist))
 
   if (isCF) {
@@ -138,7 +138,7 @@ export const build = async (platform: Platform, env: string = 'prd') => {
   const encoder = new TextEncoder()
 
   // @ts-ignore
-  platform = platform != 'node' ? '-'+ platform : ''
+  platform = platform !== 'node' ? '-'+ platform : ''
   const opts = {
     entryPoints: [join(_rajt, `prod${platform}.ts`)],
     bundle: true,
@@ -258,7 +258,7 @@ export function cleanDB(key: string, config?: WranglerConfig) {
   config ??= wranglerConfig()
   if (!config?.d1_databases) return
   for (const db of config.d1_databases) {
-    if (key == db.database_name || key == db.binding) {
+    if (key === db.database_name || key === db.binding) {
       const ns = 'miniflare-D1DatabaseObject'
       const fileName = join(ns, durableObjectNamespace(db.preview_database_id || db.database_id || db.binding, ns) +'.sqlite')
 
@@ -463,7 +463,7 @@ export async function wait(ms: number) {
 export function getDockerHost() {
 	const platform = process.platform
 
-	if (platform == 'darwin') {
+	if (platform === 'darwin') {
 		for (const socket of [
 			'/Users/'+ process.env.USER +'/.docker/run/docker.sock',
 			'/var/run/docker.sock',
@@ -476,7 +476,7 @@ export function getDockerHost() {
 		return 'tcp://localhost:2375'
 	}
 
-	return process.env.DOCKER_HOST || (platform == 'win32' ? 'tcp://localhost:2375' : 'unix:///var/run/docker.sock')
+	return process.env.DOCKER_HOST || (platform === 'win32' ? 'tcp://localhost:2375' : 'unix:///var/run/docker.sock')
 }
 
 export function makeFile(path: string, content: string) {

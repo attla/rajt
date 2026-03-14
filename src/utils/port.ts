@@ -5,7 +5,7 @@ import { error, warn } from './log'
 export function withPort(desiredPort: number, cb: (port: number) => void, maxAttempts = 10) {
   getAvailablePort(desiredPort)
     .then(([port, pid]) => {
-      if (port != desiredPort)
+      if (port !== desiredPort)
         warn(
           `Port ${desiredPort} is in use by ${pid ? 'process '+ pid : 'an unknown process'}, using available port ${port} instead`
         )

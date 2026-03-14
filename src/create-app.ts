@@ -21,10 +21,10 @@ const EHandler = async (e: Error | HTTPResponseError) => {
   console.error(e)
 
   switch (true) {
-    case 'status' in e && e.status == 401:
+    case 'status' in e && e.status === 401:
       return response.unauthorized()
 
-    case 'status' in e && e.status == 400: // @ts-ignore
+    case 'status' in e && e.status === 400: // @ts-ignore
       return response.badRequest(null, e?.message)
 
     default:
@@ -69,13 +69,13 @@ export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
   if (isDev()) {
     app.use('*', async function (c: Context, next: Next) {
       const method = c.req.method
-      const route = matchedRoutes(c).find(route => route.method == method)?.path
+      const route = matchedRoutes(c).find(route => route.method === method)?.path
       const logWithRoute = (args: string[]) => {
         if (!route || !args.length) return args
         return args.map(arg => {
           if (!arg) return arg
           const split = arg?.split(' ')
-          if (split.length < 3 || split[2] == route)
+          if (split.length < 3 || split[2] === route)
             return arg
 
           split.splice(Math.min(3, split.length), 0, gray(route))

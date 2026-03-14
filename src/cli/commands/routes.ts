@@ -46,15 +46,15 @@ export default defineCommand({
 				keys.add(key)
 
 				let mLength = method.length
-				if (method == 'GET') mLength += 5
+				if (method === 'GET') mLength += 5
 
 				maxMethodLength = Math.max(maxMethodLength, mLength)
 				maxPathLength = Math.max(maxPathLength, path.length)
 
 				return [
-					isMiddleware && method != 'ALL' || !isMiddleware,
+					isMiddleware && method !== 'ALL' || !isMiddleware,
 					opts.path ? path.startsWith(opts.path) : true,
-					opts.method ? method == opts.method : true,
+					opts.method ? method === opts.method : true,
 				].every(Boolean)
 			})
 
@@ -68,7 +68,7 @@ export default defineCommand({
 			let mLength = method.length
 			let str = highlightedMethod(method, null, true)
 
-			if (method == 'GET')
+			if (method === 'GET')
 				mLength += 5
 
 			console.log(str + ' '.repeat(maxMethodLength - mLength) +'  '+ highlightedURI(path, method))

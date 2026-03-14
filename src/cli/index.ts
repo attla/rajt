@@ -32,7 +32,7 @@ const version = [name, isColorSupported ? gray('v'+rajtVersion) : rajtVersion].j
 if (directly()) {
   const _args = process.argv.slice(2)
   const length = _args.length
-  if (!length || (length == 1 && ['-v', '--version', '--v', '-version'].includes(_args[0]))) {
+  if (!length || (length === 1 && ['-v', '--version', '--v', '-version'].includes(_args[0]))) {
     console.log(version)
     process.exit(0)
   }

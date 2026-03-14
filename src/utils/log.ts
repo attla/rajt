@@ -54,7 +54,7 @@ const LOGGING_METHOD = {
 
 function prefixedLog(prefixType: keyof typeof prefixes, ...msg: any[]) {
   const length = msg.length
-  if ((msg[0] === '' || msg[0] === undefined) && length == 1)
+  if ((msg[0] === '' || msg[0] === undefined) && length === 1)
     msg.shift()
 
   const consoleMethod: keyof typeof LOGGING_METHOD =
@@ -64,12 +64,12 @@ function prefixedLog(prefixType: keyof typeof prefixes, ...msg: any[]) {
 
   const prefix = prefixes[prefixType]
   // If there's no message, don't print the prefix but a new line
-  if (length == 0) {
+  if (length === 0) {
     console[consoleMethod]('')
   } else {
     // Ensure if there's ANSI escape codes it's concatenated into one string.
     // Chrome DevTool can only handle color if it's in one string.
-    if (length == 1 && typeof msg[0] == 'string') {
+    if (length === 1 && typeof msg[0] === 'string') {
       console[consoleMethod](prefix +' '+ msg[0])
     } else {
       console[consoleMethod](prefix, ...msg)

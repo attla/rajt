@@ -108,7 +108,7 @@ export default defineCommand({
 
 		const started = (port: number) => {
 			log(`Starting API on http://${host}:${port}`)
-			if (platform == 'cf')
+			if (platform === 'cf')
 				log(`Localflare on https://studio.localflare.dev`)
 			rn()
 		}
@@ -135,7 +135,7 @@ export default defineCommand({
 							{
 								stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
 								// stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
-								shell: process.platform == 'win32',
+								shell: process.platform === 'win32',
 								env: {...process.env, DOCKER_HOST: getDockerHost()},
 							}
 						)
@@ -193,8 +193,8 @@ export default defineCommand({
 			case 'node':
 				return withPort(desiredPort, async (port) => {
 					started(port)
-					const isBun = getRuntime() == 'bun'
-					const isWin32 = process.platform == 'win32'
+					const isBun = getRuntime() === 'bun'
+					const isWin32 = process.platform === 'win32'
 					const params = isBun
 						? ['run', '--port=' + port, '--hot', '--silent', '--no-clear-screen', '--no-summary', join(_root, 'node_modules/rajt/src/dev.ts')]
 						: [join(_root, 'node_modules/.bin/tsx' + (isWin32 ? '.exe' : '')), 'watch', join(_root, 'node_modules/rajt/src/dev-node.ts')]

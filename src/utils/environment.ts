@@ -2,7 +2,7 @@ const prd = Symbol('prd')
 const dev = Symbol('dev')
 
 // @ts-ignore
-let env = process.env.RAJT_ENV || prd
+let env = process.env.RAJT_ENV || detectEnvironment()
 
 export const getEnv = () => env // @ts-ignore
 export const setEnv = (e: symbol) => env = e
