@@ -328,7 +328,7 @@ async function dependencyPath(lib: string) {
 export async function cacheRoutes() {
   const env = Object.entries(
     config({ path: join(_root, '.env.prod') })?.parsed || {}
-  ).filter(([key, val]) => key?.toLowerCase().startsWith('aws')) // prevent AWS credentials
+  ).filter(([key, val]) => !key?.toLowerCase().startsWith('aws')) // prevent AWS credentials
 
   const version = versionSHA('../../.git') // @ts-ignore
   env.push(['VERSION_SHA', process.env['VERSION_SHA'] = version]) // @ts-ignore
@@ -387,7 +387,6 @@ import { registerHandler, registerMiddleware } from '${_rajtDir}/src/register'
 ${handlers.map(([file, name, _export]) => `\nimport ${_export ? `{ ${name} }` : name} from '${_rajtDir}/src/${file}'\nregisterHandler('${name}', ${name})`).join('\n')}
 
 ${Object.entries(openApi)?.length ? `registerHandler('RAJT_OPENAPI', ${stringifyToJS(openApi)})` : ''}
-Config.set('routes', ${stringifyToJS(Object.fromEntries(routes.map(r => ([r.path+'$'+verbAlias[r.method], r.name]))))})
 
 ${routes.map(r => `import ${r.name} from '../${normalizeImportPath(r.file)}'`).join('\n')}
 ${middlewares.map(r => `import ${r.name} from '../${normalizeImportPath(r.file)}'`).join('\n')}
