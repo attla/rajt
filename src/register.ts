@@ -1,3 +1,6 @@
+import { isProd } from './utils/environment'
+const isPrd = isProd()
+
 export const handlers: Record<string, Function> = {}
 
 export function registerHandler(id: string, handler: any) {
@@ -6,7 +9,7 @@ export function registerHandler(id: string, handler: any) {
 
 export function getHandler(id: string): Function {
   const handler = handlers[id] || null
-  if (!handler) throw new Error(`Handler ${id} not registered`)
+  if (isPrd && !handler) throw new Error(`Handler ${id} not registered`)
   return handler
 }
 

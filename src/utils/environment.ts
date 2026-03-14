@@ -11,7 +11,7 @@ export function detectEnvironment(): symbol {
   try {
     if (
       process.env?.npm_lifecycle_event === 'dev'
-      || process.env?.npm_lifecycle_script === 'rajt'
+      || process.env?.npm_lifecycle_script?.startsWith('rajt')
       || process.env?.AWS_SAM_LOCAL
       // || process?.argv?.includes('--dev')
       || process?.argv?.some(arg => ['-port', '-platform', '--dev', '--development', '--watch'].includes(arg))

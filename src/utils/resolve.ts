@@ -6,6 +6,8 @@ export function resolve(...objs: any[]) {
     if (typeof obj === 'string')
       obj = getHandler(obj)
 
+    if (obj == null) continue
+
     if (typeof obj === 'function' && obj?.length === 2) {
 
     } else if (obj?.run) {
