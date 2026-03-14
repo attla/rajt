@@ -1,16 +1,17 @@
 const prd = Symbol('prd')
 const dev = Symbol('dev')
 
-let env = prd
+// @ts-ignore
+let env = process.env.RAJT_ENV || prd
 
-export const getEnv = () => env
+export const getEnv = () => env // @ts-ignore
 export const setEnv = (e: symbol) => env = e
 
-export function detectEnvironment() {
+export function detectEnvironment(): symbol {
   try {
     if (
-      process.env?.npm_lifecycle_event == 'dev'
-      || process.env?.npm_lifecycle_script == 'rajt'
+      process.env?.npm_lifecycle_event === 'dev'
+      || process.env?.npm_lifecycle_script === 'rajt'
       || process.env?.AWS_SAM_LOCAL
       // || process?.argv?.includes('--dev')
       || process?.argv?.some(arg => ['-port', '-platform', '--dev', '--development', '--watch'].includes(arg))
@@ -24,10 +25,11 @@ export function detectEnvironment() {
   return prd
 }
 
-export const isEnv = (e: symbol) => env == e
+export const isEnv = (e: symbol) => env === e
 
-export const isDev = () => env == dev
-export const isProd = () => env == prd
+// @ts-ignore
+export const isDev = () => env === dev
+export const isProd = () => env === prd
 
 export const isDevelopment = isDev
 export const isProduction = isProd

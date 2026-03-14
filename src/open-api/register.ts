@@ -61,7 +61,8 @@ export function registerOpenAPI(app: Hono, conf: any) {
       slug: opts.appName?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s_-]/g, '').replace(/[\s_-]+/g, '_').replace(/[^\x00-\x7F]/g, '') +'_'+ opts.appVersion,
       // hideDownloadButton: true,
       // onLoaded: () => document?.querySelectorAll('[href="https://www.scalar.com"]')?.forEach(el => el.remove()),
-      customCss: `[href="https://www.scalar.com"]{display:none}`,
+      customCss: `[href="https://www.scalar.com"],.scalar-mcp-layer{display:none!important}`,
+      // favicon: 'https://example.com/favicon.png',
     })
   )
 }

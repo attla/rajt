@@ -27,6 +27,7 @@ export default class $Request {
   #u: Authnz<any> | null = null
 
   #host: string
+  #protocol: string
   #routePath?: string
   #matchedRoutes: RouterRoute[]
 
@@ -37,6 +38,7 @@ export default class $Request {
 
     const url = new URL(c.req.raw.url)
     this.#host = url.protocol +'//'+ url.host
+    this.#protocol = url.protocol
 
     this.#matchedRoutes = matchedRoutes(c)
   }
@@ -68,6 +70,13 @@ export default class $Request {
     return this.has(prop, value)
   }
 
+  createToken(data: any, exp: number) {
+    return Token.create(this, data, exp)
+  }
+  parseToken(token: string) {
+    return Token.parse(this, token)
+  }
+
   get cx() {
     return this.#c
   }
@@ -88,6 +97,10 @@ export default class $Request {
 
   get userAgent(): string | undefined {
     return this.#c.req.header('user-agent')
+  }
+
+  get protocol() {
+    return this.#protocol
   }
 
   get url() {

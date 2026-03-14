@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process';
-import { join, dirname } from 'node:path';
+import { join, dirname, resolve } from 'node:path';
 import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
-const __dirname = dirname(new URL(import.meta.url).pathname);
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const ERR_NODE_VERSION = '18.0.0';
 const MIN_NODE_VERSION = '18.0.0';
-
-let rajtProcess;
 
 function runRajt() {
   if (process?.versions?.node && semiver(process.versions.node, ERR_NODE_VERSION) < 0) {
@@ -21,58 +20,70 @@ Consider using a Node.js version manager such as https://volta.sh or https://git
     return;
   }
 
-  const isBun = process?.isBun || typeof Bun != 'undefined';
-  let tsxPath;
+  const isBun = process?.isBun || typeof Bun !== 'undefined';
+  const targetScript = resolve(__dirname, '../src/cli/index.ts');
 
-  if (!isBun) {
-    const _tsxPath = 'node_modules/.bin/tsx'
-    const tsxPaths = [
-      // join(__dirname, '../node_modules/.bin/tsx'),
-      // join(__dirname, '../../.bin/tsx'),
-      join(__dirname, '../'+ _tsxPath),
-      join(__dirname, '../../'+ _tsxPath),
-      join(process.cwd(), _tsxPath),
-      'tsx',
-    ];
+  let executor = process.execPath;
+  let args = [];
 
-    for (const pathOption of tsxPaths) {
-      if (pathOption == 'tsx' || existsSync(pathOption)) {
-        tsxPath = pathOption;
-        break;
-      }
-    }
+  if (isBun) {
+    args = [targetScript, ...process.argv.slice(2)];
+  } else {
+    const tsxBin = findTsx();
 
-    if (!tsxPath) {
-      console.error('TypeScript file found but tsx is not available. Please install tsx:');
+    if (!tsxBin) {
+      console.error('Error: "tsx" is not available. Please install tsx:');
       console.error('  npm i -D tsx');
       console.error('  or');
       console.error('  bun i -D tsx');
       process.exit(1);
-      return;
     }
+
+    args = [
+      '--no-warnings',
+      tsxBin,
+      targetScript,
+      ...process.argv.slice(2)
+    ].filter(arg => !arg.includes('experimental-vm-modules') && !arg.includes('loader'));
   }
 
-  return spawn(
-    process.execPath,
-    [
-      '--no-warnings',
-      ...process.execArgv,
-      tsxPath,
-      join(__dirname, '../src/cli/index.ts').replace(/^\\/, ''),
-      ...process.argv.slice(2),
-    ].filter(arg => arg && !arg.includes('experimental-vm-modules') && !arg.includes('loader')),
-    {
-      stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
-      env: {
-        ...process.env,
-        NODE_ENV: process.env.NODE_ENV || 'development',
-        TSX_DISABLE_CACHE: process.env.TSX_DISABLE_CACHE || '1',
-      }
+  return execute(executor, args)
+}
+
+function findTsx() {
+  const relativePaths = [
+    join(__dirname, '../node_modules/tsx/dist/cli.mjs'),
+    join(process.cwd(), 'node_modules/tsx/dist/cli.mjs'),
+    join(__dirname, '../node_modules/.bin/tsx'),
+    join(process.cwd(), 'node_modules/.bin/tsx'),
+  ];
+
+  for (const p of relativePaths) {
+    if (existsSync(p)) return p;
+    if (existsSync(`${p}.exe`)) return `${p}.exe`;
+    if (existsSync(`${p}.cmd`)) return `${p}.cmd`;
+  }
+
+  return null
+}
+
+function execute(command, args) {
+  const child = spawn(command, args, {
+    stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+    env: {
+      ...process.env,
+      NODE_ENV: process.env.NODE_ENV || 'development',
+      TSX_DISABLE_CACHE: '1',
     }
-  )
-  .on('exit', code => process.exit(code == null ? 0 : code))
-  .on('message', message => process.send && process.send(message))
-  .on('disconnect', () => process.disconnect && process.disconnect());
+  });
+
+  process.on('SIGINT', () => child.kill('SIGINT'))
+    .on('SIGTERM', () => child.kill('SIGTERM'));
+
+  return child
+    .on('exit', code => process.exit(code ?? 0))
+    .on('message', msg => process.send?.(msg))
+    .on('disconnect', () => process.disconnect?.())
 }
 
 var fn = new Intl.Collator(0, { numeric: 1 }).compare;
@@ -101,7 +112,5 @@ function directly() {
 }
 
 if (directly()) {
-  rajtProcess = runRajt();
-  process.on('SIGINT', () => rajtProcess && rajtProcess.kill())
-    .on('SIGTERM', () => rajtProcess && rajtProcess.kill());
+  runRajt()
 }

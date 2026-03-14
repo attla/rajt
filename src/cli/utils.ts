@@ -117,7 +117,7 @@ function stripDecorators(source: string) {
 }
 
 const dist = '.rajt/dist'
-export const build = async (platform: Platform) => {
+export const build = async (platform: Platform, env: string = 'prd') => {
   const startTime = Date.now()
 
   const isCF = platform == 'cf'
@@ -160,9 +160,10 @@ export const build = async (platform: Platform) => {
     ],
     metafile: true,
     write: false,
-    // define: {
-    //   'process.env.NODE_ENV': '"development"'
-    // },
+    define: {
+      'process.env.RAJT_ENV': env,
+      //  'process.env.NODE_ENV': '"development"',
+    },
     // tsconfig: join(_root, 'tsconfig.json'),
     // sourcemap: true,
     // logLevel: 'info',

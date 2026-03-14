@@ -19,8 +19,8 @@ import make from './commands/make'
 const directly = () => {
   try {
     // @ts-ignore
-    return typeof vitest == 'undefined'
-      && import.meta.url == `file://${process.argv[1].replace(/\\/g, '/')}`
+    return typeof vitest === 'undefined'
+      && import.meta.url?.endsWith(process.argv[1].replace(/\\/g, '/'))
 	} catch {
 		return false
 	}

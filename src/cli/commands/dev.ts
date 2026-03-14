@@ -53,7 +53,7 @@ export default defineCommand({
 				event('Building..')
 			}
 			const fn = async () => {
-				building && await build(platform)
+				building && await build(platform, 'dev')
 				await start()
 			}
 

@@ -113,11 +113,11 @@ export const createApp = <E extends Env>(options?: ServerOptions<E>) => {
   if (options?.init) options.init(app)
 
   const routes = options?.routes || [] // @ts-ignore
-  const routeRegister = options?.routeRegister ? options.routeRegister : (_: Hono, route: Route) => { // @ts0ignore
+  const routeRegister = options?.routeRegister ? options.routeRegister : (_: Hono, route: Route) => {
     if (Array.isArray(route)) { // @ts-ignore
       _[getVerb[route[0]]](route[1], ...resolve(...route[2], route[3]))
     } else { // @ts-ignore
-      _[route.method](route.path, ...resolve(...route.middlewares), route.handle)
+      _[route.method](route.path, ...resolve(...route.middlewares, route.handle))
     }
   }
 

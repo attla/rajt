@@ -4,11 +4,13 @@ import { join, resolve, relative } from 'pathe'
 import { IMPORT } from 't0n'
 import glob from 'tiny-glob'
 import { config } from 'dotenv'
-import { describeRoute, resolver } from 'hono-openapi'
+import { describeRoute, resolver, validator } from 'hono-openapi'
 import { mimes } from 'hono/utils/mime'
 import { STATUS_CODES } from 'node:http'
 import { registerHandler, registerMiddleware } from './register'
 import createApp from './create-app'
+import _response from './response'
+import _validator from './validator'
 import { isAnonFn } from './utils/func'
 import ensureDir from './utils/ensuredir'
 import versionSHA from './utils/version-sha'
@@ -20,7 +22,7 @@ import { resolve as _resolve } from './utils/resolve'
 import { highlightedMethod, highlightedURI } from './cli/utils'
 
 import type * as z from 'zod'
-import type { Routes, StandardSchemaV1 } from './types'
+import type { Routes, Rule, StandardSchemaV1 } from './types'
 
 const importName = (name?: string) => (name || 'Fn'+ Math.random().toString(36).substring(2)).replace(/\.ts$/, '')
 const walk = async (dir: string, baseDir: string, fn: Function, parentMw: string[] = []): Promise<void> => {
@@ -358,9 +360,13 @@ export async function cacheRoutes() {
     registerHandler(h[1], mod[h[1]])
   }
 
+  _validator.setParser((rule: Rule) => validator(rule.target, rule.schema, (result, c) => {
+    if (!result.success) // @ts-ignore
+      return _response.badRequest(result.error)
+  }))
   // @ts-ignore
   const openApi = await generateOpenAPI(createApp({ routes, routeRegister: (app: Hono, route: Route) => {
-    app[route.method](route.path, describeRoute(route.desc), ..._resolve(...route.middlewares), route.handle)
+    app[route.method](route.path, describeRoute(route.desc), ..._resolve(...route.middlewares, route.handle))
   } }), configs?.rajt || {})
 
   const iPath = join(_root, '.rajt/imports.mjs')
@@ -374,7 +380,7 @@ export async function cacheRoutes() {
   stringifyToJS(Object.fromEntries(routes.map(r => ([r.path + r.method, r.name]))))
 
   writeFileSync(iPath, `// AUTO-GENERATED FILE - DO NOT EDIT
-${env?.length ? `import { Envir } from '${await dependencyPath('t0n')}/dist/index'\nEnvir.add({${env.map(([key, val]) => key +':'+ stringifyToJS(val)).join(',')}})` : ''}
+${env?.length ? `import { Envir } from '${await dependencyPath('t0n')}/src/envir'\nEnvir.add({${env.map(([key, val]) => key +':'+ stringifyToJS(val)).join(',')}})` : ''}
 ${Object.entries(configs)?.length ? `import Config from '${_rajtDir}/src/config'\nConfig.add(${stringifyToJS(configs)})` : ''}
 
 import { registerHandler, registerMiddleware } from '${_rajtDir}/src/register'
