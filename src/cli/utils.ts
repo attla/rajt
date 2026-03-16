@@ -548,3 +548,23 @@ export const highlightedURI = (uri: string, method: string) => uri.replace(
   /(?::([a-zA-Z_][a-zA-Z0-9_]*)(\{[^}]+\})?|\*)/g,
   _ => highlightedMethod(method, _)
 )
+
+export function findTsx() {
+  const exts = ['', '.exe', '.cmd']
+  const paths = [
+    [_root, '../node_modules/tsx/dist/cli.mjs'],
+    [process.cwd(), 'node_modules/tsx/dist/cli.mjs'],
+    [_root, '../node_modules/.bin/tsx'],
+    [process.cwd(), 'node_modules/.bin/tsx'],
+  ] as const
+
+  for (const _path of paths) {
+    const path = join(..._path)
+    for (const ext of exts) {
+      const entry = path + ext
+      if (existsSync(entry)) return entry
+    }
+  }
+
+  return ''
+}

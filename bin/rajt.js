@@ -51,20 +51,23 @@ Consider using a Node.js version manager such as https://volta.sh or https://git
 }
 
 function findTsx() {
-  const relativePaths = [
-    join(__dirname, '../node_modules/tsx/dist/cli.mjs'),
-    join(process.cwd(), 'node_modules/tsx/dist/cli.mjs'),
-    join(__dirname, '../node_modules/.bin/tsx'),
-    join(process.cwd(), 'node_modules/.bin/tsx'),
+  const exts = ['', '.exe', '.cmd'];
+  const paths = [
+    [_root, '../node_modules/tsx/dist/cli.mjs'],
+    [process.cwd(), 'node_modules/tsx/dist/cli.mjs'],
+    [_root, '../node_modules/.bin/tsx'],
+    [process.cwd(), 'node_modules/.bin/tsx'],
   ];
 
-  for (const p of relativePaths) {
-    if (existsSync(p)) return p;
-    if (existsSync(`${p}.exe`)) return `${p}.exe`;
-    if (existsSync(`${p}.cmd`)) return `${p}.cmd`;
+  for (const _path of paths) {
+    const path = join(..._path);
+    for (const ext of exts) {
+      const entry = path + ext;
+      if (existsSync(entry)) return entry;
+    }
   }
 
-  return null
+  return ''
 }
 
 function execute(command, args) {

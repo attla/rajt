@@ -3,10 +3,12 @@ import { spawn, type ChildProcess } from 'node:child_process'
 
 import { defineCommand } from 'citty'
 import type { Miniflare } from 'miniflare'
+import type { WranglerConfig } from 'localflare-core'
 import {
 	build, wait, watch, normalizePlatform, platformError, getRuntime,
 	wranglerConfig, createMiniflare, localflareManifest,
-	getDockerHost
+	getDockerHost,
+  findTsx
 } from '../utils'
 import { error, event, log, rn, warn } from '../../utils/log'
 import { _root } from '../../utils/paths'
@@ -161,19 +163,12 @@ export default defineCommand({
 				})
 			case 'cf':
 				return withPort(desiredPort, async (port) => {
-					started(port)
-					let worker: Miniflare | null = null
-					let localflare: Miniflare | null = null
-					const startWorker = async () => {
-						if (worker) await worker.dispose()
-						if (localflare) await localflare.dispose()
+          started(port)
 
-						const workerConfig = await wranglerConfig()
-						workerConfig.host = host
-						workerConfig.liveReload = false
+          let localflare: Miniflare | null = null
+          const startLocalflare = async (workerConfig: WranglerConfig) => {
+            if (localflare) return
 
-						worker = createMiniflare({ ...workerConfig, port })
-						await worker.ready
 						localflare = createMiniflare({
 							...workerConfig,
 							vars: {
@@ -183,8 +178,23 @@ export default defineCommand({
 							main: '.rajt/localfire.js',
 							port: 8788,
 							inspectorPort: 9230,
-						})
+            })
+
 						await localflare.ready
+          }
+
+					let worker: Miniflare | null = null
+					const startWorker = async () => {
+						if (worker) await worker.dispose()
+
+						const workerConfig = await wranglerConfig() // @ts-ignore
+						workerConfig.host = host // @ts-ignore
+						workerConfig.liveReload = false
+
+						worker = createMiniflare({ ...workerConfig, port })
+            await worker.ready
+
+            if (!localflare) await startLocalflare(workerConfig)
 					}
 
 					await startApp(startWorker)
@@ -192,12 +202,23 @@ export default defineCommand({
 			default:
 			case 'node':
 				return withPort(desiredPort, async (port) => {
-					started(port)
 					const isBun = getRuntime() === 'bun'
-					const isWin32 = process.platform === 'win32'
+          const isWin32 = process.platform === 'win32'
+
+          const _arg = isBun ? 'run' : findTsx()
+
+					if (!_arg) {
+						console.error('Error: "tsx" is not available. Please install tsx:')
+						console.error('  npm i -D tsx')
+						console.error('  or')
+						console.error('  bun i -D tsx')
+						process.exit(1)
+					}
+
+					started(port)
 					const params = isBun
-						? ['run', '--port=' + port, '--hot', '--silent', '--no-clear-screen', '--no-summary', join(_root, 'node_modules/rajt/src/dev.ts')]
-						: [join(_root, 'node_modules/.bin/tsx' + (isWin32 ? '.exe' : '')), 'watch', join(_root, 'node_modules/rajt/src/dev-node.ts')]
+						? ['--port=' + port, '--hot', '--silent', '--no-clear-screen', '--no-summary']
+						: ['watch']
 
 					let nodeApp: ChildProcess | null = null
 					const stopNode = async () => {
@@ -209,7 +230,7 @@ export default defineCommand({
 
 						nodeApp = spawn(
 							isBun && isWin32 ? 'bun' : process.execPath,
-							params,
+							[_arg, ...params, join(_root, `node_modules/rajt/src/dev${isBun ? '' : '-node'}.ts`)],
 							{
 								stdio: ['inherit', isBun ? 'pipe' : 'inherit', 'inherit', 'ipc'],
 								env: {...process.env, PORT: port},
