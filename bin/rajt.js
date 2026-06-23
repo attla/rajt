@@ -53,9 +53,9 @@ Consider using a Node.js version manager such as https://volta.sh or https://git
 function findTsx() {
   const exts = ['', '.exe', '.cmd'];
   const paths = [
-    [_root, '../node_modules/tsx/dist/cli.mjs'],
+    [__dirname, '../node_modules/tsx/dist/cli.mjs'],
     [process.cwd(), 'node_modules/tsx/dist/cli.mjs'],
-    [_root, '../node_modules/.bin/tsx'],
+    [__dirname, '../node_modules/.bin/tsx'],
     [process.cwd(), 'node_modules/.bin/tsx'],
   ];
 

@@ -1,7 +1,7 @@
 import { copyFileSync, existsSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { join, resolve, relative } from 'pathe'
 
-import { IMPORT } from 't0n'
+import { IMPORT, JSJSON } from 't0n'
 import glob from 'tiny-glob'
 import { config } from 'dotenv'
 import { describeRoute, resolver, validator } from 'hono-openapi'
@@ -290,31 +290,6 @@ export async function getConfigs(
   return configs
 }
 
-const IDENTIFIER_RE = /^[$_\p{ID_Start}][$_\u200C\u200D\p{ID_Continue}]*$/u
-function stringifyToJS(value: unknown): string {
-  if (value === null) return 'null'
-  if (value === undefined) return 'undefined'
-
-  const type = typeof value
-
-  if (type === 'string') return JSON.stringify(value)
-  if (type === 'number' || type === 'boolean') return String(value)
-  if (type === 'bigint') return `${value}n`
-  if (type === 'function') return value.toString()
-
-  if (Array.isArray(value))
-    return `[${value.map(stringifyToJS).join(',')}]`
-
-  if (type === 'object') {
-    const entries = Object.entries(value as Record<string, unknown>)
-      .map(([key, val]) => `${IDENTIFIER_RE.test(key) ? key : JSON.stringify(key)}:${stringifyToJS(val)}`)
-
-    return `{${entries.join(',')}}`
-  }
-
-  return 'undefined'
-}
-
 export async function dependencyEntry(lib: string, root: string) {
   const path = await import.meta.resolve(lib)
   return relative(root, path.replace('file://', ''))
@@ -377,16 +352,16 @@ export async function cacheRoutes() {
 
   const _rajtDir = await dependencyPath('rajt')
 
-  stringifyToJS(Object.fromEntries(routes.map(r => ([r.path + r.method, r.name]))))
+  JSJSON(Object.fromEntries(routes.map(r => ([r.path + r.method, r.name]))))
 
   writeFileSync(iPath, `// AUTO-GENERATED FILE - DO NOT EDIT
-${env?.length ? `import { Envir } from '${await dependencyPath('t0n')}/src/envir'\nEnvir.add({${env.map(([key, val]) => key +':'+ stringifyToJS(val)).join(',')}})` : ''}
-${Object.entries(configs)?.length ? `import Config from '${_rajtDir}/src/config'\nConfig.add(${stringifyToJS(configs)})` : ''}
+${env?.length ? `import { Envir } from '${await dependencyPath('t0n')}/src/envir'\nEnvir.add({${env.map(([key, val]) => key +':'+ JSJSON(val)).join(',')}})` : ''}
+${Object.entries(configs)?.length ? `import Config from '${_rajtDir}/src/config'\nConfig.add(${JSJSON})` : ''}
 
 import { registerHandler, registerMiddleware } from '${_rajtDir}/src/register'
 ${handlers.map(([file, name, _export]) => `\nimport ${_export ? `{ ${name} }` : name} from '${_rajtDir}/src/${file}'\nregisterHandler('${name}', ${name})`).join('\n')}
 
-${Object.entries(openApi)?.length ? `registerHandler('RAJT_OPENAPI', ${stringifyToJS(openApi)})` : ''}
+${Object.entries(openApi)?.length ? `registerHandler('RAJT_OPENAPI', ${JSJSON(openApi)})` : ''}
 
 ${routes.map(r => `import ${r.name} from '../${normalizeImportPath(r.file)}'`).join('\n')}
 ${middlewares.map(r => `import ${r.name} from '../${normalizeImportPath(r.file)}'`).join('\n')}
