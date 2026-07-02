@@ -3,20 +3,20 @@ import esbuild from 'esbuild'
 import { Miniflare } from 'miniflare'
 import { mkdirSync, existsSync, statSync, readdirSync, rmSync, unlinkSync, copyFileSync, writeFileSync } from 'node:fs'
 import { readFile, stat, writeFile } from 'node:fs/promises'
-import { basename, dirname, join, relative } from 'pathe'
+import { basename, dirname, join } from 'pathe'
 import { createHash, createHmac } from 'node:crypto'
 
 import { findWranglerConfig, parseWranglerConfig, WRANGLER_CONFIG_FILES } from 'localflare-core'
 import type { WranglerConfig, LocalflareManifest } from 'localflare-core'
 
-import chokidar from 'chokidar'
 import { gray, bold, italic, purple, yellow, red } from 't0n/color'
-import type { ChokidarEventName, Platform } from './types'
+import { substep, event, error, warn } from 't0n/log'
 
 import { cacheRoutes } from '../routes'
-import { substep, event, error, wait as wwait, warn, log } from '../utils/log'
 import { platforms } from './constants'
 import { _rajt, _root } from '../utils/paths'
+
+import type { Platform } from './types'
 
 export function normalizePlatform(platform: Platform) {
   platform = platform?.toLowerCase() as Platform
@@ -41,14 +41,6 @@ export function normalizePlatform(platform: Platform) {
 
 const formatArgs = (...args: any[]) => args.flat().map(a => gray(italic(bold(a)))).join(', ')
 export const platformError = () => error(`Provide a valid platform: ${formatArgs(platforms)}.\n`)
-
-export function getRuntime() {
-  try {
-    return process?.isBun || typeof Bun !== 'undefined' ? 'bun' : 'node'
-  } catch {
-    return 'node'
-  }
-}
 
 export const formatSize = (bytes: number) => {
   if (bytes < 1024) return `${bytes}b`
@@ -398,64 +390,6 @@ export function createMiniflare(opts = {}) {
   })
 }
 
-function getAssetChangeMessage(
-	e: ChokidarEventName,
-	path: string
-): string {
-	path = relative(_root, path)
-	switch (e) {
-		case 'add':
-			return `File ${path} was added`
-		case 'addDir':
-			return `Directory ${path} was added`
-		case 'unlink':
-			return `File ${path} was removed`
-		case 'unlinkDir':
-			return `Directory ${path} was removed`
-		case 'change':
-		default:
-			return `${path} changed`
-	}
-}
-
-export async function watch(cb: (e: ChokidarEventName | string, file: string) => Promise<void>) {
-	const codeWatcher = chokidar.watch([
-		join(_root, '{actions,features,routes,configs,enums,libs,locales,middlewares,models,utils}/**/*.ts'),
-		join(_root, '.env.dev'),
-		join(_root, '.env.prod'),
-    join(_root, 'package.json'),
-    ...WRANGLER_CONFIG_FILES.map(f => join(_root, f)),
-	], {
-		ignored: /(^|[/\\])\../, // ignore hidden files
-		persistent: true,
-		ignoreInitial: true,
-		awaitWriteFinish: {
-			stabilityThreshold: 200,
-			pollInterval: 100,
-		},
-	})
-	let restartTimeout: NodeJS.Timeout | null = null
-
-	const watcher = (e: ChokidarEventName) => async (file: string) => {
-		log(getAssetChangeMessage(e, file))
-
-		if (restartTimeout)
-			clearTimeout(restartTimeout)
-
-		restartTimeout = setTimeout(async () => {
-			await cb(e, file)
-		}, 300)
-	}
-
-	codeWatcher.on('change', watcher('change'))
-	codeWatcher.on('add', watcher('add'))
-	codeWatcher.on('unlink', watcher('unlink'))
-	codeWatcher.on('addDir', watcher('addDir'))
-	codeWatcher.on('unlinkDir', watcher('unlinkDir'))
-
-	wwait('Watching for file changes')
-}
-
 export async function wait(ms: number) {
 	return new Promise(r => setTimeout(r, ms))
 }
@@ -490,37 +424,6 @@ export function hasExt(path: string) {
   const index = path.lastIndexOf('.')
   return index > 0 && index < path.length - 1
 }
-
-function normalizeText(text: string, separator = '_') {
-  const validSeparators = ['_', '-']
-  const sep = validSeparators.includes(separator) ? separator : '_'
-
-  const lastDotIndex = text.lastIndexOf('.')
-  const hasExtension = lastDotIndex > 0 && lastDotIndex < text.length - 1
-  const fileName = hasExtension ? text.substring(0, lastDotIndex) : text
-  const extension = hasExtension ? text.substring(lastDotIndex + 1) : ''
-
-  const normalizedName = fileName
-    .replace(/([a-z])([A-Z])/g, `$1${sep}$2`)
-    .replace(/[\s\-_]+/g, sep)
-    .toLowerCase()
-    .replace(new RegExp(`[^\\w${sep}]+`, 'g'), '')
-    .replace(new RegExp(`${sep}{2,}`, 'g'), sep)
-    .replace(new RegExp(`^${sep}+|${sep}+$`, 'g'), '')
-
-  return hasExtension ? `${normalizedName}.${extension}` : normalizedName
-}
-
-export const snakeCase = (text: string) => normalizeText(text, '_')
-export const kebabCase = (text: string) => normalizeText(text, '-')
-
-export const camelCase = (text: string) =>
-  text.replace(/[^a-zA-Z0-9]+/g, ' ')
-    .trim()
-    .split(/\s+/)
-    .filter(word => word.length > 0)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join('')
 
 export const highlightedMethod = (method: string, str?: string | null, siblings: boolean = false): string => {
   const val = str || method

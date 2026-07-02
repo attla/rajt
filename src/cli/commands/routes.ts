@@ -2,8 +2,8 @@ import { join } from 'pathe'
 import { defineCommand } from 'citty'
 import { inspectRoutes } from 'hono/dev'
 import { IMPORT } from 't0n'
+import { rn } from 't0n/log'
 import { _rajt } from '../../utils/paths'
-import { rn } from '../../utils/log'
 import { highlightedURI, highlightedMethod } from '../utils'
 
 export default defineCommand({

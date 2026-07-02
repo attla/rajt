@@ -2,6 +2,7 @@ import { copyFileSync, existsSync, readdirSync, statSync, writeFileSync } from '
 import { join, resolve, relative } from 'pathe'
 
 import { IMPORT, JSJSON } from 't0n'
+import { rn, substep, warn } from 't0n/log'
 import glob from 'tiny-glob'
 import { config } from 'dotenv'
 import { describeRoute, resolver, validator } from 'hono-openapi'
@@ -11,10 +12,8 @@ import { registerHandler, registerMiddleware } from './register'
 import createApp from './create-app'
 import _response from './response'
 import _validator from './validator'
-import { isAnonFn } from './utils/func'
 import ensureDir from './utils/ensuredir'
 import versionSHA from './utils/version-sha'
-import { rn, substep, warn } from './utils/log'
 import { _root, _rajt } from './utils/paths'
 import { generateOpenAPI } from './open-api/spec'
 import { verbAlias } from './http'
@@ -36,7 +35,7 @@ const walk = async (dir: string, baseDir: string, fn: Function, parentMw: string
     const mod = await IMPORT(indexFile)
     const group = mod.default
 
-    !isAnonFn(group) && group?.mw?.length && currentMw.push(group?.name)
+    group?.name && group.name !== 'anonymous' && group?.mw?.length && currentMw.push(group.name)
     fn(indexFile, baseDir, group, currentMw)
   }
 

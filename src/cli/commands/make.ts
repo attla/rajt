@@ -1,10 +1,11 @@
 import { defineCommand } from 'citty'
 import { join, relative } from 'pathe'
 import { Migrator } from 'forj'
-import { makeFile, hasExt, camelCase, kebabCase } from '../utils'
-import { _root } from '../../utils/paths'
-import { event, error } from '../../utils/log'
+import { camelCase, kebabCase } from 't0n'
 import { dim } from 't0n/color'
+import { event, error } from 't0n/log'
+import { makeFile, hasExt } from '../utils'
+import { _root } from '../../utils/paths'
 import * as stub from '../stubs'
 
 export default defineCommand({
@@ -22,11 +23,20 @@ export default defineCommand({
 		if (!name)
 			return error('File name is required')
 
+    const makeFileName = (s: string) => {
+      const lastDotIndex = s.lastIndexOf('.')
+      const hasExtension = lastDotIndex > 0 && lastDotIndex < s.length - 1
+
+      return hasExtension
+        ? `${kebabCase(s.substring(0, lastDotIndex))}.${s.substring(lastDotIndex + 1)}`
+        : s
+    }
+
 		const path = (p: string, dir: string = action) => join(_root, dir + 's', p)
 		let fileName = ''
 		switch (action) {
 			case 'config':
-				fileName = path(kebabCase(name))
+				fileName = path(makeFileName(name))
 				if (!hasExt(fileName)) fileName += '.ts'
 				makeFile(fileName, name.endsWith('.json') ? '{\n}' : 'export default {\n\n}\n')
 				break
@@ -36,7 +46,7 @@ export default defineCommand({
 			case 'route':
 			case 'action':
 			case 'endpoint':
-				fileName = path(kebabCase(name))
+				fileName = path(makeFileName(name))
 				if (!fileName.endsWith('.ts')) fileName += '.ts'
 				makeFile(fileName, stub.replace(stub.route, { R_NAME: camelCase(name) }))
 				break

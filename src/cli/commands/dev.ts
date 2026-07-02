@@ -3,17 +3,19 @@ import { spawn, type ChildProcess } from 'node:child_process'
 
 import { defineCommand } from 'citty'
 import type { Miniflare } from 'miniflare'
-import type { WranglerConfig } from 'localflare-core'
+import { WRANGLER_CONFIG_FILES, type WranglerConfig } from 'localflare-core'
+
+import { error, event, log, rn, warn } from 't0n/log'
+import { getRuntime, shutdown, watch } from 't0n/cli'
+
 import {
-	build, wait, watch, normalizePlatform, platformError, getRuntime,
+	build, wait, normalizePlatform, platformError,
 	wranglerConfig, createMiniflare, localflareManifest,
 	getDockerHost,
   findTsx
 } from '../utils'
-import { error, event, log, rn, warn } from '../../utils/log'
 import { _root } from '../../utils/paths'
 import { withPort } from '../../utils/port'
-import shutdown from '../../utils/shutdown'
 
 export default defineCommand({
 	meta: {
@@ -65,7 +67,13 @@ export default defineCommand({
 					event('Restarting..')
 					await fn()
 					// event('Restarted...')
-				})
+				}, [
+          join(_root, '{actions,features,routes,configs,enums,libs,locales,middlewares,models,utils}/**/*.ts'),
+          join(_root, '.env.dev'),
+          join(_root, '.env.prod'),
+          join(_root, 'package.json'),
+          ...WRANGLER_CONFIG_FILES.map(f => join(_root, f)),
+        ], _root)
 				// @ts-ignore
 				stop && shutdown(stop)
 			} catch (e: any) {

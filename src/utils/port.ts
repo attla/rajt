@@ -1,6 +1,6 @@
 import net from 'node:net'
 import { exec } from 'node:child_process'
-import { error, warn } from './log'
+import { error, warn } from 't0n/log'
 
 export function withPort(desiredPort: number, cb: (port: number) => void, maxAttempts = 10) {
   getAvailablePort(desiredPort)

@@ -1,6 +1,6 @@
 import { serve, type ServerType } from '@hono/node-server'
+import { shutdown } from 't0n/cli'
 import app from './dev'
-import shutdown from './utils/shutdown'
 
 const fetch = app.fetch
 
