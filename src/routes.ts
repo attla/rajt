@@ -351,11 +351,9 @@ export async function cacheRoutes() {
 
   const _rajtDir = await dependencyPath('rajt')
 
-  JSJSON(Object.fromEntries(routes.map(r => ([r.path + r.method, r.name]))))
-
   writeFileSync(iPath, `// AUTO-GENERATED FILE - DO NOT EDIT
-${env?.length ? `import { Envir } from '${await dependencyPath('t0n')}/src/envir'\nEnvir.add({${env.map(([key, val]) => key +':'+ JSJSON(val)).join(',')}})` : ''}
-${Object.entries(configs)?.length ? `import Config from '${_rajtDir}/src/config'\nConfig.add(${JSJSON})` : ''}
+${env?.length ? `import { Envir } from '${await dependencyPath('t0n')}/src/envir'\nEnvir.add(${JSJSON(Object.fromEntries(env))})` : ''}
+${Object.entries(configs)?.length ? `import Config from '${_rajtDir}/src/config'\nConfig.add(${JSJSON(configs)})` : ''}
 
 import { registerHandler, registerMiddleware } from '${_rajtDir}/src/register'
 ${handlers.map(([file, name, _export]) => `\nimport ${_export ? `{ ${name} }` : name} from '${_rajtDir}/src/${file}'\nregisterHandler('${name}', ${name})`).join('\n')}
