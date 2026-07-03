@@ -15,7 +15,7 @@ import {
   findTsx
 } from '../utils'
 import { _root } from '../../utils/paths'
-import { withPort } from '../../utils/port'
+import { withPort } from 't0n/port'
 
 export default defineCommand({
 	meta: {
