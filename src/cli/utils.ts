@@ -5,6 +5,7 @@ import { mkdirSync, existsSync, statSync, readdirSync, rmSync, unlinkSync, copyF
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'pathe'
 import { createHash, createHmac } from 'node:crypto'
+import { filesize } from 'filesize'
 
 import { findWranglerConfig, parseWranglerConfig, WRANGLER_CONFIG_FILES } from 'localflare-core'
 import type { WranglerConfig, LocalflareManifest } from 'localflare-core'
@@ -41,12 +42,6 @@ export function normalizePlatform(platform: Platform) {
 
 const formatArgs = (...args: any[]) => args.flat().map(a => gray(italic(bold(a)))).join(', ')
 export const platformError = () => error(`Provide a valid platform: ${formatArgs(platforms)}.\n`)
-
-export const formatSize = (bytes: number) => {
-  if (bytes < 1024) return `${bytes}b`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)}kb`
-  return `${(bytes / (1024 * 1024)).toFixed(2)}mb`
-}
 
 export const formatTime = (ms: number) => {
   if (ms < 1000) return `${ms}ms`
@@ -209,7 +204,7 @@ export const build = async (platform: Platform, env: string = 'prd') => {
   if (!result?.metafile) throw Error('build fail')
 
   const stats = await stat(opts.outfile)
-  const size = formatSize(stats.size)
+  const size = filesize(stats.size)
 
   event('Build done in '+ formatTime(Date.now() - startTime))
   substep(
